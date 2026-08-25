@@ -1,0 +1,117 @@
+@import "tailwindcss";
+
+:root {
+  --ink: #070605;
+  --paper: #11100e;
+  --champagne: #e0c48a;
+  --gold: #c9a66b;
+  --mist: #cfc6b8;
+  --mute: #8a8378;
+  --line: rgba(224, 196, 138, 0.14);
+  --background: var(--ink);
+  --foreground: #f4efe6;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-display: var(--font-display), ui-serif, Georgia, serif;
+}
+
+html,
+body {
+  background: var(--ink);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
+
+.font-display {
+  font-family: var(--font-display), ui-serif, Georgia, serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+@keyframes grain {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(-1%, 1%);
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.82);
+    opacity: 0.55;
+  }
+  100% {
+    transform: scale(1.45);
+    opacity: 0;
+  }
+}
+
+@keyframes scan {
+  0% {
+    top: -20%;
+    opacity: 0;
+  }
+  18% {
+    opacity: 0.7;
+  }
+  100% {
+    top: 110%;
+    opacity: 0;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: 0 0;
+  }
+}
+
+.iq-grain {
+  pointer-events: none;
+  position: absolute;
+  inset: -20%;
+  opacity: 0.09;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 160 160' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation: grain 8s steps(2) infinite;
+}
+
+.iq-rise {
+  animation: rise 0.7s ease both;
+}
+
+.iq-scan {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 28%;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    rgba(224, 196, 138, 0.18),
+    transparent
+  );
+  animation: scan 2.4s ease-in-out infinite;
+}

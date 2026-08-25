@@ -1,0 +1,15 @@
+{
+  "name": "Intelligence Extractor",
+  "short_name": "Extractor",
+  "id": "/pwa/",
+  "start_url": "/pwa/",
+  "scope": "/pwa/",
+  "display": "standalone",
+  "background_color": "#070605",
+  "theme_color": "#070605",
+  "description": "Local corporate intelligence and contact extraction workspace",
+  "icons": [
+    {"src": "/pwa/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable"},
+    {"src": "/pwa/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}
+  ]
+}
