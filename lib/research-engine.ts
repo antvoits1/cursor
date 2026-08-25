@@ -8,7 +8,7 @@ const ROLE_RE =
   /\b(ceo|cfo|coo|cto|owner|founder|co-founder|president|director|partner|principal|manager|officer)\b/i;
 const NAME_RE = /\b([A-Z][a-z]+(?:\s+[A-Z][a-z.'-]+){1,3})\b/g;
 const ADDRESS_RE =
-  /\b\d{1,6}\s+[A-Za-z0-9.'\- ]{3,40}\s(?:Street|St|Avenue|Ave|Road|Rd|Boulevard|Blvd|Drive|Dr|Lane|Ln|Way|Court|Ct|Highway|Hwy)\.?(?:\s*,?\s*[A-Za-z .]+,?\s*[A-Z]{2}\s*\d{5})?/gi;
+  /\b\d{1,6}\s+[A-Z][A-Za-z0-9.'\- ]{2,40}\s(?:Street|St\.|Avenue|Ave\.|Road|Rd\.|Boulevard|Blvd\.|Drive|Dr\.|Lane|Ln\.|Way|Court|Ct\.|Highway|Hwy\.)(?:\s*,?\s*[A-Za-z .]+,?\s*[A-Z]{2}\s*\d{5})?/g;
 const SOCIAL_HOSTS = ["linkedin.com", "facebook.com", "instagram.com", "twitter.com", "x.com", "youtube.com"];
 
 function sourceRef(label: string, url: string) {
@@ -45,7 +45,14 @@ function peopleFromText(text: string, label: string, url: string) {
     for (const name of names) {
       const key = name.toLowerCase();
       if (seen.has(key) || name.split(" ").length < 2) continue;
-      if (/Street|Avenue|Company|Inc|Llc|Ltd|Search|Google|Privacy/i.test(name)) continue;
+      if (
+        /Street|Avenue|Company|Inc|Llc|Ltd|Search|Google|Privacy|Wikipedia|Bahasa|February|January|March|April|August|September|October|November|December/i.test(
+          name,
+        )
+      ) {
+        continue;
+      }
+      if (/^(In|The|This|That|See|Also|Jump|Edit|View|Contents|References)\b/i.test(name)) continue;
       seen.add(key);
       const role = line.match(ROLE_RE)?.[0] || "Contact";
       people.push({
@@ -210,12 +217,22 @@ export async function* runResearch(rawQuery: string): AsyncGenerator<string> {
     }
   }
 
-  if (!dossier.entity.official_website && uniqueHits[0]) {
-    dossier.entity.official_website = uniqueHits[0].url;
-    try {
-      dossier.entity.official_domain = new URL(uniqueHits[0].url).hostname.replace(/^www\./, "");
-    } catch {
-      /* ignore */
+  if (!dossier.entity.official_website) {
+    const official = uniqueHits.find((hit) => {
+      try {
+        const host = new URL(hit.url).hostname.replace(/^www\./, "");
+        return !/duckduckgo\.com|bing\.com|google\.com|yahoo\.com$/i.test(host);
+      } catch {
+        return false;
+      }
+    });
+    if (official) {
+      dossier.entity.official_website = official.url;
+      try {
+        dossier.entity.official_domain = new URL(official.url).hostname.replace(/^www\./, "");
+      } catch {
+        /* ignore */
+      }
     }
   }
 

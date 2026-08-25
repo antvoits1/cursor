@@ -53,6 +53,23 @@ function downloadJson(dossier: Dossier) {
   URL.revokeObjectURL(url);
 }
 
+function clip(text: string, max = 220) {
+  const tidy = text.replace(/\s+/g, " ").trim();
+  if (tidy.length <= max) return tidy;
+  return `${tidy.slice(0, max).replace(/\s+\S*$/, "")}…`;
+}
+
+function displaySite(entity?: Dossier["entity"] | null) {
+  if (!entity) return "";
+  const site = entity.official_website || "";
+  if (/duckduckgo\.com|bing\.com|google\.com|yahoo\.com/i.test(site)) {
+    return entity.official_domain && !/duckduckgo|bing\.com|google\.com/i.test(entity.official_domain)
+      ? entity.official_domain
+      : "";
+  }
+  return site || entity.official_domain || "";
+}
+
 async function copyText(value: string) {
   await navigator.clipboard.writeText(value);
 }
@@ -289,7 +306,10 @@ export function ExtractorApp() {
                     {person?.name || entity?.name || query}
                   </h2>
                   <p className="mt-3 max-w-2xl text-sm leading-6 text-[#9a9287]">
-                    {person?.role || entity?.official_website || entity?.official_domain || "Public web dossier"}
+                    {person?.role
+                      || clip(String(entity?.metadata?.wikipedia || ""))
+                      || displaySite(entity)
+                      || "Public web dossier"}
                   </p>
                   <div className="mt-7 grid grid-cols-2 gap-2 sm:grid-cols-4">
                     {stats.map(([label, value]) => (
@@ -412,15 +432,18 @@ function Landing({
       {error ? <p className="mt-4 text-sm text-[#d4a0a0]">{error}</p> : null}
       <div className="mt-7 grid grid-cols-2 gap-2 sm:grid-cols-4">
         {EXAMPLES.map((example) => (
-          <button
+          <a
             key={example.q}
-            type="button"
-            onClick={() => onExample(example.q)}
+            href={`/?q=${encodeURIComponent(example.q)}`}
+            onClick={(event) => {
+              event.preventDefault();
+              onExample(example.q);
+            }}
             className="rounded-2xl border border-white/8 bg-white/[0.03] px-3 py-3 text-left transition hover:border-[#e0c48a]/35 hover:bg-[#e0c48a]/8"
           >
             <span className="block text-sm text-[#f4efe6]">{example.q}</span>
             <span className="mt-1 block text-[11px] leading-4 text-[#8a8378]">{example.hint}</span>
-          </button>
+          </a>
         ))}
       </div>
       <div className="mx-auto mt-14 grid max-w-2xl grid-cols-3 gap-6 text-left">
