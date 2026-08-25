@@ -8,9 +8,27 @@ import {
   normalizeAppUrl,
 } from "@/lib/oneclick";
 
+function appUrlFromRequest(request: Request) {
+  const incoming = new URL(request.url);
+  const override = incoming.searchParams.get("url");
+  if (override) return normalizeAppUrl(override);
+
+  const hostHeader =
+    request.headers.get("x-forwarded-host") ||
+    request.headers.get("host") ||
+    incoming.host;
+  const proto =
+    request.headers.get("x-forwarded-proto") ||
+    (incoming.protocol === "https:" ? "https" : "http");
+  const host = hostHeader
+    .replace(/^0\.0\.0\.0/, "127.0.0.1")
+    .replace(/^\[::\]/, "127.0.0.1");
+  return normalizeAppUrl(`${proto}://${host}`);
+}
+
 export async function GET(request: Request) {
   const incoming = new URL(request.url);
-  const appUrl = normalizeAppUrl(incoming.searchParams.get("url") || incoming.origin);
+  const appUrl = appUrlFromRequest(request);
   const vbs = buildOneClickVbs(appUrl);
   const format = incoming.searchParams.get("format") || "zip";
 
