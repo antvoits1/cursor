@@ -1,0 +1,15 @@
+AA Extractor — one-click for Windows
+=====================================
+
+Double-click  AA-Extractor-OneClick.vbs
+
+That single click:
+  • downloads the app icon
+  • puts "AA Extractor" on your Desktop (and Start Menu)
+  • opens the front page with no command window
+
+After that, just use the Desktop shortcut. It opens straight to:
+  https://aa-extractor.vercel.app/
+
+If Windows SmartScreen asks, choose More info → Run anyway.
+This file only creates a shortcut to the official app URL.

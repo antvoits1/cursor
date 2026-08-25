@@ -1,0 +1,5 @@
+Name: Jordan Lee
+Policy Number: AA-20481
+Effective Date: 2026-08-21
+Status: Active
+Notes: Sample file for AA Extractor front-page tests.
