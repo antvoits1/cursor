@@ -37,3 +37,36 @@ export function summarizeText(text: string) {
   const lines = text ? text.split(/\r?\n/).length : 0;
   return { words, lines, characters: text.length };
 }
+
+const EMAIL_RE = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi;
+const PHONE_RE = /(?:\+?\d{1,3}[\s.-]?)?(?:\(?\d{3}\)?[\s.-]?)\d{3}[\s.-]?\d{4}/g;
+
+function unique(values: string[], limit: number) {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const value of values) {
+    const key = value.trim();
+    if (!key || seen.has(key.toLowerCase())) continue;
+    seen.add(key.toLowerCase());
+    out.push(key);
+    if (out.length >= limit) break;
+  }
+  return out;
+}
+
+export function extractContacts(text: string) {
+  return {
+    emails: unique(text.match(EMAIL_RE) ?? [], 20),
+    phones: unique((text.match(PHONE_RE) ?? []).filter((n) => n.replace(/\D/g, "").length >= 10), 20),
+  };
+}
+
+export function extractLabeledAndContacts(text: string): ExtractedField[] {
+  const fields = extractFields(text, 40);
+  const { emails, phones } = extractContacts(text);
+  const extra: ExtractedField[] = [
+    ...emails.map((value) => ({ key: "Email", value })),
+    ...phones.map((value) => ({ key: "Phone", value })),
+  ];
+  return [...fields, ...extra].slice(0, 80);
+}

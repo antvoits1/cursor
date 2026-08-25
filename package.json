@@ -7,16 +7,14 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --experimental-strip-types --test lib/fields.test.ts"
+    "test": "node --experimental-strip-types --test lib/*.test.ts"
   },
   "dependencies": {
+    "cheerio": "^1.2.0",
     "jszip": "^3.10.1",
-    "mammoth": "^1.12.1",
     "next": "16.3.2",
-    "pdfjs-dist": "^6.2.108",
     "react": "19.2.8",
-    "react-dom": "19.2.8",
-    "xlsx": "^0.18.5"
+    "react-dom": "19.2.8"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { extractFields, summarizeText } from "./fields.ts";
+import { extractFields, extractContacts } from "./fields.ts";
 
 describe("extractFields", () => {
   it("pulls labeled values from document text", () => {
@@ -21,7 +21,9 @@ describe("extractFields", () => {
     ]);
   });
 
-  it("summarizes empty text as zeros", () => {
-    assert.deepEqual(summarizeText(""), { words: 0, lines: 0, characters: 0 });
+  it("finds emails and phone numbers", () => {
+    const found = extractContacts("Write press@example.com or call +1 415-555-0199 today.");
+    assert.deepEqual(found.emails, ["press@example.com"]);
+    assert.ok(found.phones.some((phone) => phone.includes("415")));
   });
 });

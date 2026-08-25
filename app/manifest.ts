@@ -2,13 +2,13 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "AA Extractor",
-    short_name: "AA Extractor",
-    description: "Extract text and data from documents on the front page.",
+    name: "Intelligence Extractor",
+    short_name: "Extractor",
+    description: "Search anything and scrape public people, phones, emails, and sources on the front page.",
     start_url: "/",
     display: "standalone",
-    background_color: "#07090f",
-    theme_color: "#07090f",
+    background_color: "#070605",
+    theme_color: "#070605",
     icons: [
       {
         src: "/icon-32.png",

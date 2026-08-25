@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Fraunces, Geist } from "next/font/google";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -7,25 +7,24 @@ const geistSans = Geist({
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const display = Fraunces({
+  variable: "--font-display",
   subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
-  title: "AA Extractor",
-  description: "One-click document extractor. Opens straight to the front page.",
-  applicationName: "AA Extractor",
-  manifest: "/manifest.webmanifest",
+  title: "Intelligence Extractor",
+  description: "Search anything on the front page and extract public people, phones, emails, and sources from the web.",
+  applicationName: "Intelligence Extractor",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${display.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-[#07090f] text-zinc-100">{children}</body>
+      <body className="min-h-full flex flex-col bg-[#070605] text-[#f4efe6]">{children}</body>
     </html>
   );
 }

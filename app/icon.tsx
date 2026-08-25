@@ -13,14 +13,15 @@ export default function Icon() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: "#081224",
-          color: "#67e8f9",
-          fontSize: 16,
+          background: "#e0c48a",
+          color: "#1c140c",
+          fontSize: 11,
           fontWeight: 700,
-          borderRadius: 8,
+          letterSpacing: 1,
+          borderRadius: 9,
         }}
       >
-        AA
+        IQ
       </div>
     ),
     size,

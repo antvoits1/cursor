@@ -1,38 +1,33 @@
 # AA Extractor
 
-One-click document extractor. Double-click once on Windows to download, make a Desktop shortcut, and open straight to the front page with no command window. The same app also runs on a Vercel URL from any device.
+Type anything in the front-page search box. The app searches the public web and scrapes the results onto that same page. Double-click once on Windows to put a Desktop shortcut here with no command window. The same URL also runs on Vercel from any device.
+
+## Front page
+
+Enter a company, person, product, or any other query. AA Extractor:
+
+- searches DuckDuckGo and Bing
+- pulls a Wikipedia / instant summary when one exists
+- opens the top result pages and extracts titles, descriptions, headings, body text, emails, phones, and labeled fields
+- lets you download everything as JSON
 
 ## Use it on your PC (one click)
 
-1. Open the live app (Vercel URL) or this GitHub repo.
-2. Click **Install on this PC**. That downloads `AA-Extractor-OneClick.zip`.
+1. Open the live app.
+2. Click **Install on this PC**.
 3. Unzip and double-click `AA-Extractor-OneClick.vbs` **once**.
 
-That single click:
-
-- downloads the app icon
-- creates **AA Extractor** on the Desktop and in the Start Menu
-- opens the front page in an Edge/Chrome app window (no command prompt)
-
-After that, use the Desktop shortcut. It goes straight to the extractor. Files are processed in the browser and are not uploaded.
+That click downloads the icon, creates **AA Extractor** on the Desktop and Start Menu, and opens the front page in an Edge/Chrome app window (no command prompt). After that, use the shortcut.
 
 If Windows SmartScreen appears, choose **More info → Run anyway**.
 
-You can also run the copy in [`oneclick/AA-Extractor-OneClick.vbs`](oneclick/AA-Extractor-OneClick.vbs). Put your live URL in [`oneclick/app-url.txt`](oneclick/app-url.txt) first if you are launching from the repo instead of the zip.
-
 ## Open it anywhere (Vercel)
 
-This repo is a Next.js app. Import it in Vercel:
+Import `antvoits1/cursor` in the Vercel dashboard, or use:
 
 [Deploy with Vercel](https://vercel.com/new/clone?repository-url=https://github.com/antvoits1/cursor)
 
-Or in the Vercel dashboard: **Add New → Project → Import** `antvoits1/cursor`. Framework preset is Next.js. After deploy you get a URL such as `https://<project>.vercel.app` that opens the front page from any browser.
-
-Then click **Install on this PC** from that live URL so the Desktop shortcut points at it.
-
-## What it extracts
-
-PDF, Word (`.docx`), Excel, CSV, JSON, and text files. Labeled fields such as `Name: Jordan Lee` are pulled out automatically. Extraction runs on the device.
+Then click **Install on this PC** from the live URL so the Desktop shortcut points at it.
 
 ## Local development
 
@@ -42,8 +37,4 @@ npm test
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). The front page is the extractor.
-
-```bash
-npm run build
-```
+Open [http://localhost:3000](http://localhost:3000), type a search, press Enter.
