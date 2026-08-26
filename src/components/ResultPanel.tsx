@@ -1,6 +1,13 @@
 import { useState } from 'react';
 import { Check, Copy, ExternalLink } from 'lucide-react';
-import type { ExtractionResult, Evidence, EntityMatchStatus } from '../types';
+import type {
+  ExtractionResult,
+  Evidence,
+  EntityMatchStatus,
+  LineType,
+  EmailVerification,
+  PersonRecord,
+} from '../types';
 import { Badge, EmptyState, type Tone } from './ui';
 
 /**
@@ -30,6 +37,42 @@ function confidenceTone(confidence: number): Tone {
   if (confidence >= 45) return 'accent';
   if (confidence >= 25) return 'warn';
   return 'bad';
+}
+
+const LINE_TYPE_LABEL: Record<LineType, string> = {
+  MOBILE: 'Mobile',
+  LANDLINE: 'Landline',
+  VOIP: 'VoIP',
+  TOLL_FREE: 'Toll-free',
+  UNKNOWN: 'Type unknown',
+};
+
+/**
+ * A mobile is what an operator is looking for, so it reads as a positive; an
+ * unresolved type is neutral rather than negative, because not knowing is a
+ * gap in the sources rather than a fault in the number.
+ */
+function lineTypeTone(type: LineType): Tone {
+  if (type === 'MOBILE') return 'good';
+  if (type === 'LANDLINE') return 'accent';
+  if (type === 'VOIP' || type === 'TOLL_FREE') return 'warn';
+  return 'neutral';
+}
+
+const VERDICT_LABEL: Record<EmailVerification['verdict'], string> = {
+  deliverable: 'Deliverable',
+  probably_deliverable: 'Likely deliverable',
+  risky: 'Risky',
+  undeliverable: 'Undeliverable',
+  unverifiable: 'Unverified',
+};
+
+function verdictTone(verdict: EmailVerification['verdict']): Tone {
+  if (verdict === 'deliverable') return 'good';
+  if (verdict === 'probably_deliverable') return 'accent';
+  if (verdict === 'risky') return 'warn';
+  if (verdict === 'undeliverable') return 'bad';
+  return 'neutral';
 }
 
 function CopyButton({ value, label }: { value: string; label: string }) {
@@ -122,6 +165,123 @@ function Group({ title, count, children }: { title: string; count: number; child
   );
 }
 
+/**
+ * One person as one source describes them.
+ *
+ * The match score leads, because a name search returns everyone with that name
+ * and the operator's first question is always whether this is the right person.
+ */
+function PersonCard({ person }: { person: PersonRecord }) {
+  const mobiles = person.phones.filter((phone) => phone.type === 'MOBILE');
+  const others = person.phones.filter((phone) => phone.type !== 'MOBILE');
+
+  return (
+    <div className="rounded-panel border border-line bg-panel-sunken p-4">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
+        <div>
+          <p className="text-base font-semibold text-ink">
+            {person.name}
+            {person.age ? <span className="ml-2 text-sm font-normal text-ink-faint">age {person.age}</span> : null}
+          </p>
+          <a
+            href={person.sourceUrl}
+            target="_blank"
+            rel="noreferrer noopener"
+            className="text-xs text-ink-faint underline-offset-2 hover:underline"
+          >
+            {person.sourceLabel}
+          </a>
+        </div>
+        <span title={person.matchBasis.join(' ')}>
+          <Badge tone={confidenceTone(person.matchScore)}>{person.matchScore}% match</Badge>
+        </span>
+      </div>
+
+      <dl className="mt-3 grid gap-x-6 gap-y-3 sm:grid-cols-2">
+        {mobiles.length > 0 && (
+          <div>
+            <dt className="field-label">Mobile</dt>
+            <dd className="mt-1 space-y-1">
+              {mobiles.map((phone) => (
+                <div key={phone.number} className="flex items-center gap-2">
+                  <a href={`tel:${phone.number}`} className="font-mono text-sm text-ink hover:underline">
+                    {phone.formatted}
+                  </a>
+                  <span title={phone.reachabilityBasis.join(' ')}>
+                    <Badge tone={confidenceTone(phone.reachabilityScore)}>{phone.reachabilityScore}</Badge>
+                  </span>
+                </div>
+              ))}
+            </dd>
+          </div>
+        )}
+
+        {others.length > 0 && (
+          <div>
+            <dt className="field-label">Other numbers</dt>
+            <dd className="mt-1 space-y-1">
+              {others.map((phone) => (
+                <div key={phone.number} className="flex items-center gap-2">
+                  <a href={`tel:${phone.number}`} className="font-mono text-sm text-ink hover:underline">
+                    {phone.formatted}
+                  </a>
+                  <Badge tone={lineTypeTone(phone.type)}>{LINE_TYPE_LABEL[phone.type]}</Badge>
+                </div>
+              ))}
+            </dd>
+          </div>
+        )}
+
+        {person.emails.length > 0 && (
+          <div>
+            <dt className="field-label">Email</dt>
+            <dd className="mt-1 space-y-1">
+              {person.emails.map((email) => (
+                <a key={email.email} href={`mailto:${email.email}`} className="block font-mono text-sm text-ink hover:underline">
+                  {email.email}
+                </a>
+              ))}
+            </dd>
+          </div>
+        )}
+
+        {person.currentAddress && (
+          <div>
+            <dt className="field-label">Current address</dt>
+            <dd className="mt-1 text-sm text-ink">{person.currentAddress.full}</dd>
+          </div>
+        )}
+
+        {person.priorAddresses.length > 0 && (
+          <div>
+            <dt className="field-label">Previous addresses ({person.priorAddresses.length})</dt>
+            <dd className="mt-1 space-y-0.5 text-sm text-ink-soft">
+              {person.priorAddresses.slice(0, 4).map((address) => (
+                <p key={address.full}>{address.full}</p>
+              ))}
+            </dd>
+          </div>
+        )}
+
+        {person.relatives.length > 0 && (
+          <div className="sm:col-span-2">
+            <dt className="field-label">Relatives and household</dt>
+            <dd className="mt-1 flex flex-wrap gap-1.5">
+              {person.relatives.map((relative) => (
+                <Badge key={relative.name} tone={relative.relation === 'spouse' ? 'accent' : 'neutral'}>
+                  {relative.name}
+                  {relative.age ? ` · ${relative.age}` : ''}
+                  {relative.relation !== 'unknown' ? ` · ${relative.relation}` : ''}
+                </Badge>
+              ))}
+            </dd>
+          </div>
+        )}
+      </dl>
+    </div>
+  );
+}
+
 export function ResultPanel({ result }: { result: ExtractionResult }) {
   const nothingFound =
     result.phones.length === 0 &&
@@ -195,15 +355,33 @@ export function ResultPanel({ result }: { result: ExtractionResult }) {
                   <ValueRow
                     key={phone.number}
                     primary={phone.formatted}
-                    secondary={[phone.location, phone.timezone, phone.lineTypeBasis].filter(Boolean).join(' · ')}
+                    secondary={[
+                      phone.lineTypeBasis,
+                      phone.carrier ? `Carrier: ${phone.carrier}` : '',
+                      phone.callerIdName ? `Caller ID: ${phone.callerIdName}` : '',
+                      phone.location,
+                      phone.timezone,
+                    ]
+                      .filter(Boolean)
+                      .join(' · ')}
                     href={`tel:${phone.number}`}
                     copyValue={phone.formatted}
                     copyLabel="phone number"
                     evidence={phone.evidence}
                     meta={
                       <>
-                        <Badge tone="neutral">{phone.type.replace('_', ' ').toLowerCase()}</Badge>
-                        <Badge tone={confidenceTone(phone.confidence)}>{phone.confidence}%</Badge>
+                        {phone.rank === 1 && result.phones.length > 1 && <Badge tone="good">best bet</Badge>}
+                        {/* The reasoning rides along as a tooltip so the badge
+                            stays short without the basis becoming unavailable. */}
+                        <span title={phone.lineTypeBasis}>
+                          <Badge tone={lineTypeTone(phone.type)}>
+                            {LINE_TYPE_LABEL[phone.type]}
+                            {phone.lineTypeConfidence > 0 ? ` · ${phone.lineTypeConfidence}%` : ''}
+                          </Badge>
+                        </span>
+                        <span title={phone.reachabilityBasis.join(' ')}>
+                          <Badge tone={confidenceTone(phone.reachabilityScore)}>reach {phone.reachabilityScore}</Badge>
+                        </span>
                       </>
                     }
                   />
@@ -227,6 +405,11 @@ export function ResultPanel({ result }: { result: ExtractionResult }) {
                     meta={
                       <>
                         <Badge tone={email.domainMatchesWebsite ? 'good' : 'neutral'}>{email.kind}</Badge>
+                        <span title={email.verification.basis.join(' ')}>
+                          <Badge tone={verdictTone(email.verification.verdict)}>
+                            {VERDICT_LABEL[email.verification.verdict]}
+                          </Badge>
+                        </span>
                         <Badge tone={confidenceTone(email.confidence)}>{email.confidence}%</Badge>
                       </>
                     }
@@ -270,6 +453,21 @@ export function ResultPanel({ result }: { result: ExtractionResult }) {
               </ul>
             </Group>
           )}
+        </div>
+      )}
+
+      {result.people.length > 0 && (
+        <div className="space-y-4">
+          <h3 className="field-label">
+            Person records · {result.people.length} from {new Set(result.people.map((person) => person.sourceLabel)).size} source
+            {new Set(result.people.map((person) => person.sourceLabel)).size === 1 ? '' : 's'}
+          </h3>
+          {/* Records are shown per source rather than merged: two sources
+              disagreeing about a current address is something to see, not
+              something to average away. */}
+          {result.people.map((person) => (
+            <PersonCard key={`${person.sourceUrl}-${person.name}`} person={person} />
+          ))}
         </div>
       )}
 
