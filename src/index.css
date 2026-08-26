@@ -1,0 +1,455 @@
+@import 'tailwindcss';
+
+/*
+ * Extractor design system — "Obsidian / Iris".
+ *
+ * Dark-first, built for long sessions in front of dense data. Three ideas hold
+ * it together:
+ *
+ *   1. Elevation is expressed twice — once in luminance, once with a hairline
+ *      border. Dark interfaces that rely on luminance alone read as muddy, so
+ *      every surface here carries a border token as well as a value.
+ *   2. One accent. An iris/periwinkle that is light enough to pass AA as link
+ *      text on any surface, and saturated enough to carry a primary button with
+ *      near-black type on it.
+ *   3. Data is monospaced. Phone numbers, URLs, IDs and confidence scores all
+ *      sit on the mono stack with tabular figures and a slashed zero.
+ *
+ * Every foreground/background pair used by the app was checked against WCAG:
+ * body text clears 4.5:1 on the surface it sits on, and primary/secondary text
+ * clears 7:1.
+ */
+@theme {
+  /* ---------------------------------------------------------------------
+   * Surfaces — the elevation ladder, darkest to lightest.
+   *
+   *   canvas-deep   app chrome recess, below the page
+   *   canvas        the page itself
+   *   rail          inert tracks and rails (toggle, progress, scrollbar)
+   *   panel-sunken  wells cut into a panel (inputs, table heads, segments)
+   *   panel         the primary card surface
+   *   panel-raised  a card sitting on a card (rows, stat tiles)
+   *   panel-overlay dialogs and popovers, floating clear of everything
+   * ------------------------------------------------------------------ */
+  --color-canvas-deep: #05070b;
+  --color-canvas: #0b0e14;
+  --color-rail: #0f131b;
+  --color-panel-sunken: #12161f;
+  --color-panel: #171b25;
+  --color-panel-raised: #1d222d;
+  --color-panel-overlay: #212734;
+
+  /* Hairlines. Low contrast but never absent — this is what keeps the dark
+   * surfaces reading as crisp planes rather than one soft wash. */
+  --color-line: #2a3142;
+  --color-line-strong: #3a4356;
+  --color-line-hover: #4a5570;
+
+  /* Foreground ramp. `ink-invert` is the maximum-contrast foreground used over
+   * the deep chrome; `on-accent` is the near-black used over accent and
+   * semantic fills. */
+  --color-ink: #e9ecf3;
+  --color-ink-soft: #b0b9c9;
+  --color-ink-faint: #8b95a8;
+  --color-ink-invert: #f8fafc;
+  --color-on-accent: #080a12;
+
+  /* Accent — iris. */
+  --color-accent: #7c8cf8;
+  --color-accent-strong: #9aa6fb;
+  --color-accent-muted: #6874ea;
+  --color-accent-soft: rgb(124 140 248 / 0.16);
+  --color-accent-border: rgb(124 140 248 / 0.34);
+  --color-accent-ring: rgb(124 140 248 / 0.42);
+
+  /* Semantic tones. Desaturated and lifted so they stay legible on dark, each
+   * with a solid tone, a low-alpha tinted background and a border tone. */
+  --color-good: #4fd3a0;
+  --color-good-soft: rgb(79 211 160 / 0.15);
+  --color-good-border: rgb(79 211 160 / 0.32);
+
+  --color-warn: #efb45f;
+  --color-warn-soft: rgb(239 180 95 / 0.15);
+  --color-warn-border: rgb(239 180 95 / 0.32);
+
+  --color-bad: #f57a76;
+  --color-bad-soft: rgb(245 122 118 / 0.15);
+  --color-bad-border: rgb(245 122 118 / 0.32);
+
+  /* Radii */
+  --radius-panel: 16px;
+  --radius-control: 10px;
+
+  /* ---------------------------------------------------------------------
+   * Type. A modern grotesque for the interface, a mono for data. Tracking
+   * tightens as size grows and opens up on small uppercase labels.
+   * ------------------------------------------------------------------ */
+  --font-sans:
+    'Inter var', 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI Variable Text',
+    'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+  --font-sans--font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11', 'ss01';
+  --font-mono:
+    'JetBrains Mono', 'SF Mono', ui-monospace, 'Cascadia Mono', 'Roboto Mono', Menlo, Consolas,
+    'Liberation Mono', monospace;
+  --font-mono--font-feature-settings: 'zero', 'tnum', 'ss01';
+
+  /* ---------------------------------------------------------------------
+   * Depth. Dark surfaces need a cast shadow *and* a 1px top highlight to read
+   * as raised; the highlight is what sells it.
+   * ------------------------------------------------------------------ */
+  --shadow-2xs: 0 1px 1px rgb(0 0 0 / 0.4);
+  --shadow-xs: 0 1px 2px rgb(0 0 0 / 0.45);
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.5), 0 2px 6px -2px rgb(0 0 0 / 0.4);
+  --shadow-md: 0 2px 4px rgb(0 0 0 / 0.45), 0 8px 20px -8px rgb(0 0 0 / 0.6);
+  --shadow-lg: 0 4px 8px rgb(0 0 0 / 0.45), 0 18px 40px -16px rgb(0 0 0 / 0.7);
+  --shadow-xl: 0 8px 16px rgb(0 0 0 / 0.45), 0 32px 64px -24px rgb(0 0 0 / 0.8);
+  --shadow-panel:
+    inset 0 1px 0 rgb(255 255 255 / 0.04), 0 1px 2px rgb(0 0 0 / 0.4),
+    0 16px 40px -24px rgb(0 0 0 / 0.9);
+  --shadow-raise:
+    inset 0 1px 0 rgb(255 255 255 / 0.07), 0 1px 2px rgb(0 0 0 / 0.5),
+    0 4px 12px -4px rgb(0 0 0 / 0.55);
+  --shadow-overlay:
+    inset 0 1px 0 rgb(255 255 255 / 0.05), 0 24px 70px -20px rgb(0 0 0 / 0.85),
+    0 0 0 1px rgb(0 0 0 / 0.5);
+  --shadow-accent:
+    inset 0 1px 0 rgb(255 255 255 / 0.26), 0 1px 2px rgb(0 0 0 / 0.4),
+    0 6px 18px -8px rgb(124 140 248 / 0.55);
+
+  /* ---------------------------------------------------------------------
+   * Motion. Short, eased, never showy.
+   * ------------------------------------------------------------------ */
+  --ease-smooth: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ease-entrance: cubic-bezier(0.16, 1, 0.3, 1);
+  --duration-fast: 120ms;
+  --duration-base: 160ms;
+  --duration-slow: 200ms;
+  --default-transition-duration: 160ms;
+  --default-transition-timing-function: cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+/*
+ * Tailwind only emits the theme variables it sees used, which is the right
+ * default but would leave holes in the two things that are meant to be
+ * complete and inspectable: the type ramp and the semantic set. `static` keeps
+ * every step and the informational tone in the output whether or not a screen
+ * has reached for them yet.
+ *
+ * Tracking tightens as size grows and opens up on the small label sizes.
+ */
+@theme static {
+  --text-2xs: 0.6875rem;
+  --text-2xs--line-height: 1.4;
+  --text-2xs--letter-spacing: 0.02em;
+
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1.45;
+  --text-xs--letter-spacing: 0.005em;
+
+  --text-sm: 0.875rem;
+  --text-sm--line-height: 1.55;
+  --text-sm--letter-spacing: 0em;
+
+  --text-base: 0.9375rem;
+  --text-base--line-height: 1.6;
+  --text-base--letter-spacing: -0.003em;
+
+  --text-lg: 1.0625rem;
+  --text-lg--line-height: 1.45;
+  --text-lg--letter-spacing: -0.012em;
+
+  --text-xl: 1.25rem;
+  --text-xl--line-height: 1.35;
+  --text-xl--letter-spacing: -0.016em;
+
+  --text-2xl: 1.5rem;
+  --text-2xl--line-height: 1.22;
+  --text-2xl--letter-spacing: -0.021em;
+
+  --text-3xl: 1.875rem;
+  --text-3xl--line-height: 1.18;
+  --text-3xl--letter-spacing: -0.024em;
+
+  --color-info: #68b5f2;
+  --color-info-soft: rgb(104 181 242 / 0.15);
+  --color-info-border: rgb(104 181 242 / 0.32);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-line);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    /* Native form controls, scrollbars and autofill follow the theme. */
+    color-scheme: dark;
+    background-color: var(--color-canvas);
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background-color: var(--color-canvas);
+    /* One ambient wash on the page canvas only. Content surfaces stay flat. */
+    background-image:
+      radial-gradient(1100px 620px at 50% -18%, rgb(124 140 248 / 0.075), transparent 68%),
+      radial-gradient(900px 520px at 100% 0%, rgb(104 181 242 / 0.04), transparent 62%);
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-feature-settings: var(--font-sans--font-feature-settings);
+    font-size: 15px;
+    line-height: 1.6;
+    letter-spacing: -0.003em;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    letter-spacing: -0.016em;
+    text-wrap: balance;
+  }
+
+  /* Data reads as data: tabular figures, slashed zero, no ligature surprises. */
+  code,
+  kbd,
+  samp,
+  pre,
+  .font-mono {
+    font-variant-numeric: tabular-nums slashed-zero;
+  }
+
+  /* Keyboard focus stays visible everywhere; nothing suppresses the outline.
+   * The outline inherits each element's own radius so pills stay pills. */
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+
+  input,
+  select,
+  textarea,
+  button {
+    font: inherit;
+    color: inherit;
+  }
+
+  ::placeholder {
+    color: var(--color-ink-faint);
+    opacity: 1;
+  }
+
+  ::selection {
+    background-color: rgb(124 140 248 / 0.32);
+    color: var(--color-ink-invert);
+  }
+
+  /* Native select popups follow the surface rather than the OS default. */
+  option,
+  optgroup {
+    background-color: var(--color-panel-raised);
+    color: var(--color-ink);
+  }
+
+  :where(a) {
+    text-underline-offset: 0.18em;
+    text-decoration-thickness: from-font;
+  }
+
+  hr {
+    border: 0;
+    border-top: 1px solid var(--color-line);
+  }
+}
+
+@layer components {
+  /* ---------------------------------------------------------------------
+   * Panel — the primary content surface. Hairline border for the edge, a 1px
+   * inset highlight along the top so it catches light, and a long soft cast
+   * shadow underneath.
+   * ------------------------------------------------------------------ */
+  .panel {
+    position: relative;
+    background-color: var(--color-panel);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-panel);
+    box-shadow: var(--shadow-panel);
+  }
+
+  /* ---------------------------------------------------------------------
+   * Form scaffolding.
+   * ------------------------------------------------------------------ */
+  .field-label {
+    display: block;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    line-height: 1.4;
+    letter-spacing: 0.004em;
+    color: var(--color-ink-soft);
+    margin-bottom: 7px;
+  }
+
+  .field-help {
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: var(--color-ink-faint);
+  }
+
+  /* Inputs and selects read as wells cut into the panel: darker than their
+   * surroundings, hairline border, and a faint inner shadow at the top. */
+  .control {
+    width: 100%;
+    appearance: none;
+    background-color: var(--color-panel-sunken);
+    border: 1px solid var(--color-line-strong);
+    border-radius: var(--radius-control);
+    padding: 10px 13px;
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    color: var(--color-ink);
+    box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.35);
+    transition:
+      border-color var(--duration-fast) var(--ease-smooth),
+      background-color var(--duration-fast) var(--ease-smooth),
+      box-shadow var(--duration-fast) var(--ease-smooth);
+  }
+
+  .control:hover:not(:disabled) {
+    border-color: var(--color-line-hover);
+  }
+
+  .control:focus {
+    outline: none;
+    border-color: var(--color-accent);
+    background-color: var(--color-panel);
+    box-shadow:
+      inset 0 1px 2px rgb(0 0 0 / 0.25),
+      0 0 0 3px var(--color-accent-ring);
+  }
+
+  .control:disabled {
+    background-color: var(--color-canvas);
+    border-color: var(--color-line);
+    color: var(--color-ink-faint);
+    box-shadow: none;
+    cursor: not-allowed;
+  }
+
+  /* Chevron for `Select`. Drawn as a background image so the select stays a
+   * single element and callers can keep sizing it directly. */
+  .control-select {
+    padding-right: 38px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238b95a8' stroke-width='2.25' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 13px center;
+    background-size: 16px 16px;
+    cursor: pointer;
+  }
+
+  .control-select:hover:not(:disabled),
+  .control-select:focus {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%237c8cf8' stroke-width='2.25' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  }
+
+  .control-select:disabled {
+    cursor: not-allowed;
+  }
+
+  /* ---------------------------------------------------------------------
+   * Small uppercase section heading. Tracking is opened up because uppercase
+   * at this size needs the air.
+   * ------------------------------------------------------------------ */
+  .section-title {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    line-height: 1.4;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--color-ink-faint);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Compatibility shims.
+ *
+ * The app chrome (header, nav, status rail, footer, modal scrims) was written
+ * against the previous light-on-mid-grey palette and still asks for
+ * `text-panel/*` where it means "muted text on the dark chrome", and
+ * `bg-ink/45` where it means "scrim". Under a dark palette `panel` is a surface
+ * and `ink` is a light foreground, so those two utilities would invert. These
+ * rules re-point them at the intended role. Declared in a layer of its own so
+ * it always sorts after Tailwind's utilities.
+ * ------------------------------------------------------------------------ */
+@layer compat {
+  .text-panel {
+    color: var(--color-ink);
+  }
+  .text-panel\/85 {
+    color: var(--color-ink-soft);
+  }
+  .text-panel\/80,
+  .text-panel\/75,
+  .text-panel\/70 {
+    color: var(--color-ink-faint);
+  }
+
+  /* Chrome hover: lift off the recess rather than flooding it with canvas. */
+  .hover\:bg-canvas\/40:hover {
+    background-color: rgb(255 255 255 / 0.06);
+  }
+
+  /* Modal scrim. */
+  .bg-ink\/45 {
+    background-color: rgb(3 4 7 / 0.72);
+    backdrop-filter: blur(6px) saturate(120%);
+    -webkit-backdrop-filter: blur(6px) saturate(120%);
+  }
+}
+
+/* Scrollbars are toned to the surface they sit on rather than left default. */
+@supports selector(::-webkit-scrollbar) {
+  ::-webkit-scrollbar {
+    width: 11px;
+    height: 11px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-line-strong);
+    border: 3px solid transparent;
+    background-clip: content-box;
+    border-radius: 999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-line-hover);
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+}
+
+@supports not selector(::-webkit-scrollbar) {
+  * {
+    scrollbar-color: var(--color-line-strong) transparent;
+    scrollbar-width: thin;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
