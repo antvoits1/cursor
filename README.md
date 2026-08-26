@@ -7,7 +7,28 @@ run in the Node API, which delegates difficult page retrieval to a persistent
 Python worker:
 
 ```text
-React on Vercel -> Node API on Render -> curl_cffi -> Patchright -> Camoufox
+React UI -> Node API -> Python worker (curl_cffi -> Patchright -> Camoufox)
+```
+
+## Run on your computer (recommended for full power)
+
+You do **not** need to convert this to `app.py`. Keep React + Node + Python.
+
+1. Install [Node.js 20+](https://nodejs.org) and [Python 3.11+](https://www.python.org).
+2. Download/unzip this project.
+3. Windows: double-click `desktop/Install-Desktop-Shortcut.bat`  
+   Mac: double-click `desktop/Install-Desktop-Shortcut.command`
+4. Forever after, double-click the Desktop **Extractor** shortcut.
+
+That starts the full local backend (including browser tiers when Python
+packages install successfully) and opens `http://localhost:3000`.
+
+Details: `desktop/README-DESKTOP.txt`
+
+Build a clean download ZIP:
+
+```bash
+bash scripts/package-desktop.sh
 ```
 
 ## Deploy the full backend on Render
