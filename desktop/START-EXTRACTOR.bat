@@ -77,12 +77,19 @@ if not exist "%MARKER%" (
   if exist "%VENV%\Scripts\activate.bat" call "%VENV%\Scripts\activate.bat"
 )
 
+if not exist "dist\index.html" (
+  echo Production UI build missing. Building now...
+  call npm run build
+  if errorlevel 1 goto :fail
+)
+
 set "NODE_ENV=production"
 set "HOST=127.0.0.1"
 set "PATH=%VENV%\Scripts;%PATH%"
 
 echo Starting Extractor at %URL% ...
-start "Extractor" /MIN cmd /c "npm start > \"%LOG%\" 2>&1"
+> "%LOG%" echo [%DATE% %TIME%] Starting Extractor
+start "Extractor" /MIN cmd /c "cd /d \"%CD%\" && set NODE_ENV=production&& set HOST=127.0.0.1&& set PORT=%PORT%&& node .\scripts\start-production.mjs >> \"%LOG%\" 2>&1"
 
 set /a tries=0
 :wait
@@ -99,6 +106,16 @@ start "" "%URL%"
 exit /b 0
 
 :fail
-echo Startup failed. Check .extractor.log in the project folder.
+echo.
+echo Startup failed. Last lines from .extractor.log:
+echo ----------------------------------------------
+if exist "%LOG%" (
+  powershell -NoProfile -Command "Get-Content -Path '%LOG%' -Tail 40"
+) else (
+  echo No log file was created.
+)
+echo ----------------------------------------------
+echo.
+echo If you see NODE_ENV or tsx errors, update to the latest desktop ZIP and retry.
 pause
 exit /b 1
