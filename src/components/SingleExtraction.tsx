@@ -179,14 +179,15 @@ export function SingleExtraction({
   const advancedCount = Object.values(advanced).filter((value) => value.trim()).length;
 
   return (
-    <div className="space-y-7">
+    <div className="grid items-start gap-4 xl:grid-cols-[minmax(390px,0.9fr)_minmax(0,1.45fr)]">
+      <div className="space-y-4 xl:sticky xl:top-[76px] xl:max-h-[calc(100vh-92px)] xl:overflow-y-auto xl:pr-1">
       <Panel>
         <PanelHeader
           step={1}
           title="What do you want to find?"
           description="A business name, a person, a phone number, an email address, a domain, a full URL, or a plain-language request."
         />
-        <div className="space-y-6 px-7 py-6">
+        <div className="space-y-4 px-5 py-4">
           <Field
             label="Search"
             htmlFor="extractor-query"
@@ -242,7 +243,7 @@ export function SingleExtraction({
             )}
           </p>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-1.5">
             <span className="text-sm text-ink-faint">Try:</span>
             {SAMPLES.map((sample) => (
               <button
@@ -266,7 +267,7 @@ export function SingleExtraction({
             type="button"
             onClick={() => setAdvancedOpen((open) => !open)}
             aria-expanded={advancedOpen}
-            className="flex w-full items-center justify-between gap-4 px-7 py-4 text-left transition-colors hover:bg-panel-sunken"
+            className="flex w-full items-center justify-between gap-4 px-5 py-3 text-left transition-colors hover:bg-panel-sunken"
           >
             <span className="flex items-center gap-2.5">
               <span className="grid size-6 place-items-center rounded-full bg-accent-soft text-xs font-bold text-accent-strong">
@@ -281,7 +282,7 @@ export function SingleExtraction({
             />
           </button>
           {advancedOpen && (
-            <div className="grid gap-6 border-t border-line px-7 py-6 md:grid-cols-3">
+            <div className="grid gap-4 border-t border-line px-5 py-4">
               <Field label="Location" htmlFor="advanced-location" help="City, state or ZIP.">
                 <TextInput
                   id="advanced-location"
@@ -310,7 +311,7 @@ export function SingleExtraction({
                 />
               </Field>
               {composed !== query.trim() && (
-                <p className="field-help md:col-span-3">
+                <p className="field-help">
                   The engine will search for: <span className="font-mono text-ink-soft">{composed}</span>
                 </p>
               )}
@@ -321,7 +322,7 @@ export function SingleExtraction({
 
       {error && (
         <Panel className="border-bad/30">
-          <div className="px-7 py-5">
+            <div className="px-5 py-4">
             <p className="font-semibold text-bad">{error.message}</p>
             {error.detail && <p className="mt-1 font-mono text-sm text-ink-soft">{error.detail}</p>}
           </div>
@@ -347,9 +348,11 @@ export function SingleExtraction({
             </>
           }
         />
-        <RouteTimeline steps={steps} running={running} verbose={verbose} />
+        <RouteTimeline steps={steps} running={running} verbose={verbose} compact />
       </Panel>
+      </div>
 
+      <div className="space-y-4 xl:max-h-[calc(100vh-92px)] xl:overflow-y-auto xl:pr-1">
       {result ? (
         <>
           <Panel>
@@ -451,6 +454,7 @@ export function SingleExtraction({
           </Panel>
         )
       )}
+      </div>
     </div>
   );
 }

@@ -1,24 +1,6 @@
 @import 'tailwindcss';
 
-/*
- * Extractor design system — "Obsidian / Iris".
- *
- * Dark-first, built for long sessions in front of dense data. Three ideas hold
- * it together:
- *
- *   1. Elevation is expressed twice — once in luminance, once with a hairline
- *      border. Dark interfaces that rely on luminance alone read as muddy, so
- *      every surface here carries a border token as well as a value.
- *   2. One accent. An iris/periwinkle that is light enough to pass AA as link
- *      text on any surface, and saturated enough to carry a primary button with
- *      near-black type on it.
- *   3. Data is monospaced. Phone numbers, URLs, IDs and confidence scores all
- *      sit on the mono stack with tabular figures and a slashed zero.
- *
- * Every foreground/background pair used by the app was checked against WCAG:
- * body text clears 4.5:1 on the surface it sits on, and primary/secondary text
- * clears 7:1.
- */
+/* Extractor design system — cool white, high-density workspace. */
 @theme {
   /* ---------------------------------------------------------------------
    * Surfaces — the elevation ladder, darkest to lightest.
@@ -31,50 +13,50 @@
    *   panel-raised  a card sitting on a card (rows, stat tiles)
    *   panel-overlay dialogs and popovers, floating clear of everything
    * ------------------------------------------------------------------ */
-  --color-canvas-deep: #05070b;
-  --color-canvas: #0b0e14;
-  --color-rail: #0f131b;
-  --color-panel-sunken: #12161f;
-  --color-panel: #171b25;
-  --color-panel-raised: #1d222d;
-  --color-panel-overlay: #212734;
+  --color-canvas-deep: #e8eef6;
+  --color-canvas: #f4f7fb;
+  --color-rail: #dbe4ef;
+  --color-panel-sunken: #f1f5f9;
+  --color-panel: #ffffff;
+  --color-panel-raised: #f8fafc;
+  --color-panel-overlay: #ffffff;
 
   /* Hairlines. Low contrast but never absent — this is what keeps the dark
    * surfaces reading as crisp planes rather than one soft wash. */
-  --color-line: #2a3142;
-  --color-line-strong: #3a4356;
-  --color-line-hover: #4a5570;
+  --color-line: #dbe3ed;
+  --color-line-strong: #c4cfdd;
+  --color-line-hover: #96a7ba;
 
   /* Foreground ramp. `ink-invert` is the maximum-contrast foreground used over
    * the deep chrome; `on-accent` is the near-black used over accent and
    * semantic fills. */
-  --color-ink: #e9ecf3;
-  --color-ink-soft: #b0b9c9;
-  --color-ink-faint: #8b95a8;
-  --color-ink-invert: #f8fafc;
-  --color-on-accent: #080a12;
+  --color-ink: #172033;
+  --color-ink-soft: #46556a;
+  --color-ink-faint: #718096;
+  --color-ink-invert: #ffffff;
+  --color-on-accent: #ffffff;
 
   /* Accent — iris. */
-  --color-accent: #7c8cf8;
-  --color-accent-strong: #9aa6fb;
-  --color-accent-muted: #6874ea;
-  --color-accent-soft: rgb(124 140 248 / 0.16);
-  --color-accent-border: rgb(124 140 248 / 0.34);
-  --color-accent-ring: rgb(124 140 248 / 0.42);
+  --color-accent: #2563eb;
+  --color-accent-strong: #1d4ed8;
+  --color-accent-muted: #3b82f6;
+  --color-accent-soft: rgb(37 99 235 / 0.09);
+  --color-accent-border: rgb(37 99 235 / 0.24);
+  --color-accent-ring: rgb(37 99 235 / 0.2);
 
   /* Semantic tones. Desaturated and lifted so they stay legible on dark, each
    * with a solid tone, a low-alpha tinted background and a border tone. */
-  --color-good: #4fd3a0;
-  --color-good-soft: rgb(79 211 160 / 0.15);
-  --color-good-border: rgb(79 211 160 / 0.32);
+  --color-good: #087f5b;
+  --color-good-soft: rgb(8 127 91 / 0.09);
+  --color-good-border: rgb(8 127 91 / 0.22);
 
-  --color-warn: #efb45f;
-  --color-warn-soft: rgb(239 180 95 / 0.15);
-  --color-warn-border: rgb(239 180 95 / 0.32);
+  --color-warn: #a15c00;
+  --color-warn-soft: rgb(161 92 0 / 0.09);
+  --color-warn-border: rgb(161 92 0 / 0.23);
 
-  --color-bad: #f57a76;
-  --color-bad-soft: rgb(245 122 118 / 0.15);
-  --color-bad-border: rgb(245 122 118 / 0.32);
+  --color-bad: #c92a2a;
+  --color-bad-soft: rgb(201 42 42 / 0.08);
+  --color-bad-border: rgb(201 42 42 / 0.22);
 
   /* Radii */
   --radius-panel: 16px;
@@ -97,24 +79,16 @@
    * Depth. Dark surfaces need a cast shadow *and* a 1px top highlight to read
    * as raised; the highlight is what sells it.
    * ------------------------------------------------------------------ */
-  --shadow-2xs: 0 1px 1px rgb(0 0 0 / 0.4);
-  --shadow-xs: 0 1px 2px rgb(0 0 0 / 0.45);
-  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.5), 0 2px 6px -2px rgb(0 0 0 / 0.4);
-  --shadow-md: 0 2px 4px rgb(0 0 0 / 0.45), 0 8px 20px -8px rgb(0 0 0 / 0.6);
-  --shadow-lg: 0 4px 8px rgb(0 0 0 / 0.45), 0 18px 40px -16px rgb(0 0 0 / 0.7);
-  --shadow-xl: 0 8px 16px rgb(0 0 0 / 0.45), 0 32px 64px -24px rgb(0 0 0 / 0.8);
-  --shadow-panel:
-    inset 0 1px 0 rgb(255 255 255 / 0.04), 0 1px 2px rgb(0 0 0 / 0.4),
-    0 16px 40px -24px rgb(0 0 0 / 0.9);
-  --shadow-raise:
-    inset 0 1px 0 rgb(255 255 255 / 0.07), 0 1px 2px rgb(0 0 0 / 0.5),
-    0 4px 12px -4px rgb(0 0 0 / 0.55);
-  --shadow-overlay:
-    inset 0 1px 0 rgb(255 255 255 / 0.05), 0 24px 70px -20px rgb(0 0 0 / 0.85),
-    0 0 0 1px rgb(0 0 0 / 0.5);
-  --shadow-accent:
-    inset 0 1px 0 rgb(255 255 255 / 0.26), 0 1px 2px rgb(0 0 0 / 0.4),
-    0 6px 18px -8px rgb(124 140 248 / 0.55);
+  --shadow-2xs: 0 1px 1px rgb(15 23 42 / 0.04);
+  --shadow-xs: 0 1px 2px rgb(15 23 42 / 0.06);
+  --shadow-sm: 0 1px 2px rgb(15 23 42 / 0.06), 0 3px 8px -4px rgb(15 23 42 / 0.12);
+  --shadow-md: 0 8px 24px -12px rgb(15 23 42 / 0.2);
+  --shadow-lg: 0 16px 36px -18px rgb(15 23 42 / 0.25);
+  --shadow-xl: 0 24px 60px -24px rgb(15 23 42 / 0.3);
+  --shadow-panel: 0 1px 2px rgb(15 23 42 / 0.04), 0 8px 24px -18px rgb(15 23 42 / 0.24);
+  --shadow-raise: 0 1px 2px rgb(15 23 42 / 0.06);
+  --shadow-overlay: 0 24px 70px -20px rgb(15 23 42 / 0.25), 0 0 0 1px rgb(15 23 42 / 0.04);
+  --shadow-accent: 0 7px 18px -8px rgb(37 99 235 / 0.5);
 
   /* ---------------------------------------------------------------------
    * Motion. Short, eased, never showy.
@@ -170,9 +144,9 @@
   --text-3xl--line-height: 1.18;
   --text-3xl--letter-spacing: -0.024em;
 
-  --color-info: #68b5f2;
-  --color-info-soft: rgb(104 181 242 / 0.15);
-  --color-info-border: rgb(104 181 242 / 0.32);
+  --color-info: #0369a1;
+  --color-info-soft: rgb(3 105 161 / 0.09);
+  --color-info-border: rgb(3 105 161 / 0.22);
 }
 
 @layer base {
@@ -182,8 +156,7 @@
 
   html {
     -webkit-text-size-adjust: 100%;
-    /* Native form controls, scrollbars and autofill follow the theme. */
-    color-scheme: dark;
+    color-scheme: light;
     background-color: var(--color-canvas);
   }
 
@@ -191,10 +164,7 @@
     margin: 0;
     min-height: 100vh;
     background-color: var(--color-canvas);
-    /* One ambient wash on the page canvas only. Content surfaces stay flat. */
-    background-image:
-      radial-gradient(1100px 620px at 50% -18%, rgb(124 140 248 / 0.075), transparent 68%),
-      radial-gradient(900px 520px at 100% 0%, rgb(104 181 242 / 0.04), transparent 62%);
+    background-image: linear-gradient(180deg, #eef4fb 0, #f7f9fc 320px, #f4f7fb 100%);
     background-repeat: no-repeat;
     background-attachment: fixed;
     color: var(--color-ink);
@@ -253,7 +223,7 @@
   /* Native select popups follow the surface rather than the OS default. */
   option,
   optgroup {
-    background-color: var(--color-panel-raised);
+    background-color: var(--color-panel);
     color: var(--color-ink);
   }
 
@@ -313,7 +283,7 @@
     font-size: 0.9375rem;
     line-height: 1.5;
     color: var(--color-ink);
-    box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.35);
+    box-shadow: inset 0 1px 2px rgb(15 23 42 / 0.04);
     transition:
       border-color var(--duration-fast) var(--ease-smooth),
       background-color var(--duration-fast) var(--ease-smooth),
@@ -329,7 +299,7 @@
     border-color: var(--color-accent);
     background-color: var(--color-panel);
     box-shadow:
-      inset 0 1px 2px rgb(0 0 0 / 0.25),
+      inset 0 1px 2px rgb(15 23 42 / 0.03),
       0 0 0 3px var(--color-accent-ring);
   }
 
@@ -345,7 +315,7 @@
    * single element and callers can keep sizing it directly. */
   .control-select {
     padding-right: 38px;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238b95a8' stroke-width='2.25' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23718096' stroke-width='2.25' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 13px center;
     background-size: 16px 16px;
@@ -354,7 +324,7 @@
 
   .control-select:hover:not(:disabled),
   .control-select:focus {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%237c8cf8' stroke-width='2.25' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%232563eb' stroke-width='2.25' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
   }
 
   .control-select:disabled {

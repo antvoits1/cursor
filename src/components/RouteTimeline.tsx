@@ -56,10 +56,12 @@ export function RouteTimeline({
   steps,
   running,
   verbose,
+  compact = false,
 }: {
   steps: RouteStep[];
   running: boolean;
   verbose: boolean;
+  compact?: boolean;
 }) {
   const endRef = useRef<HTMLDivElement | null>(null);
   const stepCount = steps.length;
@@ -82,7 +84,7 @@ export function RouteTimeline({
   }
 
   return (
-    <div className="max-h-[520px] overflow-y-auto px-7 py-5">
+    <div className={`${compact ? 'max-h-[340px] px-5 py-4' : 'max-h-[520px] px-7 py-5'} overflow-y-auto`}>
       <ol className="relative space-y-3 border-l border-line pl-6">
         {steps.map((step) => {
           const style = STATUS_STYLE[step.status];
