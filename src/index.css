@@ -1,0 +1,182 @@
+@import 'tailwindcss';
+
+/*
+ * Medium-tone premium palette.
+ *
+ * The page canvas sits at a mid neutral value so it never reads as stark white
+ * or near black. Panels are a light, low-chroma neutral one long step above the
+ * canvas, which gives clear tonal separation without a single gradient or
+ * decorative surface. Accents are desaturated on purpose.
+ */
+@theme {
+  --color-canvas: #8b94a2;
+  --color-canvas-deep: #7b8492;
+  --color-rail: #6f7886;
+
+  --color-panel: #f4f6f8;
+  --color-panel-sunken: #e8ebef;
+  --color-panel-raised: #ffffff;
+
+  --color-line: #cdd4dc;
+  --color-line-strong: #b3bcc7;
+
+  --color-ink: #1b232e;
+  --color-ink-soft: #4a5563;
+  --color-ink-faint: #6d7886;
+  --color-ink-invert: #f2f5f8;
+
+  --color-accent: #2f5d7c;
+  --color-accent-strong: #24485f;
+  --color-accent-soft: #dce6ee;
+
+  --color-good: #2c6a52;
+  --color-good-soft: #dcebe4;
+  --color-warn: #8a5f16;
+  --color-warn-soft: #f3e8d3;
+  --color-bad: #93392f;
+  --color-bad-soft: #f2ddda;
+
+  --radius-panel: 14px;
+
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+    'Noto Sans', sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', 'Cascadia Mono', 'Roboto Mono', Menlo, Consolas, monospace;
+}
+
+@layer base {
+  * {
+    border-color: var(--color-line);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    margin: 0;
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1,
+  h2,
+  h3 {
+    letter-spacing: -0.012em;
+  }
+
+  /* Keyboard focus stays visible everywhere; nothing suppresses the outline. */
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+
+  input,
+  select,
+  textarea,
+  button {
+    font: inherit;
+    color: inherit;
+  }
+
+  ::placeholder {
+    color: var(--color-ink-faint);
+  }
+}
+
+@layer components {
+  .panel {
+    background-color: var(--color-panel);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-panel);
+    box-shadow: 0 1px 2px rgb(27 35 46 / 0.06), 0 8px 24px -18px rgb(27 35 46 / 0.45);
+  }
+
+  .field-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.005em;
+    color: var(--color-ink-soft);
+    margin-bottom: 6px;
+  }
+
+  .field-help {
+    font-size: 13px;
+    color: var(--color-ink-faint);
+    line-height: 1.5;
+  }
+
+  .control {
+    width: 100%;
+    background-color: var(--color-panel-raised);
+    border: 1px solid var(--color-line-strong);
+    border-radius: 10px;
+    padding: 10px 13px;
+    font-size: 15px;
+    transition:
+      border-color 120ms ease,
+      box-shadow 120ms ease;
+  }
+
+  .control:hover:not(:disabled) {
+    border-color: #9aa5b2;
+  }
+
+  .control:focus {
+    outline: none;
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 3px rgb(47 93 124 / 0.16);
+  }
+
+  .control:disabled {
+    background-color: var(--color-panel-sunken);
+    color: var(--color-ink-faint);
+    cursor: not-allowed;
+  }
+
+  .section-title {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-ink-faint);
+  }
+}
+
+/* Scrollbars are toned to the surface they sit on rather than left default. */
+@supports selector(::-webkit-scrollbar) {
+  ::-webkit-scrollbar {
+    width: 11px;
+    height: 11px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #aab3bf;
+    border: 3px solid transparent;
+    background-clip: content-box;
+    border-radius: 999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #949eab;
+    background-clip: content-box;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

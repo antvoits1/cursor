@@ -1,0 +1,13 @@
+# Layered transport worker dependencies.
+#
+# All three are optional at runtime: the worker reports which ones are present
+# in its ready handshake and the application escalates only through the tiers
+# that actually exist on the host.
+#
+# After installing, fetch the browser runtimes:
+#   python -m patchright install chromium
+#   python -m camoufox fetch
+
+curl_cffi>=0.7.0
+patchright>=1.49.0
+camoufox[geoip]>=0.4.0
