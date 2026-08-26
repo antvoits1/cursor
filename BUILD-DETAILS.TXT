@@ -241,13 +241,48 @@ live. The application is the same either way; it simply tells you which tiers
 it has.
 
 
+SAVED SOURCES AND ADVANCED SEARCH
+--------------------------------------------------------------------------------
+The list of extra places to look lives on the server, not in one browser.
+Add a URL with placeholders ({name}, {city}, {state}, {zip}, {phone},
+{email}, {domain}, {query}) under Settings. A run fills what it knows and
+skips the rest with a reason, rather than fetching a half-empty search URL
+and attaching a stranger's number to the lead.
+
+The search box takes URLs and site names mixed into the query. Known
+people-search and directory hosts get a real search URL built for them;
+anything else is scoped. Every site that refuses is listed in plain English
+on the result: which site, what happened, and whether the same detail
+turned up somewhere else.
+
+A named lead on the fast profile (no deep scan, 12 second budget) returns
+in about eight seconds with the website, address, and a line-typed number.
+
+
+TEN-LEAD AUDIT (live sources, 20 s budget)
+--------------------------------------------------------------------------------
+  10 leads, 56 sources consulted (38 read, 17 blocked)
+  Premier HR: 4 phones, address, 74%
+  US Housing Consultants: 1 phone, 2 addresses
+  Zucca Miami: 2 phones, 2 addresses
+  Full workbook: Extraction-Audit-10-Leads.xlsx
+
+
 TESTS
 --------------------------------------------------------------------------------
-  140 tests, all passing.
+PACKAGE
+--------------------------------------------------------------------------------
+  Extractor-React-Layered-20260825-03.zip
+  SHA-256  eb0d95e9f1a9ef9b03fee23125b0de9eac43344ca5a065df36c2150491283237
+  Audit    Extraction-Audit-10-Leads.xlsx
+  SHA-256  3fb670bcb09f98c93963e2fbae3a94dfe5a5253cff9e22a4cfc771c0539f8d6a
+
+  156 tests, all passing.
 
 Covering sensitive-value exclusion, spreadsheet import and column detection,
 transport tiering and SSRF refusal, deobfuscation, evidence acceptance and
 rejection, entity matching, line-type resolution from block allocations,
 people-search parsing, email verification, the assistant's grounding check,
 crawl-target deduplication, address subsumption, run-budget apportionment,
+saved sources, advanced query parsing, plain-English block reports,
 local learning, and the API contract.
