@@ -36,8 +36,22 @@ Mobile or landline, for every number
 
     - a type label published by a records source          (strongest)
     - the carrier, where its name settles the question
+    - the operator holding the published thousands-block
     - how the page worded it: "Mobile:", "Cell:", "Fax:"
     - numbering-plan metadata                              (weakest in the US)
+
+  The third of those is what makes the feature work on ordinary business leads,
+  because business sites essentially never label their numbers. The North
+  American numbering plan publishes, for every NPA-NXX-X, the operator holding
+  that thousands-block and whether it is a wireless carrier, an incumbent local
+  exchange carrier, or a competitive one. It is free, needs no key, and covers
+  every North American number. An exchange is often split a thousand numbers at
+  a time between a cable operator and a mobile carrier, so the block digit is
+  matched exactly rather than taking the exchange's first record.
+
+  Portability means an allocation is evidence, not proof, and it is weighed and
+  worded that way: the reasoning shown alongside each verdict says so. Before
+  this, the ten-lead audit returned "Type unknown" for every number found.
 
   When signals disagree, the confidence drops and the disagreement is shown
   rather than hidden. When nothing is available the type is left unknown
@@ -90,13 +104,44 @@ Bulk output that stays readable
     People Records    person records, one row per source
     Source Audit      every source consulted, read or blocked, and why
 
-Speed
-  Discovery and the site crawl now issue their fetches concurrently instead of
-  in sequence, so a run's wall time is its slowest source rather than the sum
-  of all of them. A standard search finishes in a few seconds.
+The site is crawled from its front door
+  A search engine returns the page that matched, not the homepage: "Premier Hr"
+  resolved to premier-hr.net/contact. Treating that as the site meant the crawl
+  started on the contact page, took its title — "Contact" — as the business
+  name, and looked for subpages relative to it. The origin is now the site, and
+  the page the search matched is kept and read first, since a page matched on
+  contact terms is usually the most valuable one there.
 
-  The time budget is now enforced on the fetches themselves, not just between
-  routes. A run asked for 30 seconds finishes in 30.
+  Links repeated in a header, a footer and a mobile menu are also deduplicated
+  by destination and by kind, so a run no longer spends both of its subpage
+  fetches on two renderings of the about page while never opening the contact
+  page. That lead went from 15% confidence and one number to 70% and four.
+
+One address, reported once
+  "2250 S Atlantic Blvd", "2250 S Atlantic Blvd, Commerce, CA 90040" and
+  "2250 S Atlantic Blvd, Ste" are one address written three ways. Partial
+  renderings are now folded into the fullest one, carrying their evidence with
+  them so the agreement count still reflects every source that reported it.
+
+Speed
+  Discovery and the site crawl issue their fetches concurrently instead of in
+  sequence, so a run's wall time is its slowest source rather than the sum of
+  all of them. A standard search finishes in a few seconds; the ten-lead audit
+  averages about six.
+
+  The time budget is enforced on the fetches themselves, not just between
+  routes, and no single request may claim more than about half of what the run
+  has left. Capping a request at *all* the remaining time is not a cap: one
+  host that accepts a connection and then stalls used to spend the entire
+  budget, and every other route was skipped for want of time. Three related
+  leaks were closed with it — the escalation ladder inside the Python worker
+  now shares one budget rather than granting each tier its own, curl_cffi
+  applies its timeout across a redirect chain rather than once per hop, and DNS
+  lookups have a deadline instead of the resolver's own retry schedule.
+
+  A browser tier whose runtime is missing is now detected once and skipped
+  thereafter, instead of being retried on every page. That alone was costing
+  roughly thirteen seconds per blocked source.
 
 Visual system
   Rebuilt as a dark, layered interface. Elevation is expressed in both
@@ -121,6 +166,14 @@ sources. Sheets:
 The refused sheet is the honest counterpart to the findings. Read them
 together.
 
+One result in the audit is worth reading carefully: no email address was found
+for any of the ten leads. That is not the extractor failing to look. These are
+small businesses that publish a contact form and no address — premier-hr.net,
+for one, has no email anywhere in either its homepage or its contact page, as
+a direct fetch confirms. Where an address exists the engine does find it and
+verify it. An empty email column here is the truth about these ten businesses,
+which is exactly what the build is supposed to tell you.
+
 DOB and SSN columns in the supplied sheet were detected and dropped at parse
 time. No protected identifier reaches the engine, the exports, or the audit.
 
@@ -129,7 +182,7 @@ THE ONE THING THAT MOST LIMITS RESULTS
 --------------------------------------------------------------------------------
 Not the extraction logic — the IP address.
 
-In the audit above, 17 of 47 sources were blocked. Every one was a
+In the audit above, 17 of 46 sources were blocked. Every one was a
 Cloudflare-protected directory: Bizapedia, YellowPages, Chamber of Commerce,
 BBB, Dun & Bradstreet. They do not block scrapers; they block datacenter
 address ranges, and every cloud host is one.
@@ -190,10 +243,11 @@ it has.
 
 TESTS
 --------------------------------------------------------------------------------
-  128 tests, all passing.
+  140 tests, all passing.
 
 Covering sensitive-value exclusion, spreadsheet import and column detection,
 transport tiering and SSRF refusal, deobfuscation, evidence acceptance and
-rejection, entity matching, line-type resolution, people-search parsing, email
-verification, the assistant's grounding check, local learning, and the API
-contract.
+rejection, entity matching, line-type resolution from block allocations,
+people-search parsing, email verification, the assistant's grounding check,
+crawl-target deduplication, address subsumption, run-budget apportionment,
+local learning, and the API contract.
