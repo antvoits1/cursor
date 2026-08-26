@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "extractor-browser-renderer",
+  "name": "cursor",
   "main": "src/index.ts",
   "workers_dev": true,
   "compatibility_date": "2026-08-26",
