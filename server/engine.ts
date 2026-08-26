@@ -3,6 +3,10 @@ import { inspectDomainDns, normaliseDomain } from './dnsInspector.js';
 import { isReservedHost } from './ssrfGuard.js';
 import { withRunDeadline } from './runDeadline.js';
 import { blockOwner, prefetchBlockOwners } from './numberingPlan.js';
+import { summariseBlocks } from './blockReport.js';
+import { parseAdvancedQuery } from './advancedQuery.js';
+import { expandCustomSources } from './customSources.js';
+import { fetchPage } from './transport.js';
 import { lookupPeople } from './sources/peopleSearch.js';
 import { verifyEmails } from './emailVerifier.js';
 import { assistantAvailable, beginUsage, interpretQuery } from './assistant.js';
@@ -16,7 +20,7 @@ import { QUERY_TYPE_LABELS, planQuery } from './queryPlanner.js';
 import { RouteTrace } from './trace.js';
 import { availableTiers, proxyLabel, tierAvailability, tierLabel, transportMode } from './transport.js';
 import { readFacebookPage } from './sources/facebookPage.js';
-import { crawlOfficialSite } from './sources/officialSite.js';
+import { crawlOfficialSite, harvestPage } from './sources/officialSite.js';
 import { lookupPlaces } from './sources/openStreetMap.js';
 import { probeForOfficialSite } from './sources/domainProbe.js';
 import {
@@ -545,6 +549,118 @@ async function runExtraction(rawQuery: string, options: ExtractionOptions = {}):
         break;
       }
 
+      /*
+       * Anything the operator named themselves, opened before the engine goes
+       * looking on its own. A pasted link is a decision that has already been
+       * made, and a site named next to a person's name is a search that site
+       * knows how to answer far better than a general web search does.
+       */
+      case 'named_sites': {
+        const advanced = parseAdvancedQuery(plan.normalizedInput);
+        const targets = [
+          ...advanced.urls.map((url) => ({ url, label: hostOfUrl(url) || 'the pasted link', why: 'it was pasted into the search box' })),
+          ...advanced.siteSearches.map((search) => ({ url: search.url, label: search.site, why: search.describes })),
+        ];
+
+        for (const site of advanced.unusedSites) {
+          trace.skip('plan', `${site} was named, but there was nothing to search it for, so it was left alone.`, {});
+        }
+
+        if (targets.length === 0) {
+          markRoute(route.id, Date.now() - routeStart, 0, false, false);
+          break;
+        }
+
+        let readAny = false;
+        let blockedHere = false;
+        for (const target of targets) {
+          trace.info('parse', `Opening ${target.label}, because ${target.why}.`, { url: target.url });
+          const page = await fetchPage(target.url, { label: target.label, trace, timeoutMs: 9000 });
+          const record: ConsultedSource = {
+            url: target.url,
+            label: target.label,
+            kind: 'directory',
+            tier: page.tier,
+            ok: page.ok,
+            status: page.status,
+            blocked: page.blocked,
+            reason: page.reason,
+            fieldsFound: [],
+            elapsedMs: page.totalMs,
+          };
+          consulted.push(record);
+          blockedHere = blockedHere || page.blocked;
+
+          if (!page.ok || !page.html || !page.url) continue;
+          readAny = true;
+          const harvest = harvestPage(page.html, page.url, target.label, page.tier, ledger, trace);
+          record.fieldsFound = harvest.fieldsFound;
+          if (!website && /^https?:\/\//i.test(target.url) && harvest.fieldsFound.length > 0) {
+            adoptWebsite(target.url, 'the link that was pasted in');
+          }
+        }
+
+        blockedAnywhere = blockedAnywhere || blockedHere;
+        markRoute(route.id, Date.now() - routeStart, totalAccepted() - before, blockedHere, readAny);
+        break;
+      }
+
+      /*
+       * The places this installation was told to look, over and above the
+       * built-in list.
+       */
+      case 'saved_sources': {
+        const { ready, skipped } = expandCustomSources({
+          query: plan.normalizedInput,
+          companyName,
+          personName: context.personName,
+          city: context.city,
+          state: context.state,
+          zip: context.zip,
+          domain: normaliseDomain(website) || context.domain,
+          phone: context.phone,
+          email: context.email,
+        });
+
+        for (const entry of skipped) {
+          trace.skip('plan', `Saved source "${entry.source.label}" needs ${entry.missing}, which this search does not have.`, {});
+        }
+
+        if (ready.length === 0) {
+          markRoute(route.id, Date.now() - routeStart, 0, false, false);
+          break;
+        }
+
+        let readAny = false;
+        let blockedHere = false;
+        for (const entry of ready) {
+          const page = await fetchPage(entry.url, { label: entry.source.label, trace, timeoutMs: 8000 });
+          const record: ConsultedSource = {
+            url: entry.url,
+            label: `Saved source: ${entry.source.label}`,
+            kind: 'directory',
+            tier: page.tier,
+            ok: page.ok,
+            status: page.status,
+            blocked: page.blocked,
+            reason: page.reason,
+            fieldsFound: [],
+            elapsedMs: page.totalMs,
+          };
+          consulted.push(record);
+          blockedHere = blockedHere || page.blocked;
+
+          if (!page.ok || !page.html || !page.url) continue;
+          readAny = true;
+          const harvest = harvestPage(page.html, page.url, entry.source.label, page.tier, ledger, trace);
+          record.fieldsFound = harvest.fieldsFound;
+        }
+
+        blockedAnywhere = blockedAnywhere || blockedHere;
+        markRoute(route.id, Date.now() - routeStart, totalAccepted() - before, blockedHere, readAny);
+        break;
+      }
+
       case 'facebook_page': {
         const known = context.url && /facebook\.com/i.test(context.url) ? context.url : undefined;
         if (!known) {
@@ -949,6 +1065,7 @@ async function runExtraction(rawQuery: string, options: ExtractionOptions = {}):
     dnsIntelligence: dns ?? undefined,
     route: trace.snapshot(),
     consultedSources: consulted,
+    blocks: summariseBlocks(consulted),
     rejected: resolved.rejected,
     confidence,
     confidenceBasis: basis,

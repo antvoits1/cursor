@@ -313,6 +313,42 @@ export interface ConsultedSource {
   elapsedMs: number;
 }
 
+/** An extra place to look, saved on the server and editable from Settings. */
+export interface CustomSource {
+  id: string;
+  /** What to call it in the route, e.g. "NY corporation register". */
+  label: string;
+  /** The address, with `{name}`-style placeholders left in place. */
+  url: string;
+  enabled: boolean;
+  addedAt: string;
+}
+
+/** What a run knows about the lead, used to fill saved-source placeholders. */
+export interface QueryContext {
+  query: string;
+  companyName?: string;
+  personName?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
+  domain?: string;
+  phone?: string;
+  email?: string;
+}
+
+/** One site that would not let the run in, described without jargon. */
+export interface BlockReport {
+  /** Bare host, e.g. "yellowpages.com". */
+  site: string;
+  /** What happened, in words a non-technical reader can act on. */
+  what: string;
+  /** Whether the run got the information despite the refusal. */
+  gotAround: boolean;
+  /** How, when it did. */
+  instead?: string;
+}
+
 export interface QueryPlan {
   originalInput: string;
   normalizedInput: string;
@@ -381,6 +417,8 @@ export interface ExtractionResult {
   /** Full user-facing live route for this run. Never shared between runs. */
   route: RouteStep[];
   consultedSources: ConsultedSource[];
+  /** One plain-English line per site that refused the run. */
+  blocks: BlockReport[];
   rejected: RejectedValue[];
 
   confidence: number;

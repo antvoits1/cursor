@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { RotateCcw, ShieldCheck, Trash2 } from 'lucide-react';
 import { Badge, Button, EmptyState, Field, Panel, PanelHeader, Select, Toggle } from './ui';
 import * as api from '../lib/api';
+import { SavedSources } from './SavedSources';
 import {
   BUDGET_CHOICES,
   CONCURRENCY_CHOICES,
@@ -129,6 +130,8 @@ export function SettingsView({
           </Field>
         </div>
       </Panel>
+
+      <SavedSources />
 
       <Panel>
         <PanelHeader title="This browser" description="Nothing here is sent to the service." />

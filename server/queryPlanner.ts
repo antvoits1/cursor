@@ -1,5 +1,7 @@
 import { routePrior } from './learning.js';
 import { redactSensitiveText } from '../src/lib/sensitive.js';
+import { parseAdvancedQuery } from './advancedQuery.js';
+import { listCustomSources } from './customSources.js';
 import type { PlannedRoute, QueryPlan, QueryType } from '../src/types.js';
 
 const US_STATES: Record<string, string> = {
@@ -41,6 +43,10 @@ export interface InferredContext {
   phone?: string;
   email?: string;
   url?: string;
+  /** True when the box held links or site names as well as terms. */
+  namedSites?: boolean;
+  /** True when this installation has saved sources of its own. */
+  hasSavedSources?: boolean;
 }
 
 function titleCaseLooking(token: string): boolean {
@@ -249,6 +255,22 @@ export const ROUTE_CATALOGUE: Array<{
       Boolean(context.personName) || type === 'owner_first' || type === 'person_and_company',
   },
   {
+    id: 'named_sites',
+    label: 'Open the links and sites named in the search box',
+    purpose: 'Read the pages that were pasted in, and search any site named alongside the terms.',
+    // Runs first: somebody who pasted a link has already decided where to look,
+    // and anything found there gives the later routes something to work with.
+    baseOrder: 0,
+    appliesTo: (_type, context) => Boolean(context.namedSites),
+  },
+  {
+    id: 'saved_sources',
+    label: 'Check the sources saved on this server',
+    purpose: 'Look in the extra places this installation has been told about.',
+    baseOrder: 6.5,
+    appliesTo: (_type, context) => Boolean(context.hasSavedSources),
+  },
+  {
     id: 'dns_inspection',
     label: 'Inspect the mail infrastructure of the resolved domain',
     purpose: 'Confirm the domain can actually receive mail before scoring an email as deliverable.',
@@ -271,6 +293,12 @@ export function planQuery(rawInput: string): QueryPlan {
   const inferredContext = inferContext(normalizedInput);
   const queryType = detectQueryType(normalizedInput, inferredContext);
   const notes: string[] = [];
+
+  const advanced = parseAdvancedQuery(normalizedInput);
+  if (advanced.urls.length > 0 || advanced.siteSearches.length > 0) {
+    inferredContext.namedSites = true;
+  }
+  inferredContext.hasSavedSources = listCustomSources().some((source) => source.enabled);
 
   const applicable = ROUTE_CATALOGUE.filter((route) => route.appliesTo(queryType, inferredContext));
 
@@ -310,6 +338,11 @@ export function planQuery(rawInput: string): QueryPlan {
     notes.push(`Location read from the input: ${[inferredContext.city, inferredContext.state].filter(Boolean).join(', ')}.`);
   }
   if (inferredContext.domain) notes.push(`Domain read from the input: ${inferredContext.domain}.`);
+  for (const link of advanced.urls) notes.push(`A link was pasted in and will be opened: ${link}`);
+  for (const search of advanced.siteSearches) notes.push(`${search.site} was named, so it will be searched — ${search.describes}.`);
+  for (const site of advanced.unusedSites) {
+    notes.push(`${site} was named but there was nothing to search it for, so it was left alone.`);
+  }
   if (notes.length === 0) notes.push('No extra context was present in the input, so the plan relies on public search.');
 
   return {

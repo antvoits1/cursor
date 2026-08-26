@@ -8,6 +8,14 @@ import {
   resetEngineStats,
 } from './engine.js';
 import { resetLearning, snapshot as learningSnapshot } from './learning.js';
+import {
+  PLACEHOLDERS,
+  addCustomSource,
+  listCustomSources,
+  removeCustomSource,
+  setCustomSourceEnabled,
+  sourcesArePersistent,
+} from './customSources.js';
 import type { ApiError, EngineDiagnostics, ExtractionResult, RouteStep } from '../src/types.js';
 
 /** One line of the newline-delimited `/api/extract` response. */
@@ -110,6 +118,45 @@ export function createApiRouter(host: ApiHost): express.Router {
       send({ type: 'error', error: 'The extraction run failed.', detail: (error as Error).message });
     }
     return res.end();
+  });
+
+  /*
+   * The extra places this installation looks.
+   *
+   * Saved on the server rather than in a browser, because the source list
+   * belongs to the installation: one person adds a county register and
+   * everybody using that server gets it, and clearing a browser does not
+   * silently undo the work.
+   */
+  router.get('/sources', (_req, res) => {
+    res.json({
+      sources: listCustomSources(),
+      persistent: sourcesArePersistent(),
+      placeholders: PLACEHOLDERS,
+    });
+  });
+
+  router.post('/sources', (req: Request, res: Response) => {
+    const body = (req.body ?? {}) as Record<string, unknown>;
+    const url = asString(body.url).trim();
+    if (!url) return fail(res, 400, 'Enter a web address to save.');
+    if (url.length > 500) return fail(res, 400, 'That web address is too long.');
+
+    const saved = addCustomSource(url, asString(body.label));
+    if (!saved.ok) return fail(res, 400, saved.problem ?? 'That address could not be saved.');
+    return res.json({ ok: true, source: saved.source, sources: listCustomSources() });
+  });
+
+  router.patch('/sources/:id', (req: Request, res: Response) => {
+    const enabled = (req.body as Record<string, unknown> | undefined)?.enabled;
+    if (typeof enabled !== 'boolean') return fail(res, 400, 'Send { "enabled": true } or { "enabled": false }.');
+    if (!setCustomSourceEnabled(req.params.id, enabled)) return fail(res, 404, 'No saved source with that id.');
+    return res.json({ ok: true, sources: listCustomSources() });
+  });
+
+  router.delete('/sources/:id', (req: Request, res: Response) => {
+    if (!removeCustomSource(req.params.id)) return fail(res, 404, 'No saved source with that id.');
+    return res.json({ ok: true, sources: listCustomSources() });
   });
 
   router.get('/learning', (_req, res) => {

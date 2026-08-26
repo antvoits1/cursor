@@ -508,6 +508,27 @@ export function ResultPanel({ result }: { result: ExtractionResult }) {
         </Group>
       )}
 
+      {result.blocks.length > 0 && (
+        <Group title="Sites that would not let us in" count={result.blocks.length}>
+          <ul className="divide-y divide-line overflow-hidden rounded-lg border border-line">
+            {result.blocks.map((block) => (
+              <li key={block.site} className="flex items-start gap-3 bg-panel-raised px-4 py-2.5">
+                <span className="mt-0.5 shrink-0">
+                  {block.gotAround ? <Badge tone="warn">worked round it</Badge> : <Badge tone="bad">blocked</Badge>}
+                </span>
+                <div className="min-w-0">
+                  <p className="font-mono text-sm text-ink">{block.site}</p>
+                  <p className="text-sm text-ink-soft">
+                    {block.what}
+                    {block.instead ? ` ${block.instead}` : ''}
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </Group>
+      )}
+
       <Group title="Why this result scored the way it did" count={result.confidenceBasis.length}>
         <ul className="space-y-1.5 rounded-lg border border-line bg-panel-raised px-4 py-3">
           {result.confidenceBasis.map((line, index) => (

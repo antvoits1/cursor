@@ -1,5 +1,6 @@
 import type {
   ApiError,
+  CustomSource,
   EngineDiagnostics,
   ExtractionResult,
   LearningSnapshot,
@@ -192,4 +193,33 @@ export function resetLearning(): Promise<{ ok: boolean; learning: LearningSnapsh
 
 export function resetCounters(): Promise<{ ok: boolean }> {
   return request<{ ok: boolean }>('/diagnostics/reset', { method: 'POST' });
+}
+
+export interface SourcesResponse {
+  sources: CustomSource[];
+  /** False on hosts with no writable disk, where the list is lost on restart. */
+  persistent: boolean;
+  placeholders: Array<{ token: string; describes: string }>;
+}
+
+export function listSources(signal?: AbortSignal): Promise<SourcesResponse> {
+  return request<SourcesResponse>('/sources', { signal });
+}
+
+export function addSource(url: string, label?: string): Promise<{ ok: boolean; sources: CustomSource[] }> {
+  return request<{ ok: boolean; sources: CustomSource[] }>('/sources', {
+    method: 'POST',
+    body: JSON.stringify({ url, label }),
+  });
+}
+
+export function setSourceEnabled(id: string, enabled: boolean): Promise<{ sources: CustomSource[] }> {
+  return request<{ sources: CustomSource[] }>(`/sources/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ enabled }),
+  });
+}
+
+export function removeSource(id: string): Promise<{ sources: CustomSource[] }> {
+  return request<{ sources: CustomSource[] }>(`/sources/${encodeURIComponent(id)}`, { method: 'DELETE' });
 }

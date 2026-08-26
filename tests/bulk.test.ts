@@ -276,6 +276,7 @@ function resultFor(rowId: string, phone: string): ExtractionResult {
     people: [],
     route: [],
     consultedSources: [],
+    blocks: [],
     rejected: [],
     confidence: 80,
     confidenceBasis: ['Two sources agreed on the phone number.'],
