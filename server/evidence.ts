@@ -1,4 +1,5 @@
 import { classifyPhoneNumber } from './phoneClassifier.js';
+import { resolveLineType, scoreReachability } from './lineType.js';
 import { containsSensitiveValue } from '../src/lib/sensitive.js';
 import type {
   AddressInfo,
@@ -158,6 +159,26 @@ function addressShapeProblem(cleaned: string): string | null {
   return null;
 }
 
+/** What one source said about a number, beyond the digits themselves. */
+export interface PhoneObservation {
+  /** A word the page attached to the number, e.g. "Wireless", "Office". */
+  publishedLabel?: string;
+  carrier?: string;
+  callerIdName?: string;
+  recency?: 'current' | 'prior' | 'unknown';
+  /** The source listed this first among a person's numbers. */
+  listedFirst?: boolean;
+}
+
+interface PhoneHints {
+  contexts: string[];
+  publishedLabels: Array<{ label: string; sourceUrl: string }>;
+  carriers: Array<{ carrier: string; sourceUrl: string }>;
+  callerIdName?: string;
+  recency?: 'current' | 'prior' | 'unknown';
+  listedFirst: boolean;
+}
+
 export class EvidenceLedger {
   private readonly phones = new Map<string, Candidate<ReturnType<typeof classifyPhoneNumber>>>();
   private readonly emails = new Map<string, Candidate<string>>();
@@ -177,7 +198,16 @@ export class EvidenceLedger {
     }
   }
 
-  addPhone(raw: string, evidence: Evidence, contextText = ''): 'accepted' | 'rejected' | 'merged' {
+  /**
+   * Everything learned about a number's line type, accumulated across sources.
+   *
+   * The verdict is deliberately not decided here. A directory may label a number
+   * "wireless" while the business's own site calls it an office line; both are
+   * kept and weighed together once every source has been consulted.
+   */
+  private readonly lineTypeHints = new Map<string, PhoneHints>();
+
+  addPhone(raw: string, evidence: Evidence, contextText = '', hints: PhoneObservation = {}): 'accepted' | 'rejected' | 'merged' {
     if (containsSensitiveValue(raw)) {
       this.reject('phone', '[withheld]', 'The value matched a protected identifier pattern and was discarded before use.', evidence.url);
       return 'rejected';
@@ -191,10 +221,27 @@ export class EvidenceLedger {
       this.reject('phone', classified.formatted, 'The page labels this number as a fax line.', evidence.url);
       return 'rejected';
     }
+
+    const collected = this.lineTypeHints.get(classified.number) ?? {
+      contexts: [],
+      publishedLabels: [],
+      carriers: [],
+      recency: undefined,
+      listedFirst: false,
+    };
+    if (contextText.trim()) collected.contexts.push(contextText.slice(0, 240));
+    if (hints.publishedLabel) collected.publishedLabels.push({ label: hints.publishedLabel, sourceUrl: evidence.url });
+    if (hints.carrier) collected.carriers.push({ carrier: hints.carrier, sourceUrl: evidence.url });
+    if (hints.callerIdName && !collected.callerIdName) collected.callerIdName = hints.callerIdName;
+    // "Current" from any source outranks silence; "prior" only stands if nothing
+    // ever called it current.
+    if (hints.recency === 'current' || (hints.recency && !collected.recency)) collected.recency = hints.recency;
+    collected.listedFirst = collected.listedFirst || Boolean(hints.listedFirst);
+    this.lineTypeHints.set(classified.number, collected);
+
     const existing = this.phones.get(classified.number);
     if (existing) {
       pushEvidence(existing, evidence);
-      // A more certain line-type reading wins the merge.
       if (existing.value && classified.lineTypeConfidence > existing.value.lineTypeConfidence) {
         existing.value = classified;
       }
@@ -413,21 +460,55 @@ export class EvidenceLedger {
 
     const phones: PhoneInfo[] = [...this.phones.values()]
       .filter((c): c is Candidate<NonNullable<ReturnType<typeof classifyPhoneNumber>>> => c.value !== null)
-      .map((c) => ({
-        number: c.value.number,
-        formatted: c.value.formatted,
-        type: c.value.type,
-        lineTypeConfidence: c.value.lineTypeConfidence,
-        lineTypeBasis: c.value.lineTypeBasis,
-        carrier: c.value.carrier,
-        location: c.value.location,
-        timezone: c.value.timezone,
-        country: c.value.country,
-        agreementCount: c.sources.size,
-        confidence: scoreFor(c.evidence, c.sources.size),
-        evidence: c.evidence,
-      }))
-      .sort((a, b) => b.confidence - a.confidence || b.agreementCount - a.agreementCount);
+      .map((c) => {
+        const hints = this.lineTypeHints.get(c.value.number);
+        // The line type is decided here, once, from everything every source
+        // said about the number — not from whichever source happened to be read
+        // last.
+        const verdict = resolveLineType({
+          number: c.value.number,
+          context: hints?.contexts.join(' ') || undefined,
+          publishedLabel: hints?.publishedLabels[0]?.label,
+          publishedLabelSourceUrl: hints?.publishedLabels[0]?.sourceUrl,
+          carrier: hints?.carriers[0]?.carrier ?? c.value.carrier,
+          carrierSourceUrl: hints?.carriers[0]?.sourceUrl,
+        });
+        const reach = scoreReachability({
+          lineType: verdict.type,
+          lineTypeConfidence: verdict.confidence,
+          agreementCount: c.sources.size,
+          recency: hints?.recency,
+          listedFirst: hints?.listedFirst,
+          isFax: c.value.isFax,
+        });
+
+        return {
+          number: c.value.number,
+          formatted: c.value.formatted,
+          type: verdict.type,
+          lineTypeConfidence: verdict.confidence,
+          lineTypeBasis: verdict.basis,
+          lineTypeSignals: verdict.signals,
+          carrier: verdict.carrier ?? c.value.carrier,
+          callerIdName: hints?.callerIdName,
+          location: c.value.location,
+          timezone: c.value.timezone,
+          country: c.value.country,
+          agreementCount: c.sources.size,
+          confidence: scoreFor(c.evidence, c.sources.size),
+          reachabilityScore: reach.score,
+          reachabilityBasis: reach.basis,
+          rank: 0,
+          recency: hints?.recency,
+          evidence: c.evidence,
+        };
+      })
+      // Ranked by how likely each number is to reach the person, which is the
+      // question the operator is actually asking.
+      .sort((a, b) => b.reachabilityScore - a.reachabilityScore || b.confidence - a.confidence);
+    phones.forEach((phone, index) => {
+      phone.rank = index + 1;
+    });
 
     const emails: EmailInfo[] = [];
     for (const candidate of this.emails.values()) {
@@ -481,6 +562,20 @@ export class EvidenceLedger {
         domainMatchesWebsite,
         deliverability,
         deliverabilityBasis,
+        // Filled in by the verifier once the mail checks have run. Until then
+        // it reports honestly that nothing has been checked.
+        verification: {
+          syntaxValid: true,
+          domainHasMx: dns && dns.domain === domain ? dns.hasValidMx : null,
+          hasSpf: dns && dns.domain === domain ? dns.hasSpf : null,
+          hasDmarc: dns && dns.domain === domain ? dns.hasDmarc : null,
+          disposable: false,
+          roleAccount: classifyEmailKind(email) === 'role',
+          catchAll: null,
+          smtpAccepted: null,
+          verdict: 'unverifiable',
+          basis: ['The mail checks have not been run for this address yet.'],
+        },
         agreementCount: candidate.sources.size,
         confidence: adjusted,
         evidence: candidate.evidence,

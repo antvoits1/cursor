@@ -1,6 +1,9 @@
 import { EvidenceLedger } from './evidence.js';
 import { inspectDomainDns, normaliseDomain } from './dnsInspector.js';
 import { isReservedHost } from './ssrfGuard.js';
+import { lookupPeople } from './sources/peopleSearch.js';
+import { verifyEmails } from './emailVerifier.js';
+import { assistantAvailable, beginUsage, interpretQuery } from './assistant.js';
 import {
   domainPrior,
   noteRun,
@@ -31,6 +34,7 @@ import type {
   Evidence,
   ExtractionResult,
   QueryType,
+  PersonRecord,
   RouteStep,
   TransportTier,
 } from '../src/types.js';
@@ -254,6 +258,8 @@ export async function extract(rawQuery: string, options: ExtractionOptions = {})
   let companyName = context.companyName ?? (queryIsAddressOnly ? '' : query);
   /** True once a source, rather than the input, has supplied the business name. */
   let companyNameFromSource = false;
+  const people: PersonRecord[] = [];
+  const assistant = beginUsage();
 
   /**
    * Adopts a website proposed by a source, or refuses it and says why.
@@ -289,6 +295,34 @@ export async function extract(rawQuery: string, options: ExtractionOptions = {})
   let searchUsable: boolean | null = null;
   const sitePatternsProductive = new Set<string>();
   const sitePatternsUnproductive = new Set<string>();
+
+  /**
+   * When the input does not name a specific business, the assistant works out
+   * what it is actually asking for and turns it into searches worth running.
+   *
+   * Typing "milk" should not dead-end. It should be read as an intent to find
+   * dairy businesses and dispatched as real searches. The assistant is only
+   * interpreting the request here; it is never asked for a contact detail.
+   */
+  let interpretation: Awaited<ReturnType<typeof interpretQuery>> = null;
+  const inputNamesNothingSpecific =
+    !queryIsAddressOnly && queryType !== 'phone_first' && queryType !== 'email_first' && queryType !== 'facebook_page';
+  if (inputNamesNothingSpecific && assistantAvailable()) {
+    trace.info('classification', 'Asking the assistant what this request is actually looking for...', {});
+    interpretation = await interpretQuery(query, assistant);
+    if (interpretation) {
+      trace.success(
+        'classification',
+        `Read as ${interpretation.shape === 'category' ? 'a category of business' : interpretation.shape === 'specific_entity' ? 'one specific business' : 'an ambiguous request'}: ${interpretation.intent}`,
+        { detail: { shape: interpretation.shape, searches: interpretation.searchQueries.length } },
+      );
+      if (interpretation.companyName && !context.companyName) context.companyName = interpretation.companyName;
+      if (interpretation.personName && !context.personName) context.personName = interpretation.personName;
+      if (interpretation.industry && !industry) industry = interpretation.industry;
+    } else {
+      trace.info('classification', 'The assistant could not be reached, so the request is handled by pattern rules alone.', {});
+    }
+  }
 
   for (const route of plan.routes) {
     if (outOfTime()) {
@@ -353,9 +387,15 @@ export async function extract(rawQuery: string, options: ExtractionOptions = {})
           }
         }
 
-        // 3. Public search, when this network can use it.
+        // 3. Public search, when this network can use it. Where the assistant
+        //    interpreted the request, its searches are tried first, because a
+        //    category word like "milk" needs a real search string behind it.
         if (!website && !outOfTime()) {
-          const search = await searchWeb(`${nameForLookup}${location ? ` ${location}` : ''} official website contact`, trace, 10);
+          const searchStrings = [
+            ...(interpretation?.searchQueries ?? []),
+            `${nameForLookup}${location ? ` ${location}` : ''} official website contact`,
+          ];
+          const search = await searchWeb(searchStrings[0], trace, 10);
           searchUsable = search.ok;
           if (search.ok) {
             const pick = pickOfficialSiteFromSearch(search.hits, nameForLookup, { stateCode: context.state });
@@ -493,7 +533,44 @@ export async function extract(rawQuery: string, options: ExtractionOptions = {})
         if (!outcome.searchUsable && outcome.note) {
           trace.warn('failure', `People directories could not be reached: ${outcome.note}`, {});
         }
-        markRoute(route.id, Date.now() - routeStart, totalAccepted() - before, !outcome.searchUsable, outcome.consulted.length > 0);
+
+        // The people-search sources proper: whole records with every number a
+        // person has, each labelled wireless or landline by the source itself.
+        const lookup = await lookupPeople({
+          personName: person,
+          location,
+          knownPhones: Object.values(options.preservedFields ?? {})
+            .map(String)
+            .filter((value) => value.replace(/\D/g, '').length >= 10),
+          trace,
+        });
+        consulted.push(...lookup.consulted);
+        people.push(...lookup.people);
+        blockedAnywhere = blockedAnywhere || lookup.anyBlocked;
+
+        // Everything a record holds also feeds the merged view, carrying the
+        // source's own line-type label with it.
+        for (const record of lookup.people) {
+          const recordEvidence = evidenceFor(record.sourceUrl, record.sourceLabel, 'text_pattern');
+          for (const phone of record.phones) {
+            ledger.addPhone(phone.number, recordEvidence, '', {
+              publishedLabel: phone.type === 'UNKNOWN' ? undefined : phone.type,
+              carrier: phone.carrier,
+              recency: phone.recency,
+              listedFirst: phone.rank === 1,
+            });
+          }
+          for (const email of record.emails) ledger.addEmail(email.email, recordEvidence);
+          if (record.currentAddress) ledger.addAddress(record.currentAddress.full, recordEvidence);
+        }
+
+        markRoute(
+          route.id,
+          Date.now() - routeStart,
+          totalAccepted() - before,
+          !outcome.searchUsable || lookup.anyBlocked,
+          outcome.consulted.length > 0 || lookup.people.length > 0,
+        );
         break;
       }
 
@@ -543,6 +620,38 @@ export async function extract(rawQuery: string, options: ExtractionOptions = {})
   }
 
   const resolved = ledger.resolve(website, dns);
+
+  // Mail checks run once, on the final set, so each domain is looked up a
+  // single time however many addresses share it.
+  if (resolved.emails.length > 0) {
+    const domainFacts = new Map<string, { hasMx?: boolean; hasSpf?: boolean; hasDmarc?: boolean; mxHosts?: string[] }>();
+    if (dns) {
+      domainFacts.set(dns.domain, {
+        hasMx: dns.hasValidMx,
+        hasSpf: dns.hasSpf,
+        hasDmarc: dns.hasDmarc,
+        mxHosts: dns.mxRecords,
+      });
+    }
+    trace.info('validation', `Checking whether ${resolved.emails.length} email address${resolved.emails.length === 1 ? '' : 'es'} can actually receive mail...`, {});
+    const verified = await verifyEmails(resolved.emails.map((email) => email.email), domainFacts);
+    for (const email of resolved.emails) {
+      const verification = verified.get(email.email);
+      if (!verification) continue;
+      email.verification = verification;
+      if (verification.verdict === 'deliverable') email.deliverability = 'high';
+      else if (verification.verdict === 'undeliverable') email.deliverability = 'low';
+      else if (verification.verdict === 'probably_deliverable') email.deliverability = 'medium';
+      email.deliverabilityBasis = verification.basis[verification.basis.length - 1] ?? email.deliverabilityBasis;
+    }
+    const deliverable = resolved.emails.filter((email) => email.verification.verdict === 'deliverable').length;
+    const risky = resolved.emails.filter((email) => ['risky', 'undeliverable'].includes(email.verification.verdict)).length;
+    trace.success(
+      'validation',
+      `Mail checks finished: ${deliverable} confirmed deliverable, ${risky} risky or undeliverable, ${resolved.emails.length - deliverable - risky} could not be proven either way.`,
+      { detail: { deliverable, risky } },
+    );
+  }
 
   // Narrate the merge, validation, agreement, and selection stages.
   const merged = resolved.phones.filter((p) => p.agreementCount > 1).length + resolved.emails.filter((e) => e.agreementCount > 1).length;
@@ -749,6 +858,8 @@ export async function extract(rawQuery: string, options: ExtractionOptions = {})
     addresses: resolved.addresses,
     socials: resolved.socials,
     owner: resolved.owner,
+    people,
+    assistant,
     dnsIntelligence: dns ?? undefined,
     route: trace.snapshot(),
     consultedSources: consulted,

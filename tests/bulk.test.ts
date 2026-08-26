@@ -236,6 +236,10 @@ function resultFor(rowId: string, phone: string): ExtractionResult {
         type: 'LANDLINE',
         lineTypeConfidence: 70,
         lineTypeBasis: 'area code lookup',
+        lineTypeSignals: [],
+        reachabilityScore: 45,
+        reachabilityBasis: ['Identified as a landline (+5).'],
+        rank: 1,
         country: 'US',
         agreementCount: 2,
         confidence: 82,
@@ -250,6 +254,18 @@ function resultFor(rowId: string, phone: string): ExtractionResult {
         domainMatchesWebsite: true,
         deliverability: 'high',
         deliverabilityBasis: 'MX, SPF and DMARC present',
+        verification: {
+          syntaxValid: true,
+          domainHasMx: true,
+          hasSpf: true,
+          hasDmarc: true,
+          disposable: false,
+          roleAccount: false,
+          catchAll: false,
+          smtpAccepted: null,
+          verdict: 'probably_deliverable',
+          basis: ['The address is well-formed.'],
+        },
         agreementCount: 1,
         confidence: 78,
         evidence: [],
@@ -257,6 +273,7 @@ function resultFor(rowId: string, phone: string): ExtractionResult {
     ],
     addresses: [],
     socials: [],
+    people: [],
     route: [],
     consultedSources: [],
     rejected: [],
@@ -303,16 +320,17 @@ test('the export keeps every original row and appends enrichment in prefixed col
   assert.equal(rows.length, job.rows.length, 'the export must contain one line per sheet row');
   assert.equal(headers[0], 'Row');
   assert.ok(headers.includes('Company'), 'original headings are carried through');
-  assert.ok(headers.includes('Found Phone'), 'enrichment is appended under its own heading');
+  assert.ok(headers.includes('Best Phone'), 'enrichment is appended under its own heading');
   assert.equal(headers.includes('SSN'), false, 'an excluded column must be absent from the export');
   assert.equal(headers.includes('DOB'), false);
 
   assert.equal(rows[0]['Company'], 'Northwind Traders LLC');
-  assert.equal(rows[0]['Found Phone'], '(585) 555-0193');
+  assert.equal(rows[0]['Best Phone'], '(585) 555-0193');
+  assert.equal(rows[0]['Best Phone Type'], 'Landline', 'the row states whether the number is a mobile or a landline');
   assert.equal(rows[0]['Extractor Status'], 'success');
   assert.equal(rows[1]['Extractor Status'], 'failed');
   assert.equal(rows[1]['Extractor Detail'], 'Every source for this row was blocked.');
-  assert.equal(rows[1]['Found Phone'], '', 'a failed row must not be filled in with a guess');
+  assert.equal(rows[1]['Best Phone'], '', 'a failed row must not be filled in with a guess');
   assert.equal(rows[2]['Extractor Status'], 'pending');
 });
 

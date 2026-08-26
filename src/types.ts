@@ -117,6 +117,15 @@ export interface Evidence {
   observedAt: string;
 }
 
+/** One signal that argued for a line type, kept so the verdict can be audited. */
+export interface LineTypeSignal {
+  source: 'numbering_plan' | 'carrier_lookup' | 'people_search_label' | 'page_context' | 'prefix_heuristic' | 'assistant';
+  says: LineType;
+  weight: number;
+  detail: string;
+  sourceUrl?: string;
+}
+
 export interface PhoneInfo {
   /** E.164 */
   number: string;
@@ -124,17 +133,57 @@ export interface PhoneInfo {
   type: LineType;
   lineTypeConfidence: number;
   lineTypeBasis: string;
+  /** Every signal that was weighed to reach `type`. */
+  lineTypeSignals: LineTypeSignal[];
   carrier?: string;
+  /** Caller ID name, where a source published one. */
+  callerIdName?: string;
   location?: string;
   timezone?: string;
   country: string;
   /** Number of independent sources that reported this exact number. */
   agreementCount: number;
   confidence: number;
+  /**
+   * How likely this is the number that actually reaches the person, 0-100.
+   * Distinct from `confidence`, which is only about the number being real.
+   */
+  reachabilityScore: number;
+  reachabilityBasis: string[];
+  /** Rank among this contact's numbers, 1 being the best bet. */
+  rank: number;
+  /** Whether a source presented this as current rather than historical. */
+  recency?: 'current' | 'prior' | 'unknown';
   evidence: Evidence[];
 }
 
 export type EmailKind = 'role' | 'personal' | 'sales' | 'support' | 'info' | 'unknown';
+
+/**
+ * Result of checking an address, tier by tier.
+ *
+ * Each field is a three-state: true, false, or null meaning the check could not
+ * be run here. A check that could not run is never reported as a pass.
+ */
+export interface EmailVerification {
+  syntaxValid: boolean;
+  /** The domain resolves and publishes mail exchangers. */
+  domainHasMx: boolean | null;
+  hasSpf: boolean | null;
+  hasDmarc: boolean | null;
+  /** Domain belongs to a known throwaway-mail provider. */
+  disposable: boolean;
+  /** Local part is a shared function mailbox rather than a person. */
+  roleAccount: boolean;
+  /** Domain accepts every address, so a per-mailbox check proves nothing. */
+  catchAll: boolean | null;
+  /** SMTP RCPT probe. Null when outbound port 25 is unavailable, as on serverless. */
+  smtpAccepted: boolean | null;
+  smtpDetail?: string;
+  verdict: 'deliverable' | 'probably_deliverable' | 'risky' | 'undeliverable' | 'unverifiable';
+  /** Plain-language reasons behind the verdict, in the order they were applied. */
+  basis: string[];
+}
 
 export interface EmailInfo {
   email: string;
@@ -144,6 +193,7 @@ export interface EmailInfo {
   domainMatchesWebsite: boolean;
   deliverability: 'high' | 'medium' | 'low' | 'unknown';
   deliverabilityBasis: string;
+  verification: EmailVerification;
   agreementCount: number;
   confidence: number;
   evidence: Evidence[];
@@ -175,6 +225,41 @@ export interface OwnerInfo {
   evidence: Evidence[];
 }
 
+export type PersonRelation = 'spouse' | 'relative' | 'associate' | 'household' | 'unknown';
+
+export interface RelatedPerson {
+  name: string;
+  relation: PersonRelation;
+  age?: number;
+  /** Profile on the same source, so their numbers can be pulled on request. */
+  profileUrl?: string;
+}
+
+/**
+ * A person as one people-search source describes them.
+ *
+ * Kept whole and per-source rather than merged into the business record,
+ * because two sources disagreeing about someone's current address is
+ * information the operator needs to see, not something to average away.
+ */
+export interface PersonRecord {
+  name: string;
+  age?: number;
+  /** The address the source presents as current. */
+  currentAddress?: AddressInfo;
+  priorAddresses: AddressInfo[];
+  phones: PhoneInfo[];
+  emails: EmailInfo[];
+  relatives: RelatedPerson[];
+  /** Where the record came from, e.g. "TruePeopleSearch". */
+  sourceLabel: string;
+  sourceUrl: string;
+  /** How well this record matches the person that was asked for, 0-100. */
+  matchScore: number;
+  matchBasis: string[];
+  observedAt: string;
+}
+
 export interface DnsIntelligence {
   domain: string;
   mailProvider?: string;
@@ -187,6 +272,24 @@ export interface DnsIntelligence {
   hasValidMx: boolean;
   hasSpf: boolean;
   hasDmarc: boolean;
+}
+
+/**
+ * Use of the optional language-model layer on a run.
+ *
+ * The assistant is only ever asked to interpret a query or to pull structure out
+ * of text that was actually fetched. It is never asked for a fact, so every
+ * value it returns still carries the URL it came from.
+ */
+export interface AssistantUsage {
+  provider: 'gemini' | 'grok' | 'none';
+  model?: string;
+  /** What it was used for on this run. */
+  tasks: Array<'query_interpretation' | 'page_extraction' | 'line_type_reasoning'>;
+  callCount: number;
+  totalMs: number;
+  /** Set when the assistant was wanted but could not be used. */
+  unavailableReason?: string;
 }
 
 /** A value the engine saw but refused to output, with the reason why. */
@@ -267,7 +370,13 @@ export interface ExtractionResult {
   socials: SocialLink[];
   owner?: OwnerInfo;
 
+  /** Whole person records from people-search sources, kept per source. */
+  people: PersonRecord[];
+
   dnsIntelligence?: DnsIntelligence;
+
+  /** How the assistant layer was used on this run, if at all. */
+  assistant?: AssistantUsage;
 
   /** Full user-facing live route for this run. Never shared between runs. */
   route: RouteStep[];
