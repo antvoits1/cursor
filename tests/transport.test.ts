@@ -4,6 +4,7 @@ import { BLOCK_STATUSES, classifyContent, visibleTextLength } from '../server/bl
 import { PageCache } from '../server/cache.js';
 import { assessUrl } from '../server/ssrfGuard.js';
 import { proxyLabel, tierLabel } from '../server/transport.js';
+import { boundedTimeout, shareOfRemaining, withRunDeadline } from '../server/runDeadline.js';
 
 /**
  * Transport safety and honesty.
@@ -168,4 +169,29 @@ test('every transport tier has a plain-language label', () => {
   assert.equal(tierLabel('patchright'), 'browser rendering');
   assert.equal(tierLabel('camoufox'), 'hardened browser rendering');
   assert.equal(tierLabel('node_http'), 'built-in HTTP fetch');
+});
+
+/*
+ * One stalled host must not be allowed to spend the whole run. A thirty-second
+ * budget that produced a single unread page and five skipped routes is the
+ * defect these two tests exist to prevent coming back.
+ */
+test('no single request may claim the whole of the remaining budget', () => {
+  assert.equal(shareOfRemaining(30_000), 16_500, 'a request gets a little over half of what is left, not all of it');
+  assert.ok(shareOfRemaining(30_000) < 30_000);
+});
+
+test('the share never falls so low that a request cannot complete', () => {
+  assert.equal(shareOfRemaining(1_000), 2_500, 'a floor keeps the last requests of a run viable');
+});
+
+test('a request is bounded by the run, and refused outright once the run is over', async () => {
+  await withRunDeadline(Date.now() + 20_000, async () => {
+    const allowed = boundedTimeout(30_000);
+    assert.ok(allowed !== null && allowed <= 11_000, 'the ask is trimmed to the run’s share');
+  });
+
+  await withRunDeadline(Date.now() - 1, async () => {
+    assert.equal(boundedTimeout(5_000), null, 'a spent budget declines the request rather than starting it');
+  });
 });

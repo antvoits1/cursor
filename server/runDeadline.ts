@@ -43,5 +43,22 @@ export function boundedTimeout(requested: number): number | null {
   // Below a second there is no point starting a network request; it would only
   // add latency to a run that is already over budget.
   if (left < 750) return null;
-  return Math.min(requested, left);
+  return Math.min(requested, shareOfRemaining(left));
+}
+
+/**
+ * The most one request may take out of what the run has left.
+ *
+ * Capping a request at *all* of the remaining time is not a cap: one slow host
+ * then spends the entire budget and every other route is skipped for want of
+ * time, which is how a thirty-second run came back having read one page and
+ * reported nothing. No single request gets more than a little over half of
+ * what is left, so a run that meets one stalled host still has time to consult
+ * the sources that would have answered.
+ *
+ * The floor keeps the rule from strangling the last few requests of a run,
+ * where half of a small remainder is not enough to complete any fetch at all.
+ */
+export function shareOfRemaining(left: number): number {
+  return Math.max(2_500, Math.round(left * 0.55));
 }

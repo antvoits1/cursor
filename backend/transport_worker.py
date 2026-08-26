@@ -425,7 +425,24 @@ class TieredRouter:
         last_status: int | None = None
         redirects = 0
 
+        # `timeout_ms` bounds the tier, not each hop. Applying it per request
+        # let a host that accepts a connection and then stalls burn the timeout
+        # once per redirect and once per retry, so a ten-second budget became
+        # thirty seconds of real waiting and took the whole run's budget with
+        # it. The deadline below is what the caller actually asked for.
+        deadline = started + max(1.0, timeout_ms / 1000)
+
+        def remaining() -> float:
+            return deadline - time.monotonic()
+
         for _ in range(MAX_REDIRECTS + 1):
+            if remaining() <= 0.4:
+                return None, Attempt(
+                    'curl_cffi', False, status=last_status, redirects=redirects, timed_out=True,
+                    reason='the tier ran out of time following redirects',
+                    elapsed_ms=int((time.monotonic() - started) * 1000),
+                )
+
             if not await asyncio.to_thread(is_public_url, current):
                 return None, Attempt(
                     'curl_cffi', False, status=last_status, redirects=redirects,
@@ -438,7 +455,7 @@ class TieredRouter:
             timed_out = False
             for attempt_index in range(2):
                 try:
-                    kwargs: dict[str, Any] = {'timeout': max(1.0, timeout_ms / 1000), 'allow_redirects': False}
+                    kwargs: dict[str, Any] = {'timeout': max(1.0, remaining()), 'allow_redirects': False}
                     if proxy:
                         kwargs['proxy'] = proxy
                     response = await self._cffi_session.get(current, **kwargs)
@@ -446,7 +463,7 @@ class TieredRouter:
                     break
                 except Exception as exc:
                     timed_out = 'timeout' in type(exc).__name__.lower() or 'timeout' in str(exc).lower()
-                    if attempt_index == 0:
+                    if attempt_index == 0 and remaining() > 1.5:
                         # One retry absorbs a transient reset before giving up.
                         await asyncio.sleep(0.35)
                         continue
@@ -551,7 +568,9 @@ class TieredRouter:
                 except Exception:
                     pass
 
-    async def fetch(self, url: str, timeout_ms: int, proxy: str, block_media: bool) -> dict[str, Any]:
+    async def fetch(
+        self, url: str, timeout_ms: int, proxy: str, block_media: bool, budget_ms: int | None = None
+    ) -> dict[str, Any]:
         attempts: list[Attempt] = []
 
         if not await asyncio.to_thread(is_public_url, url):
@@ -578,18 +597,41 @@ class TieredRouter:
                 ],
             }
 
+        # The escalation ladder as a whole gets one budget, not one budget per
+        # tier. Three tiers each allowed their own generous timeout added up to
+        # far more than the caller was willing to wait, and the caller's own
+        # timer then fired mid-escalation, so the work was thrown away anyway.
+        deadline = time.monotonic() + max(1.0, (budget_ms if budget_ms else timeout_ms * 3) / 1000)
+
+        def left_ms() -> int:
+            return int((deadline - time.monotonic()) * 1000)
+
         ladder = (
-            ('curl_cffi', lambda: self._fetch_cffi(url, timeout_ms, proxy)),
-            ('patchright', lambda: self._fetch_browser('patchright', url, min(max(timeout_ms * 2, 12000), 30000), proxy, block_media)),
-            ('camoufox', lambda: self._fetch_browser('camoufox', url, min(max(timeout_ms * 3, 18000), 45000), proxy, block_media)),
+            ('curl_cffi', lambda ms: self._fetch_cffi(url, ms, proxy)),
+            ('patchright', lambda ms: self._fetch_browser('patchright', url, ms, proxy, block_media)),
+            ('camoufox', lambda ms: self._fetch_browser('camoufox', url, ms, proxy, block_media)),
         )
+        preferred = {
+            'curl_cffi': timeout_ms,
+            'patchright': max(timeout_ms * 2, 12000),
+            'camoufox': max(timeout_ms * 3, 18000),
+        }
 
         for tier, run in ladder:
             unavailable = self._tier_unavailable.get(tier)
             if unavailable:
                 attempts.append(Attempt(tier, False, reason=unavailable, elapsed_ms=0))
                 continue
-            result, attempt = await run()
+
+            allowance = min(preferred[tier], left_ms())
+            if allowance < 1500:
+                attempts.append(
+                    Attempt(tier, False, timed_out=True, elapsed_ms=0,
+                            reason='the time allowed for this page was spent by the earlier tiers')
+                )
+                continue
+
+            result, attempt = await run(allowance)
             attempts.append(attempt)
             if result:
                 self.cache.put(url, proxy, result['url'], result['html'], result['tier'], result['status'])
@@ -678,6 +720,7 @@ async def main() -> None:
                 int(message.get('timeout_ms') or 8000),
                 str(message.get('proxy') or ''),
                 bool(message.get('block_media', True)),
+                int(message['budget_ms']) if message.get('budget_ms') else None,
             )
         except Exception as exc:
             result = {

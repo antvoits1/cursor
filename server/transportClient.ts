@@ -2,7 +2,7 @@ import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
 import path from 'node:path';
 import readline from 'node:readline';
 import { fileURLToPath } from 'node:url';
-import { remainingMs } from './runDeadline.js';
+import { remainingMs, shareOfRemaining } from './runDeadline.js';
 import type { TransportAttempt, TransportTier } from '../src/types.js';
 
 export interface WorkerCapabilities {
@@ -313,8 +313,18 @@ export async function fetchViaWorker(
    * as much room to escalate as it can use.
    */
   const left = remainingMs();
-  const wanted = Math.max(20_000, Math.min(120_000, timeoutMs * 8));
-  const budgetMs = left === null ? wanted : Math.max(1_000, Math.min(wanted, left));
+  const wanted = Math.min(45_000, Math.max(15_000, timeoutMs * 3));
+  /*
+   * The fallback needs somewhere to stand.
+   *
+   * Handing the worker every millisecond the run had left meant that when the
+   * worker used all of it, the built-in HTTP fetch — which is often the tier
+   * that succeeds on an ordinary server-rendered page — was declined for want
+   * of time, and the page went unread. A few seconds are held back for it.
+   */
+  const reserve = 3_500;
+  const budgetMs =
+    left === null ? wanted : Math.max(1_500, Math.min(wanted, shareOfRemaining(left), left - reserve));
 
   return new Promise<WorkerFetchResult>((resolve) => {
     const timer = setTimeout(() => {
@@ -335,6 +345,9 @@ export async function fetchViaWorker(
       op: 'fetch',
       url: targetUrl,
       timeout_ms: timeoutMs,
+      // The worker stops a little before the timer above fires, so a run that
+      // escalated too far still reports which tiers it tried.
+      budget_ms: Math.max(1_200, budgetMs - 600),
       proxy,
       block_media: process.env.EXTRACTOR_BLOCK_MEDIA !== '0',
     };
