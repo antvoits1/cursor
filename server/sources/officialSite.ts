@@ -373,9 +373,21 @@ export async function crawlOfficialSite(
     );
   }
 
-  for (const target of subpages) {
-    facts.pagesAttempted += 1;
-    const page = await fetchPage(target.url, { label: target.label, trace, timeoutMs: 8000 });
+  /*
+   * Subpages are fetched together rather than one after another.
+   *
+   * They are all on the same host and none depends on another's content, so
+   * fetching them in sequence only added their latencies together. They are
+   * still *harvested* in their original priority order below, so the contact
+   * page keeps precedence over the about page regardless of which replies
+   * first, and per-domain rate limiting still applies inside fetchPage.
+   */
+  facts.pagesAttempted += subpages.length;
+  const fetched = await Promise.all(
+    subpages.map(async (target) => ({ target, page: await fetchPage(target.url, { label: target.label, trace, timeoutMs: 8000 }) })),
+  );
+
+  for (const { target, page } of fetched) {
     const record: ConsultedSource = {
       url: target.url,
       label: `Official website ${target.label.replace('the ', '')}`,

@@ -23,6 +23,7 @@ import {
   searchPeopleDirectories,
 } from './sources/publicDirectories.js';
 import { searchWeb } from './sources/webSearch.js';
+import type { SearchOutcome } from './sources/webSearch.js';
 import { lookupEntityFacts } from './sources/wikidata.js';
 import { redactSensitiveText } from '../src/lib/sensitive.js';
 import type {
@@ -163,7 +164,15 @@ function evidenceFor(url: string, label: string, method: Evidence['method'], exc
 export async function extract(rawQuery: string, options: ExtractionOptions = {}): Promise<ExtractionResult> {
   const startedAt = Date.now();
   const deepScan = options.deepScan ?? true;
-  const budgetMs = options.budgetMs ?? Number(process.env.EXTRACTOR_RUN_BUDGET_MS ?? (deepScan ? 45_000 : 25_000));
+  /*
+   * A standard run targets a few seconds, which is what makes the search feel
+   * immediate. That is affordable now that discovery and the site crawl run
+   * their fetches concurrently rather than in sequence; the budget bounds the
+   * slowest source rather than the sum of all of them.
+   *
+   * Deep scan trades that for reach and is given far longer.
+   */
+  const budgetMs = options.budgetMs ?? Number(process.env.EXTRACTOR_RUN_BUDGET_MS ?? (deepScan ? 45_000 : 12_000));
   const deadline = startedAt + budgetMs;
   const outOfTime = () => Date.now() >= deadline;
 
@@ -346,8 +355,35 @@ export async function extract(rawQuery: string, options: ExtractionOptions = {})
       case 'search_discovery': {
         const nameForLookup = context.companyName ?? query;
 
+        /*
+         * The three discovery lookups are independent of one another, so they
+         * run at the same time rather than one after the next. Chaining them
+         * meant a run waited out three round trips in sequence, which was most
+         * of the latency on a simple search.
+         *
+         * They are still *applied* in priority order below -- OpenStreetMap,
+         * then Wikidata, then public search -- so racing them changes the
+         * timing without changing which source wins.
+         */
+        const searchStrings = [
+          ...(interpretation?.searchQueries ?? []),
+          `${nameForLookup}${location ? ` ${location}` : ''} official website contact`,
+        ];
+        const [places, wikidataFacts, search] = await Promise.all([
+          lookupPlaces(nameForLookup, location, trace),
+          lookupEntityFacts(nameForLookup, trace).catch(() => null),
+          searchWeb(searchStrings[0], trace, 10).catch(
+            (error: unknown): SearchOutcome => ({
+              hits: [],
+              ok: false,
+              reason: error instanceof Error ? error.message : 'the search engines could not be reached',
+              challenged: false,
+              enginesTried: [],
+            }),
+          ),
+        ]);
+
         // 1. OpenStreetMap: operator-maintained records with structured contacts.
-        const places = await lookupPlaces(nameForLookup, location, trace);
         for (const place of places.slice(0, 3)) {
           const sourceEvidence = evidenceFor(place.sourceUrl, 'OpenStreetMap register', 'microdata', place.displayName.slice(0, 160));
           const fields: string[] = [];
@@ -371,9 +407,9 @@ export async function extract(rawQuery: string, options: ExtractionOptions = {})
         }
 
         // 2. Wikidata: the entity's own declared official website.
-        if (!website && !outOfTime()) {
-          const facts = await lookupEntityFacts(nameForLookup, trace);
-          if (facts?.officialWebsite && adoptWebsite(facts.officialWebsite, 'Wikidata')) {
+        {
+          const facts = wikidataFacts;
+          if (!website && facts?.officialWebsite && adoptWebsite(facts.officialWebsite, 'Wikidata')) {
             if (facts.description && !description) description = facts.description;
             consulted.push({
               url: facts.sourceUrl,
@@ -390,12 +426,7 @@ export async function extract(rawQuery: string, options: ExtractionOptions = {})
         // 3. Public search, when this network can use it. Where the assistant
         //    interpreted the request, its searches are tried first, because a
         //    category word like "milk" needs a real search string behind it.
-        if (!website && !outOfTime()) {
-          const searchStrings = [
-            ...(interpretation?.searchQueries ?? []),
-            `${nameForLookup}${location ? ` ${location}` : ''} official website contact`,
-          ];
-          const search = await searchWeb(searchStrings[0], trace, 10);
+        {
           searchUsable = search.ok;
           if (search.ok) {
             const pick = pickOfficialSiteFromSearch(search.hits, nameForLookup, { stateCode: context.state });
