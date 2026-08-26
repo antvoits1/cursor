@@ -270,7 +270,30 @@ export async function fetchPage(targetUrl: string, options: FetchOptions): Promi
     });
   }
 
-  const native = await nodeFetchPage(targetUrl, timeoutMs, options.headers);
+  /*
+   * Re-bound before the fallback rather than reusing the budget computed at the
+   * top of this function.
+   *
+   * The worker tiers may have just spent the rest of the run. Reusing the
+   * original figure meant a request that had already exhausted a thirty-second
+   * budget started a fresh fifteen-second attempt on top of it, so the run
+   * finished at fifty-five seconds having reported the budget as spent
+   * twenty-five seconds earlier.
+   */
+  const fallbackTimeout = boundedTimeout(requestedTimeout);
+  if (fallbackTimeout === null) {
+    trace.warn('timeout', `Gave up on ${label}: the run's time budget was spent by the earlier tiers.`, { url: targetUrl });
+    return {
+      ok: false,
+      fromCache: false,
+      blocked: attempts.some((attempt) => attempt.blocked),
+      reason: "The run's time budget was spent before this page could be read.",
+      attempts,
+      totalMs: Date.now() - started,
+    };
+  }
+
+  const native = await nodeFetchPage(targetUrl, fallbackTimeout, options.headers);
   attempts.push(native.attempt);
   traceAttempt(trace, native.attempt, targetUrl);
 

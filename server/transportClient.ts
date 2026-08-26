@@ -2,6 +2,7 @@ import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
 import path from 'node:path';
 import readline from 'node:readline';
 import { fileURLToPath } from 'node:url';
+import { remainingMs } from './runDeadline.js';
 import type { TransportAttempt, TransportTier } from '../src/types.js';
 
 export interface WorkerCapabilities {
@@ -301,9 +302,19 @@ export async function fetchViaWorker(
   }
 
   const id = `t_${Date.now()}_${(sequence += 1)}`;
-  // The worker escalates through three tiers, so its budget is larger than a
-  // single-request timeout, but always bounded.
-  const budgetMs = Math.max(20_000, Math.min(120_000, timeoutMs * 8));
+  /*
+   * The worker escalates through three tiers, so it needs more than a single
+   * request's timeout -- but not more than the run has left.
+   *
+   * Allowing eight times the per-request timeout unconditionally meant one
+   * browser escalation could run for over a minute inside a run budgeted for
+   * thirty seconds, and the operator waited twice as long as the number they
+   * chose. The run's remaining time is the ceiling; within it, the worker gets
+   * as much room to escalate as it can use.
+   */
+  const left = remainingMs();
+  const wanted = Math.max(20_000, Math.min(120_000, timeoutMs * 8));
+  const budgetMs = left === null ? wanted : Math.max(1_000, Math.min(wanted, left));
 
   return new Promise<WorkerFetchResult>((resolve) => {
     const timer = setTimeout(() => {
