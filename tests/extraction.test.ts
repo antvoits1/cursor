@@ -196,6 +196,50 @@ test('a candidate with no street number is refused as an address', () => {
   assert.equal(ledger.addAddress('Somewhere in California', evidenceAt('https://northwind.example/')), 'rejected');
 });
 
+test('prose that merely looks address-shaped is refused', () => {
+  // Every one of these was produced by running the extractor against a real
+  // page. Publishing them as addresses is worse than publishing nothing.
+  const prose = [
+    '000 More than RD',
+    '000 to RD',
+    '259 W Santa Clara St in',
+    '3 N Erie Street Ma',
+    '100 and more for the Way',
+  ];
+  for (const candidate of prose) {
+    const ledger = new EvidenceLedger();
+    assert.equal(
+      ledger.addAddress(candidate, evidenceAt('https://northwind.example/')),
+      'rejected',
+      `"${candidate}" must not be accepted as an address`,
+    );
+    const resolved = ledger.resolve('https://northwind.example/', null);
+    assert.equal(resolved.addresses.length, 0);
+    assert.ok(resolved.rejected[0].reason.length > 0, 'the refusal must carry a reason');
+  }
+});
+
+test('genuine addresses in their usual renderings are still accepted', () => {
+  const genuine = [
+    '4105 Irons Rd, Scio, NY 14880',
+    '1012 20th Ave',
+    '2250 S Atlantic Blvd Ste M',
+    '445 Baltimore Blvd',
+    '4001 Piedmont Avenue, Oakland, CA 94609',
+    '480 9th Street, Oakland, CA 94607',
+    '3180 18th St #100, San Francisco, CA 94110',
+    '1 Infinite Loop, Cupertino, CA 95014',
+  ];
+  for (const candidate of genuine) {
+    const ledger = new EvidenceLedger();
+    assert.equal(
+      ledger.addAddress(candidate, evidenceAt('https://northwind.example/')),
+      'accepted',
+      `"${candidate}" is a real address and must be kept`,
+    );
+  }
+});
+
 test('address components are split without inventing missing ones', () => {
   const parts = parseAddressParts('4105 Irons Rd, Scio, NY 14880');
   assert.equal(parts.street, '4105 Irons Rd');

@@ -74,6 +74,43 @@ function newId(): string {
   return `ext_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
+const NAME_NOISE = new Set([
+  'inc', 'incorporated', 'llc', 'l.l.c', 'llp', 'ltd', 'limited', 'co', 'company', 'corp', 'corporation',
+  'group', 'holdings', 'enterprises', 'enterprise', 'services', 'service', 'the', 'and', 'of', 'dba',
+  // Domain furniture, so that "stripe.com" and "Stripe" are not read as a mismatch.
+  'www', 'com', 'net', 'org', 'io', 'gov', 'edu', 'biz', 'info',
+]);
+
+function nameTokens(value: string): Set<string> {
+  return new Set(
+    value
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, ' ')
+      .split(/\s+/)
+      .filter((token) => token.length > 1 && !NAME_NOISE.has(token)),
+  );
+}
+
+/**
+ * How much two business names overlap, ignoring legal suffixes and punctuation.
+ *
+ * Returns null when there is nothing meaningful to compare — no requested name,
+ * or no resolved name — because an absent comparison must not be scored as a
+ * disagreement.
+ */
+function compareBusinessNames(requested: string | undefined, resolved: string | undefined): number | null {
+  if (!requested || !resolved) return null;
+  const left = nameTokens(requested);
+  const right = nameTokens(resolved);
+  if (left.size === 0 || right.size === 0) return null;
+
+  let shared = 0;
+  for (const token of left) if (right.has(token)) shared += 1;
+  // Measured against the requested name: the resolved name is allowed to carry
+  // extra words, but it must contain most of what was asked for.
+  return shared / left.size;
+}
+
 function locationString(city?: string, state?: string, zip?: string): string | undefined {
   const parts = [city, state, zip].filter(Boolean);
   return parts.length > 0 ? parts.join(' ') : undefined;
@@ -193,7 +230,13 @@ export async function extract(rawQuery: string, options: ExtractionOptions = {})
     });
     website = '';
   }
-  let companyName = context.companyName ?? query;
+  // When the input is a bare URL or domain there is no business name in it yet.
+  // Carrying the URL forward as the company name would present the address bar
+  // as a finding, so the name stays empty until a source supplies a real one.
+  const queryIsAddressOnly = queryType === 'url_direct' || queryType === 'domain_direct';
+  let companyName = context.companyName ?? (queryIsAddressOnly ? '' : query);
+  /** True once a source, rather than the input, has supplied the business name. */
+  let companyNameFromSource = false;
   let description: string | undefined;
   let industry: string | undefined;
   let blockedAnywhere = false;
@@ -325,7 +368,10 @@ export async function extract(rawQuery: string, options: ExtractionOptions = {})
         const maxPages = deepScan ? Number(process.env.EXTRACTOR_DEEP_PAGES ?? 7) : Number(process.env.EXTRACTOR_QUICK_PAGES ?? 3);
         const facts = await crawlOfficialSite(website, ledger, trace, maxPages);
         consulted.push(...facts.consulted);
-        if (facts.companyName && (!context.companyName || facts.companyName.length > 2)) companyName = facts.companyName;
+        if (facts.companyName && (!context.companyName || facts.companyName.length > 2)) {
+          companyName = facts.companyName;
+          companyNameFromSource = true;
+        }
         if (facts.description && !description) description = facts.description;
         if (facts.industry && !industry) industry = facts.industry;
         for (const p of facts.productivePatterns) sitePatternsProductive.add(p);
@@ -538,6 +584,41 @@ export async function extract(rawQuery: string, options: ExtractionOptions = {})
     confidence = Math.max(0, confidence - 6);
     basis.push('At least one source was blocked or challenged, so the picture may be incomplete (-6).');
   }
+
+  // The most damaging failure is not finding nothing — it is confidently
+  // returning the wrong business. When the input named a company and the
+  // resolved site belongs to something else, that gap is stated and paid for.
+  // Comparing the input against itself proves nothing, so the check only runs
+  // once a source has named the business independently.
+  // A bare URL or domain requests no particular name, so there is nothing to
+  // disagree with and the check is skipped rather than scored.
+  const nameAgreement =
+    companyNameFromSource && !queryIsAddressOnly ? compareBusinessNames(context.companyName, companyName) : null;
+  if (nameAgreement !== null && nameAgreement < 0.5) {
+    confidence = Math.max(0, confidence - 25);
+    basis.push(
+      `The resolved business is named "${companyName}", which does not match the requested "${context.companyName}". This is probably a different entity (-25).`,
+    );
+    trace.warn(
+      'validation',
+      `Name check: the request asked for "${context.companyName}" but the resolved source belongs to "${companyName}". Treat this result as unconfirmed.`,
+      { detail: { requested: context.companyName ?? '', resolved: companyName, agreement: Number(nameAgreement.toFixed(2)) } },
+    );
+  } else if (nameAgreement !== null && nameAgreement < 0.8) {
+    confidence = Math.max(0, confidence - 15);
+    basis.push(
+      `The resolved business is named "${companyName}", which only partly matches the requested "${context.companyName}" (-15).`,
+    );
+    trace.warn(
+      'validation',
+      `Name check: "${companyName}" only partly matches the requested "${context.companyName}". The contact details below may belong to a related but different organisation.`,
+      { detail: { requested: context.companyName ?? '', resolved: companyName, agreement: Number(nameAgreement.toFixed(2)) } },
+    );
+  } else if (nameAgreement !== null) {
+    confidence += 6;
+    basis.push('The resolved business name matches the one that was requested (+6).');
+  }
+
   confidence = Math.max(0, Math.min(100, Math.round(confidence)));
 
   // Conflicting evidence is a real state, not a rounding of low confidence.
@@ -545,9 +626,11 @@ export async function extract(rawQuery: string, options: ExtractionOptions = {})
   const conflictingOwner = resolved.rejected.some((r) => r.field === 'owner' && r.reason.includes('already supported'));
 
   let entityMatchStatus: EntityMatchStatus;
-  if (conflictingOwner || (conflictingAddresses && resolved.addresses.length > 2)) {
+  if (nameAgreement !== null && nameAgreement < 0.5) {
     entityMatchStatus = 'CONFLICTING_EVIDENCE';
-  } else if (confidence >= 70 && website && (resolved.phones.length > 0 || resolved.emails.length > 0)) {
+  } else if (conflictingOwner || (conflictingAddresses && resolved.addresses.length > 2)) {
+    entityMatchStatus = 'CONFLICTING_EVIDENCE';
+  } else if (confidence >= 70 && website && (resolved.phones.length > 0 || resolved.emails.length > 0) && (nameAgreement === null || nameAgreement >= 0.8)) {
     entityMatchStatus = 'VERIFIED_MATCH';
   } else if (confidence >= 40) {
     entityMatchStatus = 'PROBABLE_MATCH';
@@ -616,7 +699,7 @@ export async function extract(rawQuery: string, options: ExtractionOptions = {})
     query,
     queryType,
     plan,
-    companyName: companyName || query,
+    companyName: companyName || (queryIsAddressOnly ? undefined : query),
     website,
     industry,
     description,

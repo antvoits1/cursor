@@ -117,7 +117,7 @@ export function singleResultRow(result: ExtractionResult): Record<string, string
     Status: result.status,
     Confidence: result.confidence,
     'Entity Match': result.entityMatchStatus,
-    Company: result.companyName,
+    Company: result.companyName ?? '',
     Website: result.website,
     Owner: result.owner?.name ?? '',
     Phone: primaryPhone?.formatted ?? '',
@@ -216,7 +216,7 @@ function enrichmentCells(row: BulkRow): Record<string, string | number> {
   const address = result.addresses[0];
 
   empty['Extractor Detail'] = result.failureReason ?? result.confidenceBasis[0] ?? '';
-  empty['Found Company'] = result.companyName;
+  empty['Found Company'] = result.companyName ?? '';
   empty['Found Website'] = result.website;
   empty['Found Owner'] = result.owner?.name ?? '';
   empty['Found Phone'] = phone?.formatted ?? '';

@@ -255,7 +255,8 @@ export interface ExtractionResult {
   queryType: QueryType;
   plan: QueryPlan;
 
-  companyName: string;
+  /** Absent when the input was a bare address and no source supplied a name. */
+  companyName?: string;
   website: string;
   industry?: string;
   description?: string;

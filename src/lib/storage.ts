@@ -111,7 +111,7 @@ export function toHistoryEntry(result: ExtractionResult): HistoryEntry {
     status: result.status,
     confidence: result.confidence,
     durationMs: result.durationMs,
-    companyName: result.companyName,
+    companyName: result.companyName ?? result.query,
     website: result.website,
     phoneCount: result.phones.length,
     emailCount: result.emails.length,

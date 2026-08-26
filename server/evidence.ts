@@ -89,6 +89,58 @@ function classifyEmailKind(email: string): EmailKind {
  * confidence, and anything that fails validation is recorded with the reason it
  * was refused rather than silently dropped.
  */
+const STREET_SUFFIXES =
+  'st|street|ave|avenue|rd|road|blvd|boulevard|dr|drive|ln|lane|way|ct|court|pl|place|ter|terrace|cir|circle|pkwy|parkway|hwy|highway|sq|square|trl|trail|loop|row|walk|alley|plaza';
+
+/**
+ * A street-address regex run over page text will happily match prose that
+ * merely contains a number and a word that looks like a street suffix — "000
+ * More than RD", "259 W Santa Clara St in". Publishing those as addresses is
+ * worse than publishing nothing, so a candidate has to look like an address all
+ * the way through, not just at the start.
+ *
+ * Returns the reason the candidate is not an address, or null when it is fine.
+ */
+function addressShapeProblem(cleaned: string): string | null {
+  const leadingNumber = cleaned.match(/^(\d+)/);
+  if (leadingNumber && /^0+$/.test(leadingNumber[1])) {
+    return 'The street number is all zeroes, so this is text that happens to start with digits rather than an address.';
+  }
+
+  const suffix = new RegExp(`\\b(?:${STREET_SUFFIXES})\\b\\.?`, 'i');
+  const suffixMatch = cleaned.match(suffix);
+  const hasZip = /\b\d{5}(?:-\d{4})?\b/.test(cleaned);
+  if (!suffixMatch && !hasZip) {
+    return 'The candidate carries neither a street type nor a postal code, so it cannot be confirmed as an address.';
+  }
+
+  // Anything after the street suffix has to be address material. A city or
+  // region following a street type is separated by a comma in every real
+  // rendering; without one, the trailing words are either prose that ran on
+  // ("Santa Clara St in") or a truncated capture ("Erie Street Ma").
+  if (suffixMatch?.index !== undefined) {
+    const rawTail = cleaned.slice(suffixMatch.index + suffixMatch[0].length);
+    const tail = rawTail.replace(/^[\s.,]+/, '');
+    if (tail) {
+      const separatedByComma = /^\s*,/.test(rawTail);
+      const isUnit = /^(?:#|ste|suite|apt|unit|bldg|building|floor|fl|rm|room)\b/i.test(tail);
+      const endsWithStateAndZip = /\b[A-Z]{2}\s+\d{5}(?:-\d{4})?$/.test(tail);
+      if (!separatedByComma && !isUnit && !endsWithStateAndZip) {
+        return `The text after the street type ("${tail.slice(0, 24)}") is neither a unit nor a comma-separated locality, so this is a fragment rather than an address.`;
+      }
+    }
+  }
+
+  // A real address is mostly proper nouns and numbers. A run of lowercase
+  // function words means a sentence was captured.
+  const functionWords = (cleaned.match(/\b(?:more|than|the|and|for|with|from|that|this|these|those|about|please|click|here|our|your)\b/gi) ?? []).length;
+  if (functionWords >= 2) {
+    return 'The candidate reads as a sentence rather than a postal address.';
+  }
+
+  return null;
+}
+
 export class EvidenceLedger {
   private readonly phones = new Map<string, Candidate<ReturnType<typeof classifyPhoneNumber>>>();
   private readonly emails = new Map<string, Candidate<string>>();
@@ -174,6 +226,11 @@ export class EvidenceLedger {
     }
     if (!/\d/.test(cleaned)) {
       this.reject('address', cleaned.slice(0, 60), 'The candidate has no street number or postal code.', evidence.url);
+      return 'rejected';
+    }
+    const shapeProblem = addressShapeProblem(cleaned);
+    if (shapeProblem) {
+      this.reject('address', cleaned.slice(0, 60), shapeProblem, evidence.url);
       return 'rejected';
     }
     // Normalise for dedupe: case, punctuation and common abbreviations.
