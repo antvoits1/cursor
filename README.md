@@ -1,5 +1,7 @@
 # Extractor
 
+[Deploy the full backend to Render](https://render.com/deploy?repo=https://github.com/antvoits1/cursor/tree/cursor/cool-white-dashboard-fd45)
+
 The browser interface is React/Vite. Extraction planning, evidence and exports
 run in the Node API, which delegates difficult page retrieval to a persistent
 Python worker:
