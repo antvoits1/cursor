@@ -284,6 +284,9 @@ async function runExtraction(rawQuery: string, options: ExtractionOptions = {}):
   const people: PersonRecord[] = [];
   const assistant = beginUsage();
 
+  /** Deep links a source pointed at, read before anything found by crawling. */
+  const seedPages = new Set<string>();
+
   /**
    * Adopts a website proposed by a source, or refuses it and says why.
    *
@@ -309,7 +312,23 @@ async function runExtraction(rawQuery: string, options: ExtractionOptions = {}):
       );
       return false;
     }
-    website = normalised;
+
+    /*
+     * A search engine usually returns the page that matched, not the front
+     * door: "Premier Hr" resolved to premier-hr.net/contact. Treating that as
+     * the site meant the crawl started on the contact page, took its title
+     * ("Contact") as the business name, and then discovered subpages relative
+     * to it. The origin becomes the site; the page that matched is kept and
+     * read first, since a page a search engine matched on contact terms is
+     * usually the most valuable one there.
+     */
+    try {
+      const parsed = new URL(normalised);
+      website = `${parsed.protocol}//${parsed.hostname}/`;
+      if (parsed.pathname !== '/' && parsed.pathname !== '') seedPages.add(normalised);
+    } catch {
+      website = normalised;
+    }
     return true;
   };
   let description: string | undefined;
@@ -492,7 +511,7 @@ async function runExtraction(rawQuery: string, options: ExtractionOptions = {}):
         }
 
         const maxPages = deepScan ? Number(process.env.EXTRACTOR_DEEP_PAGES ?? 7) : Number(process.env.EXTRACTOR_QUICK_PAGES ?? 3);
-        const facts = await crawlOfficialSite(website, ledger, trace, maxPages);
+        const facts = await crawlOfficialSite(website, ledger, trace, maxPages, [...seedPages]);
         consulted.push(...facts.consulted);
         if (facts.companyName && (!context.companyName || facts.companyName.length > 2)) {
           companyName = facts.companyName;

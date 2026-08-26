@@ -5,6 +5,7 @@ import { EvidenceLedger } from '../server/evidence.js';
 import { areaCodeCoverage, classifyPhoneNumber } from '../server/phoneClassifier.js';
 import { detectQueryType, inferContext, planQuery, QUERY_TYPE_LABELS } from '../server/queryPlanner.js';
 import { pickOfficialSiteFromSearch } from '../server/sources/publicDirectories.js';
+import { __testing as __officialSite } from '../server/sources/officialSite.js';
 import { parseAddressParts } from '../server/evidence.js';
 import type { Evidence } from '../src/types.js';
 import type { SearchHit } from '../server/sources/webSearch.js';
@@ -408,4 +409,36 @@ test('every query type has a label for the interface', () => {
 test('a protected identifier in a typed query is redacted before planning', () => {
   const plan = planQuery('Northwind Traders 078-64-1091');
   assert.equal(JSON.stringify(plan).includes('078-64-1091'), false);
+});
+
+/*
+ * A search engine returns the page that matched, which is rarely the front
+ * door. The crawler has to treat the origin as the site and the matched page
+ * as the first thing worth reading, or a run resolves the business name to
+ * "Contact" and never opens the real contact page.
+ */
+test('the same page reached by two links is only fetched once', () => {
+  const targets = [
+    { url: 'https://example.com/about', label: 'the About page', weight: 8 },
+    { url: 'https://example.com/about/', label: 'the About page', weight: 8 },
+    { url: 'https://example.com/contact', label: 'the Contact page', weight: 10 },
+  ];
+
+  const kept = __officialSite.dedupeTargets(targets);
+  assert.equal(kept.length, 2, 'a duplicate link must not consume a second fetch');
+  assert.equal(kept[0].label, 'the Contact page', 'the contact page keeps precedence');
+});
+
+test('a header and footer copy of the about page cannot crowd out the contact page', () => {
+  const targets = [
+    { url: 'https://example.com/about-us', label: 'the About page', weight: 8 },
+    { url: 'https://example.com/company/about', label: 'the About page', weight: 8 },
+    { url: 'https://example.com/contact-us', label: 'the Contact page', weight: 10 },
+  ];
+
+  const kept = __officialSite.dedupeTargets(targets).slice(0, 2);
+  assert.ok(
+    kept.some((target) => target.label === 'the Contact page'),
+    'two renderings of one page must not take both crawl slots',
+  );
 });

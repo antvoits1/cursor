@@ -302,6 +302,29 @@ function discoverSubpages($: CheerioAPI, baseUrl: string, maxPages: number): Cra
 }
 
 /**
+ * Keeps the best target per URL and per label.
+ *
+ * A navigation bar repeats the same link in a header, a footer and a mobile
+ * menu under slightly different paths, which produced runs that spent both of
+ * their subpage fetches on two versions of the about page while never opening
+ * the contact page.
+ */
+function dedupeTargets(targets: CrawlTarget[]): CrawlTarget[] {
+  const byUrl = new Set<string>();
+  const byLabel = new Set<string>();
+  const kept: CrawlTarget[] = [];
+
+  for (const target of [...targets].sort((a, b) => b.weight - a.weight)) {
+    const url = target.url.replace(/\/+$/, '');
+    if (byUrl.has(url) || byLabel.has(target.label)) continue;
+    byUrl.add(url);
+    byLabel.add(target.label);
+    kept.push(target);
+  }
+  return kept;
+}
+
+/**
  * Crawls the official website: the homepage first, then the highest-value
  * contact-bearing subpages it links to.
  */
@@ -310,6 +333,12 @@ export async function crawlOfficialSite(
   ledger: EvidenceLedger,
   trace: RouteTrace,
   maxPages: number,
+  /**
+   * Pages the caller already knows are worth reading, such as the contact page
+   * a search engine returned instead of the homepage. Read before anything
+   * discovered by following links.
+   */
+  seedPages: readonly string[] = [],
 ): Promise<SiteFacts> {
   const consulted: ConsultedSource[] = [];
   const productive = new Set<string>();
@@ -362,7 +391,17 @@ export async function crawlOfficialSite(
   }
 
   const $home = cheerio.load(home.html);
-  const subpages = discoverSubpages($home, home.url, maxPages);
+  const seeded: CrawlTarget[] = seedPages
+    .map((url) => {
+      const hint = SUBPAGE_HINTS.find((h) => h.hint.test(url));
+      return { url, label: `the ${hint?.label ?? 'linked contact'} page`, weight: (hint?.weight ?? 9) + 20 };
+    })
+    .filter((target) => target.url !== home.url);
+
+  const subpages = dedupeTargets([...seeded, ...discoverSubpages($home, home.url, maxPages)]).slice(
+    0,
+    Math.max(0, maxPages - 1),
+  );
   if (subpages.length === 0) {
     trace.info('parse', 'The homepage does not link to a separate contact, about, or team page.', { url: home.url });
   } else {
@@ -421,3 +460,5 @@ export async function crawlOfficialSite(
 }
 
 export { harvestPage };
+
+export const __testing = { dedupeTargets };
