@@ -13,7 +13,10 @@
     "build": "vite build",
     "lint": "tsc --noEmit",
     "test": "tsx --test tests/*.test.ts",
-    "verify": "npm run lint && npm run test && npm run build"
+    "verify": "npm run lint && npm run test && npm run build",
+    "cf-browser:install": "npm --prefix cloudflare-browser ci",
+    "cf-browser:check": "npm --prefix cloudflare-browser run check",
+    "cf-browser:deploy": "npm --prefix cloudflare-browser run deploy"
   },
   "dependencies": {
     "cheerio": "^1.0.0",

@@ -37,6 +37,26 @@ Worker plus browser binding.
 
 The authenticated Worker lives in `cloudflare-browser/`.
 
+If Cloudflare is connected to this GitHub repo, use these exact build settings:
+
+- Root directory: leave blank
+- Production branch: `cursor/cool-white-dashboard-fd45`
+- Build command: `npm run cf-browser:install && npm run cf-browser:check`
+- Deploy command: `npm run cf-browser:deploy`
+
+Do not retry an old failed build from `main`. Create a new deployment after
+saving those settings. After deploy succeeds, open
+`https://cursor.antonvoits1.workers.dev/health` and confirm it returns
+`{"ok":true,"service":"extractor-browser-renderer"}`.
+
+Then add a Worker secret named `BROWSER_SERVICE_TOKEN` (Settings → Variables
+and secrets), and set these on the Render backend:
+
+- `CLOUDFLARE_BROWSER_URL=https://cursor.antonvoits1.workers.dev`
+- `CLOUDFLARE_BROWSER_TOKEN=<same secret value>`
+
+CLI alternative:
+
 ```bash
 cd cloudflare-browser
 npm ci
@@ -44,12 +64,6 @@ npx wrangler login
 npx wrangler secret put BROWSER_SERVICE_TOKEN
 npm run deploy
 ```
-
-Generate a long random value for `BROWSER_SERVICE_TOKEN`. Then add these two
-variables to the Render backend:
-
-- `CLOUDFLARE_BROWSER_URL`: the deployed `workers.dev` URL.
-- `CLOUDFLARE_BROWSER_TOKEN`: the same random secret.
 
 Cloudflare states that Browser Run traffic is identifiable as automated
 traffic. This tier renders JavaScript; it does not promise to defeat CAPTCHAs
