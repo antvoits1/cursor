@@ -81,6 +81,8 @@ export interface ExtractRequest {
   query: string;
   deepScan?: boolean;
   budgetMs?: number;
+  peopleSearch?: boolean;
+  useAssistant?: boolean;
   rowId?: string;
   preservedFields?: Record<string, string | number>;
   signal?: AbortSignal;

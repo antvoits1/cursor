@@ -39,6 +39,15 @@ export interface Settings {
   saveHistory: boolean;
   /** Show the technical detail rows inside the live route. */
   verboseRoute: boolean;
+  /**
+   * Consult people-search sources for every number, email and address on
+   * record for a person. Off by default: these sites prohibit automated access
+   * in their terms, so turning it on is a deliberate choice, and they refuse
+   * datacenter addresses, so most runs from a cloud host will report a block.
+   */
+  peopleSearch: boolean;
+  /** Let the assistant interpret open-ended input and read awkward pages. */
+  useAssistant: boolean;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -47,9 +56,11 @@ export const DEFAULT_SETTINGS: Settings = {
   bulkConcurrency: 2,
   saveHistory: true,
   verboseRoute: false,
+  peopleSearch: false,
+  useAssistant: true,
 };
 
-export const BUDGET_CHOICES = [20_000, 30_000, 45_000, 60_000, 90_000] as const;
+export const BUDGET_CHOICES = [8_000, 12_000, 20_000, 30_000, 45_000, 60_000, 90_000] as const;
 export const CONCURRENCY_CHOICES = [1, 2, 3, 4, 6] as const;
 
 function storageAvailable(): boolean {
@@ -135,6 +146,8 @@ export function loadSettings(): Settings {
       : DEFAULT_SETTINGS.bulkConcurrency,
     saveHistory: typeof candidate.saveHistory === 'boolean' ? candidate.saveHistory : DEFAULT_SETTINGS.saveHistory,
     verboseRoute: typeof candidate.verboseRoute === 'boolean' ? candidate.verboseRoute : DEFAULT_SETTINGS.verboseRoute,
+    peopleSearch: typeof candidate.peopleSearch === 'boolean' ? candidate.peopleSearch : DEFAULT_SETTINGS.peopleSearch,
+    useAssistant: typeof candidate.useAssistant === 'boolean' ? candidate.useAssistant : DEFAULT_SETTINGS.useAssistant,
   };
 }
 

@@ -40,7 +40,15 @@ import type {
  * Nothing here is invented. If a page cannot be read, the run says so.
  */
 
-export function peopleSearchEnabled(): boolean {
+/**
+ * Whether these sources may be consulted.
+ *
+ * The operator's per-run choice decides it. The environment variable only sets
+ * the default for callers that do not express a preference, so a deployment can
+ * keep them off entirely.
+ */
+export function peopleSearchEnabled(requested?: boolean): boolean {
+  if (typeof requested === 'boolean') return requested;
   return process.env.EXTRACTOR_ENABLE_PEOPLE_SEARCH === '1';
 }
 
@@ -397,6 +405,8 @@ export interface PeopleSearchRequest {
   /** Numbers already known for this lead, used to confirm the right person. */
   knownPhones?: string[];
   maxProfilesPerSite?: number;
+  /** The operator's choice for this run. Falls back to the deployment default. */
+  enabled?: boolean;
   trace: RouteTrace;
 }
 
@@ -413,7 +423,7 @@ export async function lookupPeople(request: PeopleSearchRequest): Promise<People
   let anyReadable = false;
   let anyBlocked = false;
 
-  if (!peopleSearchEnabled()) {
+  if (!peopleSearchEnabled(request.enabled)) {
     trace.skip(
       'discovery',
       'People-search sources are switched off. Turn them on in Settings to look up every number, email and address on record for a person.',

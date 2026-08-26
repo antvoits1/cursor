@@ -124,6 +124,8 @@ export function SingleExtraction({
           query: trimmed,
           deepScan: settings.deepScan,
           budgetMs: settings.runBudgetMs,
+          peopleSearch: settings.peopleSearch,
+          useAssistant: settings.useAssistant,
           signal: controller.signal,
           onStep: (step) => setSteps((current) => [...current, step]),
         });

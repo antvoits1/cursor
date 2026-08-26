@@ -98,6 +98,8 @@ export function createApiRouter(host: ApiHost): express.Router {
     try {
       const result = await extract(query, {
         deepScan: body.deepScan !== false,
+        peopleSearch: body.peopleSearch === true,
+        useAssistant: body.useAssistant !== false,
         budgetMs: typeof body.budgetMs === 'number' ? body.budgetMs : undefined,
         rowId: asString(body.rowId) || undefined,
         preservedFields,

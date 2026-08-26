@@ -81,6 +81,18 @@ export function SettingsView({
             label="Show technical detail in the route"
             help="Expands each route step with the underlying status codes, tiers and counts."
           />
+          <Toggle
+            checked={settings.peopleSearch}
+            onChange={(peopleSearch) => onChange({ ...settings, peopleSearch })}
+            label="Consult people-search sources"
+            help="Pulls every number a person has with the source's own wireless or landline label, plus their emails, current and previous addresses, and relatives. These sites prohibit automated access in their terms and refuse datacenter addresses, so from a cloud host most runs will report a block rather than a record."
+          />
+          <Toggle
+            checked={settings.useAssistant}
+            onChange={(useAssistant) => onChange({ ...settings, useAssistant })}
+            label="Use the assistant for open-ended input"
+            help="Lets a language model work out what a bare query like “milk” is asking for and read contacts off pages the pattern rules struggle with. It is never asked for a fact: every value it returns is checked back against the fetched page and dropped if it is not there. Needs a Google AI Studio or Grok key on the server; without one this has no effect."
+          />
           <Field
             label="Time budget per run"
             htmlFor="setting-budget"

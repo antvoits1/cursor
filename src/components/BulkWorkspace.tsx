@@ -172,6 +172,8 @@ export function BulkWorkspace({
           query: row.query,
           deepScan: settings.deepScan,
           budgetMs: settings.runBudgetMs,
+          peopleSearch: settings.peopleSearch,
+          useAssistant: settings.useAssistant,
           rowId,
           preservedFields: row.original,
           signal: controller.signal,

@@ -69,6 +69,10 @@ export interface ExtractionOptions {
   deepScan?: boolean;
   /** Hard wall-clock budget. The run returns what it has when this is reached. */
   budgetMs?: number;
+  /** Consult people-search sources for full person records. */
+  peopleSearch?: boolean;
+  /** Allow the assistant layer on this run. */
+  useAssistant?: boolean;
   rowId?: string;
   preservedFields?: Record<string, string | number>;
   /** Receives each route step as it happens so the API can stream the live route. */
@@ -316,7 +320,7 @@ export async function extract(rawQuery: string, options: ExtractionOptions = {})
   let interpretation: Awaited<ReturnType<typeof interpretQuery>> = null;
   const inputNamesNothingSpecific =
     !queryIsAddressOnly && queryType !== 'phone_first' && queryType !== 'email_first' && queryType !== 'facebook_page';
-  if (inputNamesNothingSpecific && assistantAvailable()) {
+  if (inputNamesNothingSpecific && options.useAssistant !== false && assistantAvailable()) {
     trace.info('classification', 'Asking the assistant what this request is actually looking for...', {});
     interpretation = await interpretQuery(query, assistant);
     if (interpretation) {
@@ -570,6 +574,7 @@ export async function extract(rawQuery: string, options: ExtractionOptions = {})
         const lookup = await lookupPeople({
           personName: person,
           location,
+          enabled: options.peopleSearch,
           knownPhones: Object.values(options.preservedFields ?? {})
             .map(String)
             .filter((value) => value.replace(/\D/g, '').length >= 10),
