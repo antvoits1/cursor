@@ -60,6 +60,8 @@ export function normaliseDomain(domainOrUrl: string): string | null {
  * whether an email address could plausibly be delivered — it never invents an
  * address and never marks an unverified address as verified.
  */
+const DNS_TIMEOUT_MS = Number(process.env.EXTRACTOR_DNS_TIMEOUT_MS ?? 3500);
+
 export async function inspectDomainDns(domainOrUrl: string): Promise<DnsIntelligence | null> {
   const domain = normaliseDomain(domainOrUrl);
   if (!domain) return null;
@@ -74,11 +76,27 @@ export async function inspectDomainDns(domainOrUrl: string): Promise<DnsIntellig
     hasDmarc: false,
   };
 
+  /*
+   * A resolver asked about a domain whose nameservers do not answer will retry
+   * on its own schedule, which is measured in seconds and pays no attention to
+   * how long the run has left. Four of those in parallel added most of a
+   * ten-second overrun to runs that were otherwise inside their budget, so
+   * each lookup is given a deadline of its own.
+   */
+  const bounded = <T>(lookup: Promise<T>): Promise<T> =>
+    Promise.race([
+      lookup,
+      new Promise<T>((_, reject) => {
+        const timer = setTimeout(() => reject(new Error('The DNS lookup did not answer in time.')), DNS_TIMEOUT_MS);
+        timer.unref();
+      }),
+    ]);
+
   const [aResult, mxResult, txtResult, dmarcResult] = await Promise.allSettled([
-    dns.resolve4(domain),
-    dns.resolveMx(domain),
-    dns.resolveTxt(domain),
-    dns.resolveTxt(`_dmarc.${domain}`),
+    bounded(dns.resolve4(domain)),
+    bounded(dns.resolveMx(domain)),
+    bounded(dns.resolveTxt(domain)),
+    bounded(dns.resolveTxt(`_dmarc.${domain}`)),
   ]);
 
   if (aResult.status === 'fulfilled' && aResult.value.length > 0) {
