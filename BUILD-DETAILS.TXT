@@ -1,0 +1,199 @@
+================================================================================
+EXTRACTOR — REACT / LAYERED
+Build 20260825-03
+================================================================================
+
+WHAT THIS IS
+--------------------------------------------------------------------------------
+A contact-extraction tool for sales teams. You give it a business name, a
+person, a domain, a phone number, or a plain-language request, and it works
+through public sources to find phone numbers, email addresses, postal
+addresses and social profiles — showing you every source it consulted,
+including the ones that refused to answer.
+
+Two commitments shape the whole build:
+
+  1. Nothing is invented. Every value carries the page it came from. A source
+     that could not be read is reported as blocked, never as an absent value,
+     because "we could not look" and "there is nothing there" are different
+     answers and only one of them means you should stop looking.
+
+  2. A check that could not run is never reported as a pass. Mailbox
+     verification needs outbound port 25, which most hosts block; where it
+     cannot run the address is marked unverifiable rather than deliverable.
+
+
+WHAT CHANGED IN THIS BUILD
+--------------------------------------------------------------------------------
+
+Mobile or landline, for every number
+  In North America this cannot be answered from the number alone. Local number
+  portability has moved tens of millions of numbers between carriers, so the
+  block a number was originally issued from proves very little.
+
+  The verdict is therefore assembled from every signal available, each weighted
+  by how much it actually proves, and reported together with those signals:
+
+    - a type label published by a records source          (strongest)
+    - the carrier, where its name settles the question
+    - how the page worded it: "Mobile:", "Cell:", "Fax:"
+    - numbering-plan metadata                              (weakest in the US)
+
+  When signals disagree, the confidence drops and the disagreement is shown
+  rather than hidden. When nothing is available the type is left unknown
+  instead of guessed.
+
+Numbers ranked by whether they will reach a person
+  A separate score from confidence. A disconnected landline published on three
+  directories is a real number that reaches nobody; a mobile on a current
+  record probably reaches someone. Mobiles, corroboration and recency raise it;
+  fax lines, toll-free queues and numbers a source calls "previous" lower it.
+  The best bet is marked.
+
+People-search records
+  Whole person records from TruePeopleSearch, FastPeopleSearch and ThatsThem:
+  every number with the source's own wireless/landline label, email addresses,
+  current and previous addresses, and relatives. A relative sharing a surname
+  is labelled "household", not asserted as a spouse, unless the page says so.
+
+  Records are kept per source rather than merged, because two sources
+  disagreeing about someone's current address is something you need to see.
+
+  OFF BY DEFAULT. These sites prohibit automated access in their terms, so
+  turning it on is a deliberate choice. They also refuse datacenter addresses,
+  so from a cloud host most runs will report a block. See PROXY below.
+
+Email verification
+  Syntax, MX, SPF, DMARC, disposable-domain and role-account detection run
+  anywhere. Catch-all detection and per-mailbox SMTP probing need port 25 and
+  are off unless EXTRACTOR_ENABLE_SMTP_PROBE=1 on a host that allows it.
+
+Assistant layer for open-ended input
+  Typing "milk" no longer dead-ends. Where a Google AI Studio or Grok key is
+  configured, the assistant works out what the request is asking for and turns
+  it into searches worth running, and can read contacts off pages the pattern
+  rules struggle with.
+
+  It is never asked for a fact. It only ever sees text that was actually
+  fetched, and every value it returns is checked back against that text before
+  being accepted — so a hallucinated phone number is dropped, not published.
+  With no key configured it has no effect and the engine runs as before.
+
+Bulk output that stays readable
+  A run can turn up a dozen numbers for one lead. Your sheet keeps the best
+  value per field plus counts; four further sheets in the same workbook carry
+  every value found, one per line, with its source:
+
+    Leads             your original columns, enriched
+    Phone Numbers     every number, its type, the reasoning, its reach score
+    Email Addresses   every address with each verification check spelled out
+    People Records    person records, one row per source
+    Source Audit      every source consulted, read or blocked, and why
+
+Speed
+  Discovery and the site crawl now issue their fetches concurrently instead of
+  in sequence, so a run's wall time is its slowest source rather than the sum
+  of all of them. A standard search finishes in a few seconds.
+
+  The time budget is now enforced on the fetches themselves, not just between
+  routes. A run asked for 30 seconds finishes in 30.
+
+Visual system
+  Rebuilt as a dark, layered interface. Elevation is expressed in both
+  luminance and a hairline border; one iris accent carries links, primary
+  actions and focus rings; data values sit on a monospace stack with tabular
+  figures so numbers line up column to column.
+
+
+TEN-LEAD AUDIT
+--------------------------------------------------------------------------------
+Extraction-Audit-10-Leads.xlsx, in this archive, records a live run of the
+first ten leads from the supplied sheet. Every lead was run against real
+sources. Sheets:
+
+  How This Was Run        settings, totals, and what was excluded as sensitive
+  Lead Summary            one row per lead with counts and timings
+  What Was Found          every accepted value, its source URL, and the
+                          reasoning behind its line type or mail verdict
+  Every Source Consulted  every source, whether it was read or blocked, and why
+  Values Refused          what was thrown away and the reason
+
+The refused sheet is the honest counterpart to the findings. Read them
+together.
+
+DOB and SSN columns in the supplied sheet were detected and dropped at parse
+time. No protected identifier reaches the engine, the exports, or the audit.
+
+
+THE ONE THING THAT MOST LIMITS RESULTS
+--------------------------------------------------------------------------------
+Not the extraction logic — the IP address.
+
+In the audit above, 17 of 47 sources were blocked. Every one was a
+Cloudflare-protected directory: Bizapedia, YellowPages, Chamber of Commerce,
+BBB, Dun & Bradstreet. They do not block scrapers; they block datacenter
+address ranges, and every cloud host is one.
+
+A residential proxy (roughly $2–5/GB) is worth more here than any paid API. It
+is what makes those directories, and the people-search sources, readable at
+all. Set EXTRACTOR_PROXY_URL and they start working immediately; the code is
+already in place and reports honestly until then.
+
+Second most important: curl_cffi (see backend/requirements.txt). It reproduces
+a browser's TLS fingerprint, and without it every search engine challenges the
+request. Installing it alone took the ten-lead sample from 4 accepted values
+to 32.
+
+
+CONFIGURATION
+--------------------------------------------------------------------------------
+All optional. Every one degrades honestly when absent.
+
+  EXTRACTOR_PROXY_URL              residential proxy; the single biggest lever
+  GEMINI_API_KEY                   Google AI Studio, free tier — assistant
+  XAI_API_KEY                      Grok, free tier — assistant fallback
+  BRAVE_SEARCH_API_KEY             Brave Search API, free tier; an API rather
+                                   than a scraped page, so it expects
+                                   datacenter traffic
+  EXTRACTOR_ENABLE_PEOPLE_SEARCH   default for people-search sources
+  EXTRACTOR_ENABLE_SMTP_PROBE      mailbox-level mail checks; needs port 25
+  EXTRACTOR_RUN_BUDGET_MS          wall-clock budget per run
+  EXTRACTOR_PYTHON                 path to the Python used for the worker
+
+
+RUNNING IT
+--------------------------------------------------------------------------------
+  npm install
+  pip install -r backend/requirements.txt      # strongly recommended
+  npm run dev                                  # http://localhost:5178
+
+  npm run verify                               # typecheck, tests, build
+  npm run build                                # production bundle into dist/
+
+  npx tsx scripts/audit-run.ts <sheet.xlsx> 10 ./out    # regenerate the audit
+
+
+DEPLOYMENT, HONESTLY
+--------------------------------------------------------------------------------
+The frontend and a Node serverless API deploy to Vercel and work there.
+
+The Python transport worker does not, and cannot: Vercel functions are
+short-lived containers with no room for a persistent browser process. On
+Vercel the engine runs with the built-in HTTP tier only, reports exactly which
+tiers are present on the Diagnostics tab, and will be challenged by more
+sources than a self-hosted install would be.
+
+For full capability, run it on a host where the Python worker and a proxy can
+live. The application is the same either way; it simply tells you which tiers
+it has.
+
+
+TESTS
+--------------------------------------------------------------------------------
+  128 tests, all passing.
+
+Covering sensitive-value exclusion, spreadsheet import and column detection,
+transport tiering and SSRF refusal, deobfuscation, evidence acceptance and
+rejection, entity matching, line-type resolution, people-search parsing, email
+verification, the assistant's grounding check, local learning, and the API
+contract.

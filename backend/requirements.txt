@@ -4,7 +4,16 @@
 # in its ready handshake and the application escalates only through the tiers
 # that actually exist on the host.
 #
-# After installing, fetch the browser runtimes:
+# Optional does not mean unimportant. curl_cffi in particular is the difference
+# between a working extractor and a useless one on any server. It reproduces a
+# real browser's TLS and HTTP/2 fingerprint, and without it every public search
+# engine answers a datacenter address with a bot challenge, which leaves
+# discovery with nothing to work from. Measured on a cloud host, installing it
+# alone took a ten-lead sample from 4 accepted values to 32.
+#
+#   pip install -r backend/requirements.txt
+#
+# After installing, fetch the browser runtimes for the escalation tiers:
 #   python -m patchright install chromium
 #   python -m camoufox fetch
 
