@@ -12,18 +12,26 @@ React on Vercel -> Node API on Render -> curl_cffi -> Patchright -> Camoufox
 
 ## Deploy the full backend on Render
 
-The repository includes a Render Blueprint (`render.yaml`) and Docker image
-that installs all three Python transport tiers and their browsers.
+The repository includes two deployment profiles:
+
+- `render.yaml` + `Dockerfile.render-free`: Render Free, with the persistent
+  Python worker and `curl_cffi`.
+- `Dockerfile`: a 2 GB+ host, with `curl_cffi`, Patchright and Camoufox.
 
 1. In Render, create a **Blueprint** from this GitHub repository and branch.
-2. Review the `Standard` instance. Browser escalation needs its 2 GB of RAM;
-   Render's Free and Starter instances provide only 512 MB and can be killed
-   when Chromium or Camoufox starts.
+2. Keep the Free instance selected. It sleeps after 15 minutes without traffic
+   and can take about a minute to wake. It intentionally excludes local
+   browsers because Chromium and Camoufox are not reliable in 512 MB.
 3. Wait for `/api/health` to pass, then copy the service URL.
 4. In the Vercel project, set `VITE_API_BASE_URL` to that Render URL for
    Production and redeploy.
-5. Open Diagnostics. `curl_cffi`, `patchright` and `camoufox` should all report
-   `available`.
+5. Open Diagnostics. `curl_cffi` should report `available`; Patchright and
+   Camoufox remain unavailable on the free profile.
+
+For free browser escalation, Cloudflare Browser Run can provide remote
+Chromium for up to 10 browser-minutes per day on Workers Free. It is a
+different integration from Patchright/Camoufox and requires a Cloudflare
+Worker plus browser binding.
 
 Optional backend variables:
 
@@ -42,10 +50,10 @@ screen.
 npm ci
 npm run verify
 
-docker build -t extractor-layered .
+docker build -f Dockerfile.render-free -t extractor-layered-free .
 docker run --rm -p 10000:10000 \
   -e EXTRACTOR_ALLOWED_ORIGINS=http://localhost:5173 \
-  extractor-layered
+  extractor-layered-free
 
 curl http://localhost:10000/api/health
 curl http://localhost:10000/api/diagnostics

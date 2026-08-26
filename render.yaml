@@ -3,8 +3,8 @@ services:
     name: extractor-layered-backend
     runtime: docker
     branch: cursor/cool-white-dashboard-fd45
-    plan: standard
-    dockerfilePath: ./Dockerfile
+    plan: free
+    dockerfilePath: ./Dockerfile.render-free
     healthCheckPath: /api/health
     autoDeployTrigger: commit
     envVars:
