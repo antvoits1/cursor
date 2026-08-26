@@ -124,6 +124,17 @@ test('a site that was read in the end is not presented as a wall', () => {
   assert.match(blocks[0].instead ?? '', /read after all/i);
 });
 
+test('a knock at the door is not reported as a way in', () => {
+  const blocks = summariseBlocks([
+    source({ url: 'https://www.jarboemotors.com/', reason: 'The server answered HTTP 403, which indicates a block or rate limit.' }),
+    source({ url: 'dns://jarboemotors.com', label: 'DNS records', kind: 'dns', ok: true, blocked: false }),
+  ]);
+
+  assert.equal(blocks[0].gotAround, false, 'a DNS answer is not the page');
+  assert.match(blocks[0].what, /refused/i);
+  assert.doesNotMatch(blocks[0].what, /asking too often|wait/i, 'a shut door is not a queue');
+});
+
 test('every kind of refusal has plain words for it', () => {
   const reasons = [
     'The server answered HTTP 429, which indicates a block or rate limit.',

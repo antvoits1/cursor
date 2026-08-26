@@ -38,8 +38,11 @@ const TRANSLATIONS: Translation[] = [
     match: /verify you are human|verification required|enable javascript and cookies/i,
     what: 'The site demanded proof that a person was asking before showing anything.',
   },
-  { match: /\b429\b|rate limit/i, what: 'The site said we were asking too often and told us to wait.' },
-  { match: /\b(401|403)\b/, what: 'The site refused the request outright.' },
+  // A status code is checked before the words around it, because the
+  // classifier writes "403, which indicates a block or rate limit" and reading
+  // that as a rate limit would tell someone to wait for a door that is shut.
+  { match: /\b(401|403)\b/, what: 'The site refused to let us in at all.' },
+  { match: /\b429\b|rate limit|too many requests/i, what: 'The site said we were asking too often and told us to wait.' },
   { match: /\b404\b/, what: 'The page is not there any more.' },
   { match: /\b(500|502|503|504)\b/, what: 'The site itself was broken or overloaded at the time.' },
   { match: /timed out|time budget|did not answer|deadline/i, what: 'The site was too slow to answer in the time allowed.' },
@@ -102,8 +105,12 @@ export function summariseBlocks(consulted: readonly ConsultedSource[]): BlockRep
 
   // A site that was blocked on one attempt and read on another was not,
   // finally, a block: it is reported as worked around rather than as a wall.
+  //
+  // A DNS answer for the same hostname does not count. Knowing a domain has
+  // mail records is not the same as having read the page, and saying we got in
+  // when the door never opened is the one thing this report cannot do.
   for (const source of consulted) {
-    if (!source.ok) continue;
+    if (!source.ok || source.kind === 'dns') continue;
     const entry = bySite.get(siteName(source.url));
     if (entry) {
       entry.gotAround = true;

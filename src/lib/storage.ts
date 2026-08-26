@@ -50,9 +50,16 @@ export interface Settings {
   useAssistant: boolean;
 }
 
+/*
+ * The defaults favour a search that answers while you are still looking at it.
+ * Deep scan and a long budget find more, but they turn a single lookup into a
+ * three-quarter-minute wait, and a tool nobody wants to wait for is a tool
+ * nobody uses. Both are one click away in Settings for the runs that warrant
+ * them.
+ */
 export const DEFAULT_SETTINGS: Settings = {
-  deepScan: true,
-  runBudgetMs: 45_000,
+  deepScan: false,
+  runBudgetMs: 12_000,
   bulkConcurrency: 2,
   saveHistory: true,
   verboseRoute: false,
