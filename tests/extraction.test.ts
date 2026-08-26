@@ -4,8 +4,10 @@ import { decodeEntities, deobfuscate, extractEmails, PHONE_PATTERN } from '../se
 import { EvidenceLedger } from '../server/evidence.js';
 import { areaCodeCoverage, classifyPhoneNumber } from '../server/phoneClassifier.js';
 import { detectQueryType, inferContext, planQuery, QUERY_TYPE_LABELS } from '../server/queryPlanner.js';
+import { pickOfficialSiteFromSearch } from '../server/sources/publicDirectories.js';
 import { parseAddressParts } from '../server/evidence.js';
 import type { Evidence } from '../src/types.js';
+import type { SearchHit } from '../server/sources/webSearch.js';
 
 /** Extraction quality: classification, deobfuscation, evidence and planning. */
 
@@ -181,6 +183,27 @@ test('a protected identifier offered as a phone number is discarded, not stored'
   assert.equal(JSON.stringify(resolved).includes('078-64-1091'), false, 'the value must not survive anywhere');
 });
 
+test("the site builder's own social accounts are not attributed to the business", () => {
+  const ledger = new EvidenceLedger();
+  // Every Wix-built site links to Wix's accounts in its footer.
+  assert.equal(ledger.addSocial('http://facebook.com/wix', evidenceAt('https://northwind.example/')), 'rejected');
+  assert.equal(ledger.addSocial('https://twitter.com/squarespace', evidenceAt('https://northwind.example/')), 'rejected');
+  assert.equal(
+    ledger.addSocial('https://facebook.com/northwindtraders', evidenceAt('https://northwind.example/')),
+    'accepted',
+    "the business's own page must still be kept",
+  );
+
+  const resolved = ledger.resolve('https://northwind.example/', null);
+  assert.deepEqual(resolved.socials.map((item) => item.url), ['https://facebook.com/northwindtraders']);
+});
+
+test('a share widget or network homepage is not a profile', () => {
+  const ledger = new EvidenceLedger();
+  assert.equal(ledger.addSocial('https://facebook.com/sharer/sharer.php?u=x', evidenceAt('https://northwind.example/')), 'rejected');
+  assert.equal(ledger.addSocial('https://facebook.com/', evidenceAt('https://northwind.example/')), 'rejected');
+});
+
 test('addresses deduplicate across abbreviation and punctuation differences', () => {
   const ledger = new EvidenceLedger();
   ledger.addAddress('4105 Irons Road, Scio, NY 14880', evidenceAt('https://northwind.example/contact'));
@@ -205,6 +228,8 @@ test('prose that merely looks address-shaped is refused', () => {
     '259 W Santa Clara St in',
     '3 N Erie Street Ma',
     '100 and more for the Way',
+    '2250 S Atlantic Blvd Suite M Co',
+    '90040 323-488-0160 990 North Tustin St #B Or',
   ];
   for (const candidate of prose) {
     const ledger = new EvidenceLedger();
@@ -250,6 +275,57 @@ test('address components are split without inventing missing ones', () => {
   const sparse = parseAddressParts('1012 20th Ave');
   assert.equal(sparse.street, '1012 20th Ave');
   assert.equal(sparse.city, undefined, 'a city must not be guessed when the input has none');
+});
+
+/* -------------------------- Official site choice -------------------------- */
+
+function hit(url: string, title: string): SearchHit {
+  return { url, title, snippet: '', engine: 'duckduckgo' };
+}
+
+test('the domain that carries the business name wins', () => {
+  const hits = [
+    hit('https://www.yelp.com/biz/jarboe-motors', 'Jarboe Motors - Westminster, MD - Yelp'),
+    hit('https://www.jarboemotors.com/', 'Jarboe Motors LLC'),
+  ];
+  const pick = pickOfficialSiteFromSearch(hits, 'Jarboe Motors LLC', { stateCode: 'MD' });
+  assert.equal(pick?.url, 'https://www.jarboemotors.com/');
+});
+
+test('a foreign country domain is not adopted for a business given a US location', () => {
+  // "Premier Hr, Commerce CA" really does return the Croatian government,
+  // because "hr" is a country domain. Answering with it would be confidently
+  // wrong, which is worse than answering with nothing.
+  const hits = [
+    hit('http://www.vlada.hr/', 'Naslovna'),
+    hit('https://premierhr.example/', 'Premier HR — Commerce, California'),
+  ];
+  const pick = pickOfficialSiteFromSearch(hits, 'Premier Hr', { stateCode: 'CA' });
+  assert.notEqual(pick?.url, 'http://www.vlada.hr/');
+  assert.equal(pick?.url, 'https://premierhr.example/');
+});
+
+test('an unrelated result is refused rather than returned as the official site', () => {
+  const hits = [
+    hit('https://www.somethingelse.example/news/2026', 'Local news roundup'),
+    hit('https://www.anotherthing.example/', 'Gardening supplies'),
+  ];
+  assert.equal(pickOfficialSiteFromSearch(hits, 'Northwind Traders', { stateCode: 'NY' }), null);
+});
+
+test('a title that names the business is enough when the domain does not', () => {
+  const hits = [hit('https://www.ntl-group.example/', 'Northwind Traders — wholesale supply')];
+  const pick = pickOfficialSiteFromSearch(hits, 'Northwind Traders', { stateCode: 'NY' });
+  assert.equal(pick?.url, 'https://www.ntl-group.example/');
+});
+
+test('directories and social networks are never taken as the official site', () => {
+  const hits = [
+    hit('https://www.facebook.com/northwindtraders', 'Northwind Traders | Facebook'),
+    hit('https://www.yelp.com/biz/northwind-traders', 'Northwind Traders - Yelp'),
+    hit('https://www.linkedin.com/company/northwind-traders', 'Northwind Traders | LinkedIn'),
+  ];
+  assert.equal(pickOfficialSiteFromSearch(hits, 'Northwind Traders', { stateCode: 'NY' }), null);
 });
 
 /* ------------------------------- Planning -------------------------------- */

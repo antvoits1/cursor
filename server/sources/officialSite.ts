@@ -242,8 +242,23 @@ function harvestPage(
     title,
     description: metaDescription,
     industry,
-    companyName: companyName ?? (title ? title.split(/[|\u2013\u2014-]/)[0].trim() : undefined),
+    companyName: usableSiteName(companyName) ?? usableSiteName(title ? title.split(/[|\u2013\u2014-]/)[0] : undefined),
   };
+}
+
+
+/**
+ * Titles that a site builder leaves behind when nobody sets one. Reading these
+ * as the business name presents the template's placeholder as a finding.
+ */
+const PLACEHOLDER_SITE_NAMES =
+  /^(?:mysite(?:[\s-]*\d+)?|my[\s-]*site|home|homepage|index|untitled|welcome|new[\s-]*page|website|site|page|default|test|coming[\s-]*soon|under[\s-]*construction|wix[\s-]*site|squarespace|wordpress[\s-]*site|blog)$/i;
+
+function usableSiteName(candidate: string | undefined): string | undefined {
+  const cleaned = candidate?.replace(/\s+/g, ' ').trim();
+  if (!cleaned || cleaned.length < 2 || cleaned.length > 90) return undefined;
+  if (PLACEHOLDER_SITE_NAMES.test(cleaned)) return undefined;
+  return cleaned;
 }
 
 function discoverSubpages($: CheerioAPI, baseUrl: string, maxPages: number): CrawlTarget[] {

@@ -116,6 +116,8 @@ test('both protected columns in a real lead sheet layout are excluded', () => {
   const { file, rows } = parseWorkbook(leadSheetBytes(), { filename: 'leads.xlsx' });
 
   assert.deepEqual(file.excludedColumns, ['DOB', 'SSN']);
+  assert.deepEqual(file.excludedByName, ['DOB', 'SSN']);
+  assert.deepEqual(file.excludedByContent, [], 'both headings name the identifier outright');
   assert.equal(file.detectedRoles['SSN'], 'sensitive_excluded');
   assert.equal(file.detectedRoles['DOB'], 'sensitive_excluded');
 
@@ -127,6 +129,27 @@ test('both protected columns in a real lead sheet layout are excluded', () => {
     assert.equal('DOB' in row.original, false);
     assert.equal('EIN' in row.original, true, 'a business tax ID is public and stays with the row');
   }
+});
+
+test('a column whose heading hides what it holds is still excluded on its values', () => {
+  // The heading says "Reference", but the column holds SSNs. Trusting the
+  // heading would let every one of them into the pipeline.
+  const headers = ['Company', 'City', 'State', 'Reference'];
+  const sheet = XLSX.utils.aoa_to_sheet([
+    headers,
+    ['Northwind Traders LLC', 'Scio', 'NY', '078-64-1091'],
+    ['Jarboe Motors LLC', 'Westminster', 'MD', '443-31-0746'],
+    ['Upper Shelf Farms LLC', 'Menominee', 'MI', '391-13-3468'],
+  ]);
+  const book = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(book, sheet, 'Leads');
+  const bytes = new Uint8Array(XLSX.write(book, { bookType: 'xlsx', type: 'array' }) as ArrayBuffer);
+
+  const { file, rows } = parseWorkbook(bytes, { filename: 'leads.xlsx' });
+  assert.deepEqual(file.excludedByContent, ['Reference']);
+  assert.deepEqual(file.excludedByName, []);
+  assert.equal(file.detectedRoles['Reference'], 'sensitive_excluded');
+  assert.equal(/\d{3}-\d{2}-\d{4}/.test(JSON.stringify(rows)), false);
 });
 
 test('each row builds the strongest query its safe columns allow', () => {

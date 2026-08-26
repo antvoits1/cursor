@@ -315,6 +315,8 @@ export function parseWorkbook(data: ArrayBuffer | Uint8Array, options: ParseOpti
     headers,
     detectedRoles: roles,
     excludedColumns: [...excluded],
+    excludedByName: [...sensitive.byHeader],
+    excludedByContent: [...sensitive.byValue],
     warnings,
   };
 

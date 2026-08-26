@@ -421,18 +421,30 @@ export function BulkWorkspace({
                     </strong>{' '}
                     {job.file.excludedColumns.join(', ')}. These values are dropped at parse time and never reach
                     search, matching, evidence, scoring, learning, diagnostics or export.
+                    {job.file.excludedByContent.length > 0 && (
+                      <>
+                        {' '}
+                        {job.file.excludedByContent.join(', ')}{' '}
+                        {job.file.excludedByContent.length === 1 ? 'was' : 'were'} excluded on the strength of the
+                        values alone — the heading did not say so.
+                      </>
+                    )}
                   </span>
                 </p>
               )}
-              {job.file.warnings.map((warning, index) => (
-                <p
-                  key={index}
-                  className="flex items-start gap-2.5 rounded-lg border border-warn/25 bg-warn-soft px-4 py-3 text-sm text-ink"
-                >
-                  <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warn" strokeWidth={2.2} />
-                  {warning}
-                </p>
-              ))}
+              {/* The exclusion panel above already states this in full; repeating it
+                  as a warning buries the warnings that need attention. */}
+              {job.file.warnings
+                .filter((warning) => !/^Excluded by (name|content):/.test(warning))
+                .map((warning, index) => (
+                  <p
+                    key={index}
+                    className="flex items-start gap-2.5 rounded-lg border border-warn/25 bg-warn-soft px-4 py-3 text-sm text-ink"
+                  >
+                    <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warn" strokeWidth={2.2} />
+                    {warning}
+                  </p>
+                ))}
             </div>
           </Panel>
 

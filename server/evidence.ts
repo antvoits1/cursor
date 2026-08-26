@@ -44,6 +44,16 @@ const SOCIAL_NOISE_PATHS = [
   '/help', '/policies', '/legal', '/privacy', '/terms', '/about/', '/settings',
 ];
 
+/**
+ * Handles belonging to the platform a site was built on. Every Wix site links
+ * to Wix's own social accounts in its footer; reporting those as the business's
+ * accounts attributes the vendor's presence to the customer.
+ */
+const VENDOR_SOCIAL_HANDLES = new Set([
+  'wix', 'wixcom', 'squarespace', 'wordpress', 'wordpressdotcom', 'godaddy', 'shopify', 'weebly',
+  'bigcommerce', 'webflow', 'duda', 'hubspot', 'mailchimp', 'yelp', 'google', 'facebook', 'instagram',
+]);
+
 const STATE_CODES = new Set([
   'AL','AK','AZ','AR','CA','CO','CT','DE','DC','FL','GA','HI','ID','IL','IN','IA','KS','KY','LA','ME',
   'MD','MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ','NM','NY','NC','ND','OH','OK','OR','PA','RI',
@@ -114,18 +124,25 @@ function addressShapeProblem(cleaned: string): string | null {
     return 'The candidate carries neither a street type nor a postal code, so it cannot be confirmed as an address.';
   }
 
-  // Anything after the street suffix has to be address material. A city or
-  // region following a street type is separated by a comma in every real
-  // rendering; without one, the trailing words are either prose that ran on
-  // ("Santa Clara St in") or a truncated capture ("Erie Street Ma").
+  // A phone number inside the candidate means two separate fields were captured
+  // as one run of text, not that the address contains a phone number.
+  if (/(?:\(\d{3}\)\s*|\b\d{3}[.\s-])\d{3}[.\s-]\d{4}\b/.test(cleaned)) {
+    return 'The candidate runs a phone number together with an address, so the boundary between two fields was lost.';
+  }
+
+  // Anything after the street suffix has to be address material: an optional
+  // unit, then either nothing or a comma-separated locality. Without that, the
+  // trailing words are prose that ran on ("Santa Clara St in") or a truncated
+  // capture ("Erie Street Ma", "Atlantic Blvd Suite M Co").
   if (suffixMatch?.index !== undefined) {
     const rawTail = cleaned.slice(suffixMatch.index + suffixMatch[0].length);
-    const tail = rawTail.replace(/^[\s.,]+/, '');
-    if (tail) {
-      const separatedByComma = /^\s*,/.test(rawTail);
-      const isUnit = /^(?:#|ste|suite|apt|unit|bldg|building|floor|fl|rm|room)\b/i.test(tail);
-      const endsWithStateAndZip = /\b[A-Z]{2}\s+\d{5}(?:-\d{4})?$/.test(tail);
-      if (!separatedByComma && !isUnit && !endsWithStateAndZip) {
+    let tail = rawTail.replace(/^[\s.,]+/, '');
+    if (tail && !/^,/.test(rawTail.trimStart())) {
+      // Consume one unit clause, e.g. "Ste M", "#100", "Apt 4B".
+      tail = tail.replace(/^(?:#|ste|suite|apt|apartment|unit|bldg|building|floor|fl|rm|room)\.?\s*#?[\w-]+/i, '').replace(/^[\s.]+/, '');
+      const remainderIsLocality = /^,/.test(tail) || /^[A-Z][A-Za-z.'’-]+,/.test(tail);
+      const remainderIsStateAndZip = /^[A-Z]{2}\s+\d{5}(?:-\d{4})?$/.test(tail);
+      if (tail && !remainderIsLocality && !remainderIsStateAndZip) {
         return `The text after the street type ("${tail.slice(0, 24)}") is neither a unit nor a comma-separated locality, so this is a fragment rather than an address.`;
       }
     }
@@ -282,6 +299,16 @@ export class EvidenceLedger {
 
     const canonical = `${parsed.protocol}//${host.replace(/^www\./, '')}${parsed.pathname.replace(/\/$/, '')}`;
     const handle = parsed.pathname.split('/').filter(Boolean).pop();
+
+    if (handle && VENDOR_SOCIAL_HANDLES.has(handle.toLowerCase().replace(/[^a-z0-9]/g, ''))) {
+      this.reject(
+        'social',
+        canonical,
+        'The account belongs to the platform the site was built on, not to the business.',
+        evidence.url,
+      );
+      return 'rejected';
+    }
     const existing = this.socials.get(canonical);
     if (existing) {
       pushEvidence(existing, evidence);

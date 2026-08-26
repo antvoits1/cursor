@@ -331,6 +331,10 @@ export interface BulkFileInfo {
   headers: string[];
   detectedRoles: Record<string, ColumnRole>;
   excludedColumns: string[];
+  /** Excluded because the heading names a protected identifier. */
+  excludedByName: string[];
+  /** Excluded because the values look like a protected identifier even though the heading does not say so. */
+  excludedByContent: string[];
   warnings: string[];
 }
 

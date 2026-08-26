@@ -183,21 +183,77 @@ export async function searchPeopleDirectories(
   return { consulted, searchUsable: true };
 }
 
-/** Picks the most likely official website from a set of search results. */
-export function pickOfficialSiteFromSearch(hits: SearchHit[], companyName: string): SearchHit | null {
+/**
+ * Country-code top-level domains that a business in the United States would not
+ * normally publish on. Used only to disqualify a weak search match, never to
+ * reject a site the input itself pointed at.
+ */
+const FOREIGN_CCTLD =
+  /\.(?:hr|ru|cn|jp|kr|in|br|pl|cz|sk|hu|ro|bg|gr|tr|ua|by|kz|rs|si|lt|lv|ee|vn|th|id|my|ph|pk|bd|ir|eg|za|ng|ke|ma|il|sa|ae)$/i;
+
+const OFFICIAL_SITE_NOISE = new Set([
+  'the', 'and', 'of', 'for', 'inc', 'llc', 'ltd', 'corp', 'co', 'company', 'group', 'services', 'service',
+]);
+
+function significantTokens(value: string): string[] {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .split(/\s+/)
+    .filter((token) => token.length > 2 && !OFFICIAL_SITE_NOISE.has(token));
+}
+
+export interface OfficialSitePickOptions {
+  /** Two-letter state from the query, if any. Its presence implies a US business. */
+  stateCode?: string;
+}
+
+/**
+ * Picks the most likely official website from a set of search results.
+ *
+ * A search for a short or ambiguous business name will happily return something
+ * unrelated — "Premier Hr, Commerce CA" returns the Croatian government, because
+ * "hr" is a country domain. Taking the first non-directory result on trust turns
+ * that into a confidently wrong answer, so a candidate has to earn its place:
+ * either its domain carries the business name, or its title does.
+ */
+export function pickOfficialSiteFromSearch(
+  hits: SearchHit[],
+  companyName: string,
+  options: OfficialSitePickOptions = {},
+): SearchHit | null {
   const excluded = [...BUSINESS_DIRECTORY_HOSTS, ...PEOPLE_DIRECTORY_HOSTS,
     'facebook.com', 'linkedin.com', 'instagram.com', 'twitter.com', 'x.com', 'youtube.com', 'tiktok.com',
     'wikipedia.org', 'wikidata.org', 'crunchbase.com', 'zoominfo.com', 'indeed.com', 'glassdoor.com',
     'amazon.com', 'ebay.com', 'pinterest.com', 'reddit.com', 'tripadvisor.com', 'google.com', 'apple.com'];
 
-  const tokens = companyName.toLowerCase().replace(/[^a-z0-9]+/g, '');
-  for (const hit of hits) {
-    if (matchesHosts(hit.url, excluded)) continue;
+  const expectsUnitedStates = Boolean(options.stateCode);
+  const eligible = hits.filter((hit) => {
+    if (matchesHosts(hit.url, excluded)) return false;
+    const host = hostOf(hit.url);
+    if (expectsUnitedStates && FOREIGN_CCTLD.test(host)) return false;
+    return true;
+  });
+
+  const collapsed = companyName.toLowerCase().replace(/[^a-z0-9]+/g, '');
+  for (const hit of eligible) {
     const host = hostOf(hit.url).replace(/[^a-z0-9]+/g, '');
-    // Prefer a domain that actually contains the business name.
-    if (tokens.length >= 4 && host.includes(tokens.slice(0, Math.min(tokens.length, 12)))) return hit;
+    // Strongest signal: the domain itself carries the business name.
+    if (collapsed.length >= 4 && host.includes(collapsed.slice(0, Math.min(collapsed.length, 12)))) return hit;
   }
-  return hits.find((hit) => !matchesHosts(hit.url, excluded)) ?? null;
+
+  // Otherwise the result has to at least be about the business that was asked
+  // for. Without that, no site is better than the wrong site.
+  const wanted = significantTokens(companyName);
+  if (wanted.length === 0) return eligible[0] ?? null;
+
+  for (const hit of eligible) {
+    const haystack = `${hit.title ?? ''} ${hostOf(hit.url)}`.toLowerCase();
+    const matched = wanted.filter((token) => haystack.includes(token)).length;
+    if (matched / wanted.length >= 0.5) return hit;
+  }
+
+  return null;
 }
 
 export { BUSINESS_DIRECTORY_HOSTS, PEOPLE_DIRECTORY_HOSTS };

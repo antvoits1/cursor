@@ -74,6 +74,23 @@ function newId(): string {
   return `ext_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
+
+/**
+ * Country-code domains a business located in the United States would not
+ * normally publish on. Used only to reject a site that a *search or register
+ * lookup* proposed; a site the operator supplied in the input is always honoured.
+ */
+const FOREIGN_CCTLD =
+  /\.(?:hr|ru|cn|jp|kr|in|br|pl|cz|sk|hu|ro|bg|gr|tr|ua|by|kz|rs|si|lt|lv|ee|vn|th|id|my|ph|pk|bd|ir|eg|za|ng|ke|ma|il|sa|ae)$/i;
+
+function hostOfUrl(raw: string): string {
+  try {
+    return new URL(raw).hostname.toLowerCase();
+  } catch {
+    return '';
+  }
+}
+
 const NAME_NOISE = new Set([
   'inc', 'incorporated', 'llc', 'l.l.c', 'llp', 'ltd', 'limited', 'co', 'company', 'corp', 'corporation',
   'group', 'holdings', 'enterprises', 'enterprise', 'services', 'service', 'the', 'and', 'of', 'dba',
@@ -237,6 +254,35 @@ export async function extract(rawQuery: string, options: ExtractionOptions = {})
   let companyName = context.companyName ?? (queryIsAddressOnly ? '' : query);
   /** True once a source, rather than the input, has supplied the business name. */
   let companyNameFromSource = false;
+
+  /**
+   * Adopts a website proposed by a source, or refuses it and says why.
+   *
+   * A short or ambiguous business name makes registers and search engines
+   * confident about the wrong entity — "Premier Hr, Commerce CA" resolves to the
+   * Croatian government, because "hr" is a country domain. When the input placed
+   * the business in a US state, a foreign country domain is not that business.
+   */
+  const adoptWebsite = (candidate: string, sourceLabel: string): boolean => {
+    const normalised = normaliseWebsite(candidate);
+    if (!normalised) return false;
+    if (isReservedHost(normalised)) {
+      trace.warn('validation', `Ignored ${normalised} from ${sourceLabel}: it is on a reserved or private network.`, {
+        url: normalised,
+      });
+      return false;
+    }
+    if (context.state && FOREIGN_CCTLD.test(hostOfUrl(normalised))) {
+      trace.warn(
+        'validation',
+        `Ignored ${normalised} from ${sourceLabel}: the request placed this business in ${context.state}, and that is a foreign country domain.`,
+        { url: normalised, detail: { state: context.state } },
+      );
+      return false;
+    }
+    website = normalised;
+    return true;
+  };
   let description: string | undefined;
   let industry: string | undefined;
   let blockedAnywhere = false;
@@ -274,12 +320,9 @@ export async function extract(rawQuery: string, options: ExtractionOptions = {})
           if (place.phone && ledger.addPhone(place.phone, sourceEvidence, `${place.category ?? ''} ${place.type ?? ''}`) !== 'rejected') fields.push('phone');
           if (place.email && ledger.addEmail(place.email, sourceEvidence) !== 'rejected') fields.push('email');
           if (place.formattedAddress && ledger.addAddress(place.formattedAddress, sourceEvidence) !== 'rejected') fields.push('address');
-          if (!website && place.website) {
-            website = normaliseWebsite(place.website);
-            if (website) {
-              fields.push('website');
-              trace.success('accepted', `OpenStreetMap lists ${website} as this business's website.`, { url: place.sourceUrl });
-            }
+          if (!website && place.website && adoptWebsite(place.website, 'the OpenStreetMap register')) {
+            fields.push('website');
+            trace.success('accepted', `OpenStreetMap lists ${website} as this business's website.`, { url: place.sourceUrl });
           }
           if (!industry && place.type) industry = place.type.replace(/_/g, ' ');
           consulted.push({
@@ -296,8 +339,7 @@ export async function extract(rawQuery: string, options: ExtractionOptions = {})
         // 2. Wikidata: the entity's own declared official website.
         if (!website && !outOfTime()) {
           const facts = await lookupEntityFacts(nameForLookup, trace);
-          if (facts?.officialWebsite) {
-            website = normaliseWebsite(facts.officialWebsite);
+          if (facts?.officialWebsite && adoptWebsite(facts.officialWebsite, 'Wikidata')) {
             if (facts.description && !description) description = facts.description;
             consulted.push({
               url: facts.sourceUrl,
@@ -316,9 +358,8 @@ export async function extract(rawQuery: string, options: ExtractionOptions = {})
           const search = await searchWeb(`${nameForLookup}${location ? ` ${location}` : ''} official website contact`, trace, 10);
           searchUsable = search.ok;
           if (search.ok) {
-            const pick = pickOfficialSiteFromSearch(search.hits, nameForLookup);
-            if (pick) {
-              website = normaliseWebsite(pick.url);
+            const pick = pickOfficialSiteFromSearch(search.hits, nameForLookup, { stateCode: context.state });
+            if (pick && adoptWebsite(pick.url, 'public search')) {
               trace.success('accepted', `Public search points at ${website} as the official website.`, { url: pick.url });
               consulted.push({
                 url: pick.url,
@@ -339,7 +380,7 @@ export async function extract(rawQuery: string, options: ExtractionOptions = {})
         // 4. Direct domain probing, which needs no search engine at all.
         if (!website && context.companyName && !outOfTime()) {
           const probed = await probeForOfficialSite(context.companyName, trace);
-          if (probed) website = normaliseWebsite(probed.url);
+          if (probed) adoptWebsite(probed.url, 'a direct domain probe');
         }
 
         if (!website) {
@@ -409,7 +450,7 @@ export async function extract(rawQuery: string, options: ExtractionOptions = {})
         }
         const fb = await readFacebookPage(known, ledger, trace);
         consulted.push(fb.consulted);
-        if (!website && fb.website) website = normaliseWebsite(fb.website);
+        if (!website && fb.website) adoptWebsite(fb.website, 'the Facebook page');
         if (!industry && fb.category) industry = fb.category;
         blockedAnywhere = blockedAnywhere || fb.consulted.blocked;
         markRoute(route.id, Date.now() - routeStart, totalAccepted() - before, fb.consulted.blocked, fb.readable);
