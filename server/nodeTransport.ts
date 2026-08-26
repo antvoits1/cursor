@@ -60,6 +60,7 @@ async function readCappedText(response: Response): Promise<string> {
 async function singleAttempt(
   targetUrl: string,
   timeoutMs: number,
+  extraHeaders?: Record<string, string>,
 ): Promise<NodeFetchResult & { redirects: number }> {
   const started = Date.now();
   let current = targetUrl;
@@ -93,6 +94,9 @@ async function singleAttempt(
           Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
           'Accept-Language': 'en-US,en;q=0.9',
           'Cache-Control': 'no-cache',
+          // Caller-supplied headers last, so an API key or a JSON Accept can
+          // override the browser-shaped defaults.
+          ...extraHeaders,
         },
         redirect: 'manual',
         signal: controller.signal,
@@ -268,7 +272,11 @@ async function singleAttempt(
  * transport, and as the only tier when the Python worker is unavailable.
  * Retries once on a transient network error or timeout.
  */
-export async function nodeFetchPage(targetUrl: string, timeoutMs: number): Promise<NodeFetchResult> {
+export async function nodeFetchPage(
+  targetUrl: string,
+  timeoutMs: number,
+  extraHeaders?: Record<string, string>,
+): Promise<NodeFetchResult> {
   let host = '';
   try {
     host = new URL(targetUrl).hostname.toLowerCase();
@@ -281,14 +289,14 @@ export async function nodeFetchPage(targetUrl: string, timeoutMs: number): Promi
   }
 
   await throttleHost(host);
-  const first = await singleAttempt(targetUrl, timeoutMs);
+  const first = await singleAttempt(targetUrl, timeoutMs, extraHeaders);
   if (first.ok) return first;
 
   const retryable = Boolean(first.attempt.timedOut) || /Network error/.test(first.attempt.reason ?? '');
   if (!retryable) return first;
 
   await throttleHost(host);
-  const second = await singleAttempt(targetUrl, Math.round(timeoutMs * 1.5));
+  const second = await singleAttempt(targetUrl, Math.round(timeoutMs * 1.5), extraHeaders);
   return {
     ...second,
     attempt: {

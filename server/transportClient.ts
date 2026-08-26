@@ -220,6 +220,20 @@ async function tryCandidate(candidate: { command: string; args: string[] }): Pro
       done(false);
       return;
     }
+    /*
+     * The worker is a long-lived helper, not a reason for the host process to
+     * stay alive. Left referenced, its pipes hold the event loop open and a
+     * command-line run that has finished its work simply hangs. Unreferencing
+     * lets the process exit when nothing else is pending, while the worker
+     * keeps serving normally for as long as the process does live.
+     */
+    proc.unref();
+    // Unreferencing the child is not enough on its own: its three stdio pipes
+    // are themselves referenced handles and will hold the loop open. Node types
+    // these as plain streams, but the pipe-backed instances do expose unref.
+    for (const pipe of [proc.stdin, proc.stdout, proc.stderr]) {
+      (pipe as unknown as { unref?: () => void }).unref?.();
+    }
     attachChild(proc, done);
   });
 }

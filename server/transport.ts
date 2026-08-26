@@ -1,5 +1,6 @@
 import { pageCache } from './cache.js';
 import { nodeFetchPage } from './nodeTransport.js';
+import { boundedTimeout } from './runDeadline.js';
 import { assessUrl } from './ssrfGuard.js';
 import { ensureWorker, fetchViaWorker, workerState } from './transportClient.js';
 import type { RouteTrace } from './trace.js';
@@ -140,6 +141,8 @@ export interface FetchOptions {
   /** Short label used in the route, e.g. "official website homepage". */
   label: string;
   trace: RouteTrace;
+  /** Extra request headers, for endpoints that need a key or a JSON Accept. */
+  headers?: Record<string, string>;
 }
 
 /**
@@ -152,7 +155,7 @@ export interface FetchOptions {
  */
 export async function fetchPage(targetUrl: string, options: FetchOptions): Promise<TransportOutcome> {
   const { trace, label } = options;
-  const timeoutMs = options.timeoutMs ?? Number(process.env.EXTRACTOR_FETCH_TIMEOUT_MS ?? 9000);
+  const requestedTimeout = options.timeoutMs ?? Number(process.env.EXTRACTOR_FETCH_TIMEOUT_MS ?? 9000);
   const started = Date.now();
   const attempts: TransportAttempt[] = [];
   const proxy = proxyUrl();
@@ -207,6 +210,29 @@ export async function fetchPage(targetUrl: string, options: FetchOptions): Promi
   }
   trace.info('cache', `Cache miss for ${label}; a live fetch is required.`, { url: targetUrl, tier: 'cache' });
 
+  /*
+   * The run's remaining time caps this request.
+   *
+   * The check sits below the cache lookup on purpose: a cached page costs
+   * nothing and is worth serving even when the budget is spent. A live request
+   * is not, so once there is no time left the fetch is declined rather than
+   * started, and the reason says so instead of appearing as a timeout.
+   */
+  const timeoutMs = boundedTimeout(requestedTimeout);
+  if (timeoutMs === null) {
+    trace.warn('timeout', `Skipped ${label}: the run's time budget was spent before this request could start.`, {
+      url: targetUrl,
+    });
+    return {
+      ok: false,
+      fromCache: false,
+      blocked: false,
+      reason: "The run's time budget was spent before this request could start.",
+      attempts,
+      totalMs: Date.now() - started,
+    };
+  }
+
   const worker = await fetchViaWorker(targetUrl, timeoutMs, proxy);
   if (worker.workerAvailable) {
     for (const attempt of worker.attempts) {
@@ -244,7 +270,7 @@ export async function fetchPage(targetUrl: string, options: FetchOptions): Promi
     });
   }
 
-  const native = await nodeFetchPage(targetUrl, timeoutMs);
+  const native = await nodeFetchPage(targetUrl, timeoutMs, options.headers);
   attempts.push(native.attempt);
   traceAttempt(trace, native.attempt, targetUrl);
 

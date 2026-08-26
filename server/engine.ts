@@ -1,6 +1,7 @@
 import { EvidenceLedger } from './evidence.js';
 import { inspectDomainDns, normaliseDomain } from './dnsInspector.js';
 import { isReservedHost } from './ssrfGuard.js';
+import { withRunDeadline } from './runDeadline.js';
 import { lookupPeople } from './sources/peopleSearch.js';
 import { verifyEmails } from './emailVerifier.js';
 import { assistantAvailable, beginUsage, interpretQuery } from './assistant.js';
@@ -166,6 +167,14 @@ function evidenceFor(url: string, label: string, method: Evidence['method'], exc
  * findings.
  */
 export async function extract(rawQuery: string, options: ExtractionOptions = {}): Promise<ExtractionResult> {
+  const deepScan = options.deepScan ?? true;
+  const budget = options.budgetMs ?? Number(process.env.EXTRACTOR_RUN_BUDGET_MS ?? (deepScan ? 45_000 : 12_000));
+  // Publishing the deadline in async context is what lets the budget reach the
+  // individual fetches rather than only the gaps between routes.
+  return withRunDeadline(Date.now() + budget, () => runExtraction(rawQuery, options));
+}
+
+async function runExtraction(rawQuery: string, options: ExtractionOptions = {}): Promise<ExtractionResult> {
   const startedAt = Date.now();
   const deepScan = options.deepScan ?? true;
   /*
