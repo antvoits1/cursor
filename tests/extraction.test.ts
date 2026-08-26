@@ -6,7 +6,7 @@ import { areaCodeCoverage, classifyPhoneNumber } from '../server/phoneClassifier
 import { detectQueryType, inferContext, planQuery, QUERY_TYPE_LABELS } from '../server/queryPlanner.js';
 import { pickOfficialSiteFromSearch } from '../server/sources/publicDirectories.js';
 import { __testing as __officialSite } from '../server/sources/officialSite.js';
-import { parseAddressParts } from '../server/evidence.js';
+import { mergeSubsumedAddresses, parseAddressParts } from '../server/evidence.js';
 import type { Evidence } from '../src/types.js';
 import type { SearchHit } from '../server/sources/webSearch.js';
 
@@ -441,4 +441,65 @@ test('a header and footer copy of the about page cannot crowd out the contact pa
     kept.some((target) => target.label === 'the Contact page'),
     'two renderings of one page must not take both crawl slots',
   );
+});
+
+/*
+ * One address reported three ways is one finding. Presenting it as three made
+ * a clean result read like a noisy one, and inflated nothing but the row count.
+ */
+test('partial renderings of one address are folded into the fullest of them', () => {
+  const evidence = (url: string): Evidence => ({
+    url,
+    sourceLabel: url,
+    method: 'text_pattern',
+    observedAt: new Date().toISOString(),
+  });
+
+  const merged = mergeSubsumedAddresses([
+    {
+      full: '72 N Main St, Concord, NH 03301',
+      street: '72 N Main St',
+      city: 'Concord',
+      state: 'NH',
+      zip: '03301',
+      country: 'US',
+      agreementCount: 1,
+      confidence: 46,
+      evidence: [evidence('https://www.yellowpages.com/x')],
+    },
+    {
+      full: '72 N Main St',
+      street: '72 N Main St',
+      agreementCount: 1,
+      confidence: 40,
+      evidence: [evidence('https://www.mapquest.com/y')],
+    },
+    {
+      full: '72 N Main St, Ste',
+      street: '72 N Main St',
+      agreementCount: 1,
+      confidence: 40,
+      evidence: [evidence('https://www.mapquest.com/z')],
+    },
+  ]);
+
+  assert.equal(merged.length, 1, 'three renderings of one address are one address');
+  assert.equal(merged[0].full, '72 N Main St, Concord, NH 03301', 'the complete rendering is the one kept');
+  assert.equal(merged[0].agreementCount, 3, 'every source that reported the place still counts towards agreement');
+});
+
+test('two different addresses on the same street are not collapsed into one', () => {
+  const evidence: Evidence = {
+    url: 'https://example.com',
+    sourceLabel: 'example',
+    method: 'text_pattern',
+    observedAt: new Date().toISOString(),
+  };
+
+  const merged = mergeSubsumedAddresses([
+    { full: '72 N Main St, Concord, NH', street: '72 N Main St', agreementCount: 1, confidence: 40, evidence: [evidence] },
+    { full: '88 N Main St, Concord, NH', street: '88 N Main St', agreementCount: 1, confidence: 40, evidence: [evidence] },
+  ]);
+
+  assert.equal(merged.length, 2, 'a different house number is a different address');
 });

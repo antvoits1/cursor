@@ -594,18 +594,20 @@ export class EvidenceLedger {
     }
     emails.sort((a, b) => b.confidence - a.confidence || a.email.localeCompare(b.email));
 
-    const addresses: AddressInfo[] = [...this.addresses.values()]
-      .map((c) => {
-        const parts = parseAddressParts(c.value);
-        return {
-          full: c.value,
-          ...parts,
-          agreementCount: c.sources.size,
-          confidence: scoreFor(c.evidence, c.sources.size),
-          evidence: c.evidence,
-        };
-      })
-      .sort((a, b) => b.confidence - a.confidence || b.full.length - a.full.length);
+    const addresses: AddressInfo[] = mergeSubsumedAddresses(
+      [...this.addresses.values()]
+        .map((c) => {
+          const parts = parseAddressParts(c.value);
+          return {
+            full: c.value,
+            ...parts,
+            agreementCount: c.sources.size,
+            confidence: scoreFor(c.evidence, c.sources.size),
+            evidence: c.evidence,
+          };
+        })
+        .sort((a, b) => b.confidence - a.confidence || b.full.length - a.full.length),
+    );
 
     const socials: SocialLink[] = [...this.socials.values()]
       .map((c) => ({ ...c.value, evidence: c.evidence }))
@@ -631,6 +633,84 @@ function safeHost(url: string): string {
   } catch {
     return '';
   }
+}
+
+/**
+ * The house number and street, with everything else stripped away.
+ *
+ * Two renderings of one address only agree on this much: a directory writes
+ * "72 N Main St, Concord, NH 03301", a map listing writes "72 N Main St", and
+ * a snippet cut off mid-line writes "72 N Main St, Ste". They are one place.
+ */
+function streetKey(full: string): string {
+  const cleaned = full
+    .toLowerCase()
+    .replace(/[.,#]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const match = cleaned.match(/^(\d+[a-z]?)\s+(.+)$/);
+  if (!match) return cleaned;
+
+  const [, number, rest] = match;
+  // The street name ends at the street type; anything after it is a unit, a
+  // locality, or the tail of a truncated snippet.
+  const street = rest.split(
+    /\b(?:st|street|ave|avenue|rd|road|blvd|boulevard|dr|drive|ln|lane|way|ct|court|pl|place|ter|terrace|cir|circle|pkwy|parkway|hwy|highway|sq|square|trl|trail|loop)\b/,
+  )[0];
+  return `${number} ${street.trim()}`;
+}
+
+/**
+ * Folds partial renderings of one address into the fullest of them.
+ *
+ * Listing "2250 S Atlantic Blvd", "2250 S Atlantic Blvd, Commerce, CA 90040"
+ * and "2250 S Atlantic Blvd, Ste" as three findings is not three findings; it
+ * is one address reported three ways, and it makes a clean result look like a
+ * noisy one. The fullest rendering is kept and the others are folded into it,
+ * carrying their evidence with them so the agreement count reflects every
+ * source that reported the place.
+ */
+export function mergeSubsumedAddresses(addresses: AddressInfo[]): AddressInfo[] {
+  const groups = new Map<string, AddressInfo[]>();
+  for (const address of addresses) {
+    const key = streetKey(address.full);
+    const group = groups.get(key);
+    if (group) group.push(address);
+    else groups.set(key, [address]);
+  }
+
+  const merged: AddressInfo[] = [];
+  for (const group of groups.values()) {
+    if (group.length === 1) {
+      merged.push(group[0]);
+      continue;
+    }
+
+    // "Fullest" means the most components resolved, not the longest string: a
+    // truncated snippet can be longer than a clean, complete address.
+    const best = [...group].sort((a, b) => {
+      const score = (item: AddressInfo) => Number(Boolean(item.city)) + Number(Boolean(item.state)) + Number(Boolean(item.zip));
+      return score(b) - score(a) || b.confidence - a.confidence || b.full.length - a.full.length;
+    })[0];
+
+    const sources = new Set<string>();
+    const evidence = [];
+    for (const item of group) {
+      for (const record of item.evidence) {
+        sources.add(record.url);
+        evidence.push(record);
+      }
+    }
+
+    merged.push({
+      ...best,
+      agreementCount: sources.size,
+      confidence: Math.max(...group.map((item) => item.confidence)),
+      evidence,
+    });
+  }
+
+  return merged.sort((a, b) => b.confidence - a.confidence || b.full.length - a.full.length);
 }
 
 /** Splits a formatted US address into components without guessing missing ones. */
