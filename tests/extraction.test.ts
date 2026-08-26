@@ -283,6 +283,29 @@ function hit(url: string, title: string): SearchHit {
   return { url, title, snippet: '', engine: 'duckduckgo' };
 }
 
+test('an organisation that shares only the generic words is refused', () => {
+  // "Chautauqua County Stockyards" matches two of its three words against the
+  // Chautauqua County government site. Accepting that on a simple majority
+  // yielded a confident page of county switchboard numbers for a stockyard.
+  const hits = [
+    hit('https://chautauquacountyny.gov/carts/Contact-Us', 'Contact Us | Chautauqua County, NY'),
+    hit('https://chautauquacountyny.gov/contact', 'Chautauqua County Government'),
+  ];
+
+  assert.equal(
+    pickOfficialSiteFromSearch(hits, 'Chautauqua County Stockyards Ll', { stateCode: 'NY' }),
+    null,
+    'the word that says what the business is must be present, not just its surroundings',
+  );
+});
+
+test('the word naming the business has to appear, but the rest need not', () => {
+  const hits = [hit('https://knoxgolfusa.com/', 'Knox Golf Academy - Saint James NY')];
+  const pick = pickOfficialSiteFromSearch(hits, 'Knox Golf Academy', { stateCode: 'NY' });
+
+  assert.equal(pick?.url, 'https://knoxgolfusa.com/', 'a title naming the business is enough when the domain differs');
+});
+
 test('the domain that carries the business name wins', () => {
   const hits = [
     hit('https://www.yelp.com/biz/jarboe-motors', 'Jarboe Motors - Westminster, MD - Yelp'),

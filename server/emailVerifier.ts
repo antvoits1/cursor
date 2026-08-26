@@ -50,30 +50,46 @@ interface MxLookup {
   hosts: string[];
 }
 
-async function lookupMx(domain: string): Promise<MxLookup | null> {
+/**
+ * Bounds a DNS query so a slow or unresponsive resolver cannot stall a run.
+ *
+ * Node's resolver has no per-query timeout, and a domain whose nameservers
+ * simply never answer will otherwise hold a run open long past its budget. A
+ * query that does not come back in time is treated as "could not check", which
+ * is the honest reading, rather than as a failure of the address.
+ */
+async function withTimeout<T>(work: Promise<T>, ms: number): Promise<T | null> {
+  let timer: NodeJS.Timeout | undefined;
+  const expiry = new Promise<null>((resolve) => {
+    timer = setTimeout(() => resolve(null), ms);
+    timer.unref?.();
+  });
   try {
-    const records = await dns.resolveMx(domain);
-    const hosts = records.sort((a, b) => a.priority - b.priority).map((record) => record.exchange);
-    return { hasMx: hosts.length > 0, hosts };
-  } catch {
-    // No MX is not necessarily fatal: a domain with an A record can still take
-    // mail. Distinguish "no MX" from "domain does not resolve at all".
-    try {
-      await dns.resolve4(domain);
-      return { hasMx: false, hosts: [domain] };
-    } catch {
-      return null;
-    }
+    return await Promise.race([work.catch(() => null), expiry]);
+  } finally {
+    clearTimeout(timer);
   }
 }
 
-async function lookupTxt(domain: string, predicate: (value: string) => boolean): Promise<boolean | null> {
-  try {
-    const records = await dns.resolveTxt(domain);
-    return records.some((chunks) => predicate(chunks.join('').toLowerCase()));
-  } catch {
-    return null;
+const DNS_TIMEOUT_MS = 3000;
+
+async function lookupMx(domain: string): Promise<MxLookup | null> {
+  const records = await withTimeout(dns.resolveMx(domain), DNS_TIMEOUT_MS);
+  if (records && records.length > 0) {
+    const hosts = [...records].sort((a, b) => a.priority - b.priority).map((record) => record.exchange);
+    return { hasMx: true, hosts };
   }
+  // No MX is not necessarily fatal: a domain with an A record can still take
+  // mail. Distinguish "no MX" from "domain does not resolve at all".
+  const addresses = await withTimeout(dns.resolve4(domain), DNS_TIMEOUT_MS);
+  if (addresses && addresses.length > 0) return { hasMx: false, hosts: [domain] };
+  return null;
+}
+
+async function lookupTxt(domain: string, predicate: (value: string) => boolean): Promise<boolean | null> {
+  const records = await withTimeout(dns.resolveTxt(domain), DNS_TIMEOUT_MS);
+  if (!records) return null;
+  return records.some((chunks) => predicate(chunks.join('').toLowerCase()));
 }
 
 interface SmtpResult {

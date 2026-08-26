@@ -235,11 +235,21 @@ export function pickOfficialSiteFromSearch(
     return true;
   });
 
-  const collapsed = companyName.toLowerCase().replace(/[^a-z0-9]+/g, '');
-  for (const hit of eligible) {
-    const host = hostOf(hit.url).replace(/[^a-z0-9]+/g, '');
-    // Strongest signal: the domain itself carries the business name.
-    if (collapsed.length >= 4 && host.includes(collapsed.slice(0, Math.min(collapsed.length, 12)))) return hit;
+  /*
+   * Strongest signal: the domain itself carries the business name.
+   *
+   * The name is collapsed to its significant words rather than truncated to a
+   * fixed prefix. Matching on a prefix meant "Chautauqua County Stockyards"
+   * matched chautauquacountyny.gov on its first twelve characters and returned
+   * a county government site for a stockyard, because the words the prefix
+   * happened to cover were the ones the two names share.
+   */
+  const collapsed = significantTokens(companyName).join('');
+  if (collapsed.length >= 6) {
+    for (const hit of eligible) {
+      const host = hostOf(hit.url).replace(/[^a-z0-9]+/g, '');
+      if (host.includes(collapsed)) return hit;
+    }
   }
 
   // Otherwise the result has to at least be about the business that was asked
@@ -247,8 +257,23 @@ export function pickOfficialSiteFromSearch(
   const wanted = significantTokens(companyName);
   if (wanted.length === 0) return eligible[0] ?? null;
 
+  /*
+   * Counting matched tokens alone is not enough, because the tokens a name
+   * shares with unrelated organisations are exactly the generic ones.
+   * "Chautauqua County Stockyards" matches two of its three tokens against the
+   * Chautauqua County government site, clears a simple majority, and yields a
+   * confident page of county switchboard numbers.
+   *
+   * The last significant token is what actually names the business -- Stockyards,
+   * Motors, Academy, Entertainment -- so it has to be there. A candidate that
+   * matches every word except the one saying what the business is has matched
+   * its surroundings, not the business.
+   */
+  const head = wanted[wanted.length - 1];
+
   for (const hit of eligible) {
     const haystack = `${hit.title ?? ''} ${hostOf(hit.url)}`.toLowerCase();
+    if (!haystack.includes(head)) continue;
     const matched = wanted.filter((token) => haystack.includes(token)).length;
     if (matched / wanted.length >= 0.5) return hit;
   }
