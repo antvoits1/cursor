@@ -168,6 +168,7 @@ test('every transport tier has a plain-language label', () => {
   assert.equal(tierLabel('curl_cffi'), 'fast static fetch');
   assert.equal(tierLabel('patchright'), 'browser rendering');
   assert.equal(tierLabel('camoufox'), 'hardened browser rendering');
+  assert.equal(tierLabel('cloudflare_browser'), 'Cloudflare remote browser');
   assert.equal(tierLabel('node_http'), 'built-in HTTP fetch');
 });
 

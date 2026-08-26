@@ -414,7 +414,7 @@ export function SingleExtraction({
                   </Badge>
                   {result.availableTiers.map((tier) => (
                     <Badge key={tier} tone="neutral">
-                      {tier}
+                      {tier === 'cloudflare_browser' ? 'Cloudflare browser' : tier}
                     </Badge>
                   ))}
                 </div>

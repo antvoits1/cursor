@@ -1085,7 +1085,9 @@ export async function getDiagnostics(host: EngineDiagnostics['host']): Promise<E
   const tiers = await tierAvailability();
   const mode = await transportMode();
   const cacheStats = pageCache.stats();
-  const browserTiers = tiers.filter((t) => t.tier === 'patchright' || t.tier === 'camoufox');
+  const browserTiers = tiers.filter(
+    (t) => t.tier === 'patchright' || t.tier === 'camoufox' || t.tier === 'cloudflare_browser',
+  );
   const anyBrowser = browserTiers.some((t) => t.available);
 
   // "online" is only claimed once a real extraction has completed in this
@@ -1097,7 +1099,7 @@ export async function getDiagnostics(host: EngineDiagnostics['host']): Promise<E
     statusDetail = 'The API is reachable, but no extraction has completed on this instance yet, so end-to-end connectivity is not proven.';
   } else if (mode === 'layered_python' && anyBrowser) {
     status = 'online';
-    statusDetail = 'Extractions have completed successfully with the full layered transport available.';
+    statusDetail = 'Extractions have completed successfully with layered fetching and browser rendering available.';
   } else {
     status = 'degraded';
     statusDetail =

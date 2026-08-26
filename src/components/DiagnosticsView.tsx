@@ -23,7 +23,8 @@ const TIER_PURPOSE: Record<string, string> = {
   curl_cffi: 'Fast static fetch with a real browser TLS fingerprint.',
   patchright: 'Headless Chromium for pages that only assemble their content in JavaScript.',
   camoufox: 'Hardened Firefox for sources that reject ordinary headless browsers.',
-  node_http: 'Node’s own HTTP client. Always present, and the only tier available on serverless hosts.',
+  cloudflare_browser: 'Remote Chromium for JavaScript-rendered pages, using Cloudflare Browser Run.',
+  node_http: 'Node’s own HTTP client. Always present as the final network fallback.',
 };
 
 export function DiagnosticsView({

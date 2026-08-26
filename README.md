@@ -33,6 +33,29 @@ Chromium for up to 10 browser-minutes per day on Workers Free. It is a
 different integration from Patchright/Camoufox and requires a Cloudflare
 Worker plus browser binding.
 
+### Add the free Cloudflare browser
+
+The authenticated Worker lives in `cloudflare-browser/`.
+
+```bash
+cd cloudflare-browser
+npm ci
+npx wrangler login
+npx wrangler secret put BROWSER_SERVICE_TOKEN
+npm run deploy
+```
+
+Generate a long random value for `BROWSER_SERVICE_TOKEN`. Then add these two
+variables to the Render backend:
+
+- `CLOUDFLARE_BROWSER_URL`: the deployed `workers.dev` URL.
+- `CLOUDFLARE_BROWSER_TOKEN`: the same random secret.
+
+Cloudflare states that Browser Run traffic is identifiable as automated
+traffic. This tier renders JavaScript; it does not promise to defeat CAPTCHAs
+or bot protection, and the extractor continues reporting those blocks
+honestly.
+
 Optional backend variables:
 
 - `EXTRACTOR_PROXY_URL`: residential proxy for directories that refuse
