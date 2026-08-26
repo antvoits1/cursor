@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { labelToLineType, resolveLineType, scoreReachability } from '../server/lineType.js';
 import { parseSectionedProfile } from '../server/sources/peopleSearch.js';
+import { __testing as __numberingPlan, seedBlockOwner } from '../server/numberingPlan.js';
 
 /*
  * Whether a number is a mobile or a landline is the question these tests exist
@@ -173,4 +174,68 @@ test('a page that says spouse is taken at its word', () => {
   );
   const profile = parseSectionedProfile(html, 'https://www.truepeoplesearch.com/find/person/x');
   assert.equal(profile.relatives.find((person) => person.name === 'Marcus Whitfield')?.relation, 'spouse');
+});
+
+/*
+ * The published block allocations are what turned "Type unknown" into a real
+ * answer for ordinary business numbers, which no page ever labels. These tests
+ * hold the two things that matter about that: the right thousands-block is
+ * read out of the register, and portability keeps the verdict short of
+ * certainty.
+ */
+
+test('the register record for the right thousands-block is the one used', () => {
+  // One exchange split between a cable operator and a mobile carrier, which is
+  // ordinary. Taking the first record rather than matching the block digit
+  // would misclassify half the numbers in the exchange.
+  const xml = `<root>
+    <prefixdata><npa>631</npa><nxx>686</nxx><x>1</x><rc>St James</rc><region>NY</region>
+      <company-name>CABLEVISION LIGHTPATH, INC. - NY</company-name><company-type>C</company-type></prefixdata>
+    <prefixdata><npa>631</npa><nxx>686</nxx><x>9</x><rc>St James</rc><region>NY</region>
+      <company-name>T-MOBILE USA, INC.</company-name><company-type>W</company-type></prefixdata>
+  </root>`;
+
+  assert.equal(__numberingPlan.ownerFromXml(xml, '9')?.carrier, 'T-MOBILE USA, INC.');
+  assert.equal(__numberingPlan.ownerFromXml(xml, '9')?.operator, 'wireless');
+  assert.equal(__numberingPlan.ownerFromXml(xml, '1')?.operator, 'competitive');
+});
+
+test('a number allocated to a wireless carrier is reported as mobile, but not as certain', () => {
+  seedBlockOwner('+16316869123', {
+    carrier: 'T-MOBILE USA, INC.',
+    operator: 'wireless',
+    rateCenter: 'St James',
+    region: 'NY',
+  });
+
+  const verdict = resolveLineType({ number: '+16316869123' });
+  assert.equal(verdict.type, 'MOBILE');
+  assert.ok(verdict.confidence > 20, 'the block allocation is real evidence and should register as such');
+  assert.ok(verdict.confidence < 90, 'portability means an allocation is never proof');
+  assert.match(verdict.basis, /ported away/i, 'the caveat belongs in the answer, not only in the code');
+  assert.equal(verdict.carrier, 'T-MOBILE USA, INC.');
+});
+
+test('an incumbent local carrier means landline', () => {
+  seedBlockOwner('+16032230003', { carrier: 'CONSOLIDATED COMM OF NO. NEW ENGLAND-NH', operator: 'incumbent' });
+  assert.equal(resolveLineType({ number: '+16032230003' }).type, 'LANDLINE');
+});
+
+test('a page that calls the number a mobile outweighs a landline allocation', () => {
+  seedBlockOwner('+14105550111', { carrier: 'VERIZON MARYLAND, INC.', operator: 'incumbent' });
+  const verdict = resolveLineType({
+    number: '+14105550111',
+    publishedLabel: 'Wireless',
+    context: 'Cell: (410) 555-0111',
+  });
+
+  assert.equal(verdict.type, 'MOBILE', 'a carrier-data label plus page wording beats the original allocation');
+  assert.match(verdict.basis, /a weaker signal disagreed/i, 'the disagreement has to be visible');
+});
+
+test('a number the register knows nothing about stays unknown rather than guessed', () => {
+  seedBlockOwner('+12065550100', null);
+  const verdict = resolveLineType({ number: '+12065550100' });
+  assert.equal(verdict.type, 'UNKNOWN');
+  assert.equal(verdict.confidence, 0);
 });

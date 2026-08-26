@@ -26,3 +26,4 @@ __MACOSX/
 .env
 .env.local
 .env.*.local
+.vercel

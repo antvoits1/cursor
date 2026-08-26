@@ -89,9 +89,18 @@ export async function availableTiers(): Promise<TransportTier[]> {
   return (await tierAvailability()).filter((t) => t.available).map((t) => t.tier);
 }
 
+/**
+ * A tier whose runtime is missing was never tried, and the route should say so
+ * rather than implying a fetch was attempted and came back empty.
+ */
+function tierUnavailable(attempt: TransportAttempt): boolean {
+  return /is not installed|could not be started/i.test(attempt.reason ?? '');
+}
+
 function describeAttempt(attempt: TransportAttempt): string {
   const label = tierLabel(attempt.tier);
   if (attempt.ok) return `The ${label} tier returned a readable page.`;
+  if (tierUnavailable(attempt)) return `The ${label} tier is unavailable on this host, so it was skipped. ${attempt.reason}`;
   if (attempt.challenge) return `The ${label} tier hit a ${attempt.challenge}; this source is protected and was not solved.`;
   if (attempt.blocked) return `The ${label} tier was blocked${attempt.status ? ` with HTTP ${attempt.status}` : ''}.`;
   if (attempt.timedOut) return `The ${label} tier timed out.`;
@@ -111,6 +120,10 @@ function traceAttempt(trace: RouteTrace, attempt: TransportAttempt, url: string)
 
   if (attempt.ok) {
     trace.success('transport', describeAttempt(attempt), options);
+    return;
+  }
+  if (tierUnavailable(attempt)) {
+    trace.skip('escalation', describeAttempt(attempt), options);
     return;
   }
   if (attempt.challenge) {

@@ -1,4 +1,5 @@
 import { parsePhoneNumber } from 'libphonenumber-js';
+import { blockOwner } from './numberingPlan.js';
 import type { LineType, LineTypeSignal } from '../src/types.js';
 
 /**
@@ -21,8 +22,12 @@ import type { LineType, LineTypeSignal } from '../src/types.js';
  *     lookup, and it is the best free signal that exists.
  *  2. A carrier lookup that names the operator, where the operator is known to
  *     be mobile-only or landline-only.
- *  3. Page context: "Mobile:", "Cell:", "Fax:" next to the number.
- *  4. Numbering-plan metadata, which for the US is close to useless and is
+ *  3. The operator holding the published thousands-block the number came from.
+ *     Portability makes this fallible, but it is right for most numbers and it
+ *     is available for every North American number rather than only the ones
+ *     somebody happened to label.
+ *  4. Page context: "Mobile:", "Cell:", "Fax:" next to the number.
+ *  5. Numbering-plan metadata, which for the US is close to useless and is
  *     weighted accordingly, but is meaningful in most other countries.
  */
 
@@ -47,6 +52,8 @@ const VOIP_CARRIERS = [
   'bandwidth.com', 'twilio', 'level 3', 'level3', 'onvoy', 'inteliquent', 'peerless network',
   'vonage', 'magicjack', 'ringcentral', 'dialpad', 'grasshopper', 'google voice', 'voip', 'sinch',
   'telnyx', 'plivo', 'nextiva', '8x8', 'ooma', 'callcentric', 'flowroute', 'teleport communications',
+  // Cable operators name their telephony subsidiaries this way in the register.
+  'ip phone', 'ip enabled', 'ip-enabled', 'digital phone',
 ];
 
 function carrierClass(carrier: string): LineType | null {
@@ -154,7 +161,50 @@ export function resolveLineType(input: LineTypeInput): LineTypeVerdict {
     }
   }
 
-  // 3. How the page presented the number.
+  /*
+   * 3. The operator holding the published thousands-block.
+   *
+   * Weighed below an explicit "Wireless"/"Landline" label, because that label
+   * comes from a live carrier lookup and this does not, but above everything
+   * else: it is a matter of public record, it is available for every North
+   * American number, and portability moves only a minority of them.
+   *
+   * A competitive carrier is left to say only that the line is not mobile.
+   * That category holds both cable telephony and VoIP wholesalers, so it
+   * cannot separate the two on its own, and the operator's name is checked
+   * against the known VoIP wholesalers before falling back to fixed line.
+   */
+  const block = blockOwner(input.number);
+  if (block) {
+    const named = carrierClass(block.carrier);
+    const says: LineType | null =
+      block.operator === 'wireless'
+        ? 'MOBILE'
+        : block.operator === 'incumbent'
+          ? 'LANDLINE'
+          : block.operator === 'competitive'
+            ? (named ?? 'LANDLINE')
+            : named;
+
+    if (says) {
+      const strong = block.operator === 'wireless' || block.operator === 'incumbent';
+      signals.push({
+        source: 'carrier_lookup',
+        says,
+        weight: strong ? 38 : 20,
+        detail:
+          `The number belongs to a block allocated to ${block.carrier.trim()}, ` +
+          (says === 'MOBILE'
+            ? 'a wireless carrier. Numbers can be ported away from the operator that was allocated them, so this is strong evidence rather than proof.'
+            : says === 'VOIP'
+              ? 'a VoIP wholesaler rather than a mobile or fixed-line network.'
+              : 'a fixed-line operator. Numbers can be ported away from the operator that was allocated them, so this is strong evidence rather than proof.'),
+        sourceUrl: `https://localcallingguide.com/lca_prefix.php?npa=${digits.slice(-10, -7)}&nxx=${digits.slice(-7, -4)}`,
+      });
+    }
+  }
+
+  // 4. How the page presented the number.
   if (input.context) {
     const lowered = input.context.toLowerCase();
     if (/\b(?:mobile|cell(?:ular)?|cell phone|text|sms|whatsapp)\b/.test(lowered)) {
@@ -174,7 +224,7 @@ export function resolveLineType(input: LineTypeInput): LineTypeVerdict {
     }
   }
 
-  // 4. Numbering-plan metadata. Genuinely informative outside North America,
+  // 5. Numbering-plan metadata. Genuinely informative outside North America,
   //    close to meaningless inside it because of number portability.
   try {
     const parsed = parsePhoneNumber(input.number);
@@ -217,7 +267,7 @@ export function resolveLineType(input: LineTypeInput): LineTypeVerdict {
       confidence: 0,
       basis: 'Nothing available said whether this is a mobile or a landline, so it is left unstated rather than guessed.',
       signals: [],
-      carrier: input.carrier,
+      carrier: input.carrier ?? block?.carrier,
     };
   }
 
@@ -244,7 +294,7 @@ export function resolveLineType(input: LineTypeInput): LineTypeVerdict {
       ? `${deciding.detail} A weaker signal disagreed: ${dissent[0].detail.charAt(0).toLowerCase()}${dissent[0].detail.slice(1)}`
       : deciding.detail;
 
-  return { type: winner, confidence, basis, signals, carrier: input.carrier };
+  return { type: winner, confidence, basis, signals, carrier: input.carrier ?? block?.carrier };
 }
 
 export interface ReachabilityInput {

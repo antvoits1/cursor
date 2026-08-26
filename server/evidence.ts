@@ -428,6 +428,17 @@ export class EvidenceLedger {
   }
 
   /**
+   * Every number collected so far, in E.164.
+   *
+   * Exposed so a caller can resolve carrier data for the whole set in one
+   * batch before `resolve` settles the verdicts, which keeps `resolve` itself
+   * synchronous and free of network access.
+   */
+  phoneNumbers(): string[] {
+    return [...this.phones.values()].map((c) => c.value?.number).filter((n): n is string => Boolean(n));
+  }
+
+  /**
    * Produces the final, ranked values. Confidence is derived from how many
    * independent sources agreed and how the value was located — never from a
    * fixed optimistic baseline.

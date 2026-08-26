@@ -2,6 +2,7 @@ import { EvidenceLedger } from './evidence.js';
 import { inspectDomainDns, normaliseDomain } from './dnsInspector.js';
 import { isReservedHost } from './ssrfGuard.js';
 import { withRunDeadline } from './runDeadline.js';
+import { blockOwner, prefetchBlockOwners } from './numberingPlan.js';
 import { lookupPeople } from './sources/peopleSearch.js';
 import { verifyEmails } from './emailVerifier.js';
 import { assistantAvailable, beginUsage, interpretQuery } from './assistant.js';
@@ -662,6 +663,27 @@ async function runExtraction(rawQuery: string, options: ExtractionOptions = {}):
         fieldYield: dns.hasValidMx ? 1 : 0,
       });
     }
+  }
+
+  /*
+   * Carrier data is fetched for the whole set of numbers before the ledger
+   * settles, so that "mobile or landline" is answered from the published
+   * block allocations rather than left unknown whenever a page happened not to
+   * label its numbers — which is nearly always.
+   */
+  const collectedNumbers = ledger.phoneNumbers();
+  if (collectedNumbers.length > 0) {
+    const carrierStart = Date.now();
+    trace.info('validation', `Looking up who was allocated ${collectedNumbers.length === 1 ? 'this number' : 'these numbers'} to tell mobile from landline...`);
+    await prefetchBlockOwners(collectedNumbers);
+    const identified = collectedNumbers.filter((number) => blockOwner(number)).length;
+    trace.success(
+      'validation',
+      identified > 0
+        ? `The public numbering register named the carrier for ${identified} of ${collectedNumbers.length}.`
+        : 'The public numbering register had nothing on these numbers, so line type rests on how the pages presented them.',
+      { durationMs: Date.now() - carrierStart },
+    );
   }
 
   const resolved = ledger.resolve(website, dns);

@@ -305,6 +305,11 @@ class TieredRouter:
         self._camoufox_browsers: dict[str, Any] = {}
         self._lifecycle_lock = asyncio.Lock()
         self._host_safety_cache: dict[str, bool] = {}
+        self._tier_unavailable: dict[str, str] = {}
+        if async_playwright is None:
+            self._tier_unavailable['patchright'] = 'Patchright is not installed on this host.'
+        if AsyncCamoufox is None:
+            self._tier_unavailable['camoufox'] = 'Camoufox is not installed on this host.'
 
     async def _throttle(self, url: str) -> None:
         """Keeps at least DOMAIN_DELAY_SECONDS between requests to one host."""
@@ -344,6 +349,19 @@ class TieredRouter:
             except Exception:
                 pass
 
+    def _disable_tier(self, tier: str, reason: str) -> None:
+        """
+        Records that a tier cannot run here, so it is never attempted again.
+
+        A browser package that imports but has no browser binary installed
+        fails only at launch, and the launch is slow. Retrying it on every page
+        cost roughly thirteen seconds per blocked source in the first audit
+        run, which is time taken from sources that would have answered. One
+        failure is enough to know; the reason is kept so the route can still
+        say why the tier was skipped instead of silently omitting it.
+        """
+        self._tier_unavailable.setdefault(tier, reason)
+
     async def _get_patch_context(self, proxy: str) -> Any:
         if async_playwright is None:
             return None
@@ -351,15 +369,23 @@ class TieredRouter:
         async with self._lifecycle_lock:
             if key in self._patch_contexts:
                 return self._patch_contexts[key]
-            if self._patchright is None:
-                self._patchright = await async_playwright().start()
-            if self._patch_browser is None:
-                self._patch_browser = await self._patchright.chromium.launch(headless=True)
-            kwargs: dict[str, Any] = {}
-            cfg = _proxy_config(proxy)
-            if cfg:
-                kwargs['proxy'] = cfg
-            context = await self._patch_browser.new_context(**kwargs)
+            try:
+                if self._patchright is None:
+                    self._patchright = await async_playwright().start()
+                if self._patch_browser is None:
+                    self._patch_browser = await self._patchright.chromium.launch(headless=True)
+                kwargs: dict[str, Any] = {}
+                cfg = _proxy_config(proxy)
+                if cfg:
+                    kwargs['proxy'] = cfg
+                context = await self._patch_browser.new_context(**kwargs)
+            except Exception as exc:
+                self._disable_tier(
+                    'patchright',
+                    f'The Patchright browser could not be started here ({type(exc).__name__}). '
+                    'Run "patchright install chromium" to enable this tier.',
+                )
+                return None
             self._patch_contexts[key] = context
             return context
 
@@ -376,8 +402,16 @@ class TieredRouter:
                 kwargs['proxy'] = cfg
                 # GeoIP alignment only matters when traffic exits somewhere else.
                 kwargs['geoip'] = True
-            manager = AsyncCamoufox(**kwargs)
-            browser = await manager.__aenter__()
+            try:
+                manager = AsyncCamoufox(**kwargs)
+                browser = await manager.__aenter__()
+            except Exception as exc:
+                self._disable_tier(
+                    'camoufox',
+                    f'The Camoufox browser could not be started here ({type(exc).__name__}). '
+                    'Run "camoufox fetch" to download its runtime.',
+                )
+                return None
             self._camoufox_managers[key] = manager
             self._camoufox_browsers[key] = browser
             return browser
@@ -550,7 +584,11 @@ class TieredRouter:
             ('camoufox', lambda: self._fetch_browser('camoufox', url, min(max(timeout_ms * 3, 18000), 45000), proxy, block_media)),
         )
 
-        for _, run in ladder:
+        for tier, run in ladder:
+            unavailable = self._tier_unavailable.get(tier)
+            if unavailable:
+                attempts.append(Attempt(tier, False, reason=unavailable, elapsed_ms=0))
+                continue
             result, attempt = await run()
             attempts.append(attempt)
             if result:
