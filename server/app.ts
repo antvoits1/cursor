@@ -34,6 +34,20 @@ export type ApiHost = EngineDiagnostics['host'];
 
 const MAX_QUERY_LENGTH = 400;
 
+/**
+ * The production UI and extraction service can live on different hosts.
+ * Only explicitly configured browser origins receive cross-origin access;
+ * same-origin requests and non-browser clients remain unaffected.
+ */
+function allowedOrigins(): Set<string> {
+  return new Set(
+    (process.env.EXTRACTOR_ALLOWED_ORIGINS ?? '')
+      .split(',')
+      .map((origin) => origin.trim().replace(/\/+$/, ''))
+      .filter(Boolean),
+  );
+}
+
 function fail(res: Response, status: number, error: string, detail?: string): void {
   const body: ApiError = detail ? { error, detail } : { error };
   res.status(status).json(body);
@@ -179,7 +193,26 @@ export function createApiRouter(host: ApiHost): express.Router {
 /** Builds the Express application shared by the local server and the Vercel function. */
 export function createApp(host: ApiHost): Express {
   const app = express();
+  const browserOrigins = allowedOrigins();
   app.disable('x-powered-by');
+
+  app.use((req, res, next) => {
+    const origin = req.get('origin')?.replace(/\/+$/, '');
+    if (!origin || !browserOrigins.has(origin)) {
+      if (req.method === 'OPTIONS' && origin) {
+        return res.status(403).json({ error: 'This browser origin is not allowed to use the extraction service.' });
+      }
+      return next();
+    }
+
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Vary', 'Origin');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    if (req.method === 'OPTIONS') return res.status(204).end();
+    return next();
+  });
+
   app.use(express.json({ limit: '1mb' }));
 
   app.use('/api', createApiRouter(host));

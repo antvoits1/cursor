@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: extractor-layered-backend
+    runtime: docker
+    plan: standard
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    autoDeployTrigger: commit
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: EXTRACTOR_ALLOWED_ORIGINS
+        value: https://workspace-six-pink-20.vercel.app
+      - key: EXTRACTOR_RUN_BUDGET_MS
+        value: "45000"
+      - key: EXTRACTOR_ENABLE_PEOPLE_SEARCH
+        value: "0"
