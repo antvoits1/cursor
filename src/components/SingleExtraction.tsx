@@ -179,8 +179,8 @@ export function SingleExtraction({
   const advancedCount = Object.values(advanced).filter((value) => value.trim()).length;
 
   return (
-    <div className="grid items-start gap-4 xl:grid-cols-[minmax(390px,0.9fr)_minmax(0,1.45fr)]">
-      <div className="space-y-4 xl:sticky xl:top-[76px] xl:max-h-[calc(100vh-92px)] xl:overflow-y-auto xl:pr-1">
+    <div className="grid items-start gap-4 xl:h-full xl:grid-cols-[minmax(390px,0.9fr)_minmax(0,1.45fr)]">
+      <div className="space-y-4 xl:h-full xl:overflow-y-auto xl:pr-1">
       <Panel>
         <PanelHeader
           step={1}
@@ -352,7 +352,7 @@ export function SingleExtraction({
       </Panel>
       </div>
 
-      <div className="space-y-4 xl:max-h-[calc(100vh-92px)] xl:overflow-y-auto xl:pr-1">
+      <div className="space-y-4 xl:h-full xl:overflow-y-auto xl:pr-1">
       {result ? (
         <>
           <Panel>

@@ -150,7 +150,7 @@ export default function App() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-[1600px] px-4 py-4 sm:px-5 lg:px-8 lg:py-5">
+      <main className="mx-auto max-w-[1600px] px-4 py-4 sm:px-5 lg:px-8 lg:py-5 xl:h-[calc(100vh-65px)] xl:overflow-hidden">
         {tab === 'extract' && (
           <SingleExtraction
             settings={settings}
@@ -189,7 +189,7 @@ export default function App() {
         )}
       </main>
 
-      <footer className="mx-auto max-w-[1600px] px-5 pb-6 pt-2 text-xs text-ink-faint lg:px-8">
+      <footer className="mx-auto max-w-[1600px] px-5 pb-6 pt-2 text-xs text-ink-faint lg:px-8 xl:hidden">
         {diagnostics ? `${diagnostics.build} v${diagnostics.version}` : 'Extractor'} · data comes from public
         sources only · nothing on this screen is generated or inferred beyond the evidence shown
       </footer>
