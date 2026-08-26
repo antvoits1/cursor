@@ -144,7 +144,14 @@ export function SingleExtraction({
         abortRef.current = null;
       }
     },
-    [onResult, running, settings.deepScan, settings.runBudgetMs],
+    [
+      onResult,
+      running,
+      settings.deepScan,
+      settings.peopleSearch,
+      settings.runBudgetMs,
+      settings.useAssistant,
+    ],
   );
 
   // A query handed over from History lands in the field and runs immediately.
