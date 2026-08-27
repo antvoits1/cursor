@@ -88,10 +88,12 @@ if not exist "dist\index.html" (
 set "NODE_ENV=production"
 set "HOST=127.0.0.1"
 set "PATH=%VENV%\Scripts;%PATH%"
+if exist "%VENV%\Scripts\python.exe" set "EXTRACTOR_PYTHON=%VENV%\Scripts\python.exe"
 
 echo Starting Extractor at %URL% ...
 > "%LOG%" echo [%DATE% %TIME%] Starting Extractor
-start "Extractor" /MIN cmd /c "cd /d \"%CD%\" && set NODE_ENV=production&& set HOST=127.0.0.1&& set PORT=%PORT%&& node .\scripts\start-production.mjs >> \"%LOG%\" 2>&1"
+if exist "%VENV%\Scripts\python.exe" >> "%LOG%" echo Using EXTRACTOR_PYTHON=%VENV%\Scripts\python.exe
+start "Extractor" /MIN cmd /c "\"%~dp0START-SERVER.bat\" >> \"%LOG%\" 2>&1"
 
 set /a tries=0
 :wait

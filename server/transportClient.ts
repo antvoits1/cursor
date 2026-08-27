@@ -72,9 +72,12 @@ function pythonCandidates(): Array<{ command: string; args: string[] }> {
   const configured = process.env.EXTRACTOR_PYTHON?.trim();
   if (configured) return [{ command: configured, args: [] }];
   if (process.platform === 'win32') {
+    // Prefer `python` first so an activated/.venv PATH wins over the Windows
+    // `py -3` launcher, which often points at a system interpreter without
+    // curl_cffi / Patchright / Camoufox installed.
     return [
-      { command: 'py', args: ['-3'] },
       { command: 'python', args: [] },
+      { command: 'py', args: ['-3'] },
       { command: 'python3', args: [] },
     ];
   }

@@ -83,6 +83,9 @@ start_extractor() {
   export HOST=127.0.0.1
   export PORT
   export PATH="$ROOT_DIR/.venv/bin:$PATH"
+  if [[ -x "$ROOT_DIR/.venv/bin/python" ]]; then
+    export EXTRACTOR_PYTHON="$ROOT_DIR/.venv/bin/python"
+  fi
 
   if curl -fsS "$URL/api/health" >/dev/null 2>&1; then
     echo "Extractor is already running at $URL"
