@@ -44,9 +44,15 @@ if not errorlevel 1 (
   exit /b 0
 )
 
+rem If packages were already installed earlier, never re-run the long setup.
+if exist "node_modules\tsx" if exist "dist\index.html" (
+  if not exist "%MARKER%" > "%MARKER%" echo setup-complete-existing
+)
+
 if not exist "%MARKER%" (
   echo Fast first-time setup — installs the quick backend only...
-  echo Optional full browsers can be added later with Install-Full-Browsers.bat
+  echo This will NOT download Chromium/Camoufox.
+  echo Optional browsers: desktop\Install-Full-Browsers.bat
   call npm ci
   if errorlevel 1 goto :fail
   call npm run build
