@@ -44,15 +44,15 @@ export function StatusRail({
 
   return (
     <div
-      className="flex items-center gap-3 rounded-xl bg-canvas-deep/50 px-3 py-2"
+      className="flex items-center gap-3 rounded-xl border border-line bg-panel-sunken px-3 py-2"
       title={detail}
     >
       <span className="flex items-center gap-2">
         <span className={`size-2 rounded-full ${DOT[tone]}`} aria-hidden="true" />
-        <span className="text-sm font-semibold text-ink-invert">{label}</span>
+        <span className="text-sm font-semibold text-ink">{label}</span>
       </span>
       {diagnostics && (
-        <span className="hidden text-xs text-panel/75 sm:inline">
+        <span className="hidden text-xs text-ink-faint sm:inline">
           {diagnostics.transportMode === 'layered_python' ? 'Layered transport' : 'Node transport'}
         </span>
       )}
@@ -60,7 +60,7 @@ export function StatusRail({
         type="button"
         onClick={onRefresh}
         aria-label="Refresh service status"
-        className="rounded-md p-1 text-panel/80 transition-colors hover:bg-canvas/40 hover:text-ink-invert"
+        className="rounded-md p-1 text-ink-faint transition-colors hover:bg-panel hover:text-ink"
       >
         <RefreshCw className="size-3.5" strokeWidth={2.4} />
       </button>

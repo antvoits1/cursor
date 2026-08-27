@@ -15,6 +15,7 @@ import type { Server } from 'node:http';
 process.env.EXTRACTOR_DISABLE_PYTHON_TRANSPORT = '1';
 process.env.EXTRACTOR_DISABLE_LEARNING = '1';
 process.env.EXTRACTOR_OFFLINE = '1';
+process.env.EXTRACTOR_ALLOWED_ORIGINS = 'https://workspace-six-pink-20.vercel.app';
 
 const { createApp } = await import('../server/app.js');
 
@@ -49,6 +50,35 @@ test('health identifies the build that is actually serving', async () => {
   assert.equal(body.build, 'Extractor-React-Layered-20260825-03');
   assert.equal(body.host, 'node_server');
   assert.ok(typeof body.version === 'string' && body.version.length > 0);
+});
+
+test('the configured Vercel frontend can call a separately hosted backend', async () => {
+  const origin = 'https://workspace-six-pink-20.vercel.app';
+  const preflight = await fetch(`${base}/api/health`, {
+    method: 'OPTIONS',
+    headers: {
+      origin,
+      'access-control-request-method': 'GET',
+    },
+  });
+  assert.equal(preflight.status, 204);
+  assert.equal(preflight.headers.get('access-control-allow-origin'), origin);
+
+  const response = await fetch(`${base}/api/health`, { headers: { origin } });
+  assert.equal(response.headers.get('access-control-allow-origin'), origin);
+  assert.match(response.headers.get('vary') ?? '', /Origin/);
+});
+
+test('an unconfigured browser origin is refused at preflight', async () => {
+  const response = await fetch(`${base}/api/health`, {
+    method: 'OPTIONS',
+    headers: {
+      origin: 'https://untrusted.example',
+      'access-control-request-method': 'GET',
+    },
+  });
+  assert.equal(response.status, 403);
+  assert.equal(response.headers.get('access-control-allow-origin'), null);
 });
 
 test('diagnostics report only the capabilities actually present', async () => {

@@ -102,20 +102,20 @@ export default function App() {
 
   return (
     <div className="min-h-screen">
-      <header className="border-b border-canvas-deep/60 bg-canvas-deep/40">
-        <div className="mx-auto flex max-w-[1400px] flex-wrap items-center justify-between gap-x-8 gap-y-4 px-6 py-4 lg:px-10">
+      <header className="sticky top-0 z-30 border-b border-line bg-panel/95 shadow-xs backdrop-blur">
+        <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-x-8 gap-y-3 px-5 py-3 lg:px-8">
           <div className="flex items-center gap-3">
-            <span className="grid size-9 place-items-center rounded-xl bg-panel-raised text-accent shadow-sm">
+            <span className="grid size-9 place-items-center rounded-xl bg-accent text-white shadow-accent">
               <Search className="size-5" strokeWidth={2.4} />
             </span>
             <div className="leading-tight">
-              <h1 className="text-lg font-semibold text-ink-invert">Extractor</h1>
-              <p className="text-xs text-panel/75">Layered public-record intelligence</p>
+              <h1 className="text-lg font-semibold text-ink">Extractor</h1>
+              <p className="text-xs text-ink-faint">Layered public-record intelligence</p>
             </div>
           </div>
 
           <nav aria-label="Sections" className="order-3 w-full lg:order-2 lg:w-auto">
-            <ul className="flex flex-wrap gap-1 rounded-xl bg-canvas-deep/50 p-1">
+            <ul className="flex flex-wrap gap-1 rounded-xl border border-line bg-panel-sunken p-1">
               {TABS.map(({ id, label, icon: Icon }) => {
                 const active = tab === id;
                 return (
@@ -126,8 +126,8 @@ export default function App() {
                       aria-current={active ? 'page' : undefined}
                       className={`inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-sm font-semibold transition-colors ${
                         active
-                          ? 'bg-panel text-ink shadow-sm'
-                          : 'text-panel/85 hover:bg-canvas/40 hover:text-ink-invert'
+                          ? 'bg-panel text-accent shadow-sm'
+                          : 'text-ink-soft hover:bg-panel hover:text-ink'
                       }`}
                     >
                       <Icon className="size-4" strokeWidth={2.2} />
@@ -150,7 +150,7 @@ export default function App() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-[1400px] px-6 py-8 lg:px-10 lg:py-10">
+      <main className="mx-auto max-w-[1600px] px-4 py-4 sm:px-5 lg:px-8 lg:py-5 xl:h-[calc(100vh-65px)] xl:overflow-hidden">
         {tab === 'extract' && (
           <SingleExtraction
             settings={settings}
@@ -189,7 +189,7 @@ export default function App() {
         )}
       </main>
 
-      <footer className="mx-auto max-w-[1400px] px-6 pb-10 text-xs text-panel/70 lg:px-10">
+      <footer className="mx-auto max-w-[1600px] px-5 pb-6 pt-2 text-xs text-ink-faint lg:px-8 xl:hidden">
         {diagnostics ? `${diagnostics.build} v${diagnostics.version}` : 'Extractor'} · data comes from public
         sources only · nothing on this screen is generated or inferred beyond the evidence shown
       </footer>

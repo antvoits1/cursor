@@ -1,4 +1,5 @@
 import { pageCache } from './cache.js';
+import { cloudflareBrowserAvailable, fetchViaCloudflareBrowser } from './cloudflareBrowser.js';
 import { nodeFetchPage } from './nodeTransport.js';
 import { boundedTimeout } from './runDeadline.js';
 import { assessUrl } from './ssrfGuard.js';
@@ -33,6 +34,7 @@ const humanTier: Record<TransportTier, string> = {
   curl_cffi: 'fast static fetch',
   patchright: 'browser rendering',
   camoufox: 'hardened browser rendering',
+  cloudflare_browser: 'Cloudflare remote browser',
   node_http: 'built-in HTTP fetch',
 };
 
@@ -76,6 +78,13 @@ export async function tierAvailability(): Promise<TierAvailability[]> {
       tier: 'camoufox',
       available: Boolean(caps?.camoufox),
       detail: caps?.camoufox ? 'Camoufox browser runtime is installed.' : (workerDetail ?? 'Camoufox is not installed.'),
+    },
+    {
+      tier: 'cloudflare_browser',
+      available: cloudflareBrowserAvailable(),
+      detail: cloudflareBrowserAvailable()
+        ? 'Cloudflare Browser Run is configured as the remote JavaScript-rendering tier.'
+        : 'Cloudflare Browser Run is not configured.',
     },
     {
       tier: 'node_http',
@@ -159,8 +168,8 @@ export interface FetchOptions {
 }
 
 /**
- * Layered page fetch: cache, then the Python tiers (curl_cffi to Patchright to
- * Camoufox), then the built-in Node HTTP client.
+ * Layered page fetch: cache, then the Python tiers, then an optional Cloudflare
+ * remote browser, then the built-in Node HTTP client.
  *
  * Every transition is written to the run trace in plain language, so the
  * operator can see exactly which tier produced the page and why the earlier
@@ -281,6 +290,36 @@ export async function fetchPage(targetUrl: string, options: FetchOptions): Promi
       url: targetUrl,
       detail: { reason: worker.reason ?? 'unavailable' },
     });
+  }
+
+  const remoteTimeout = boundedTimeout(requestedTimeout);
+  if (cloudflareBrowserAvailable() && remoteTimeout !== null) {
+    trace.info('escalation', `Trying the Cloudflare remote browser for ${label}...`, {
+      url: targetUrl,
+      tier: 'cloudflare_browser',
+    });
+    const remote = await fetchViaCloudflareBrowser(targetUrl, remoteTimeout);
+    attempts.push(remote.attempt);
+    traceAttempt(trace, remote.attempt, targetUrl);
+    if (remote.ok && remote.html && remote.finalUrl) {
+      pageCache.set(targetUrl, proxy, {
+        finalUrl: remote.finalUrl,
+        html: remote.html,
+        tier: 'cloudflare_browser',
+        status: remote.status,
+      });
+      return {
+        ok: true,
+        url: remote.finalUrl,
+        html: remote.html,
+        tier: 'cloudflare_browser',
+        status: remote.status,
+        fromCache: false,
+        blocked: false,
+        attempts,
+        totalMs: Date.now() - started,
+      };
+    }
   }
 
   /*

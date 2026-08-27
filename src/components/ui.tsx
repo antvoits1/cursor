@@ -10,10 +10,9 @@ import type {
  * The small set of primitives every screen is built from. Keeping them in one
  * place is what makes spacing, radii, and type scale identical across the app.
  *
- * All of them target the dark "Obsidian / Iris" system defined in index.css:
- * surfaces are separated by luminance *and* a hairline, depth comes from a cast
- * shadow plus a 1px top highlight, and the accent is the only saturated colour
- * on screen unless something is telling you about state.
+ * All of them target the cool-white workspace system defined in index.css:
+ * crisp borders separate dense data, shadows stay quiet, and blue is the only
+ * saturated colour unless a semantic status needs attention.
  */
 
 export type Tone = 'neutral' | 'good' | 'warn' | 'bad' | 'accent';
@@ -80,8 +79,7 @@ export function PanelHeader({
 type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
 
 const BUTTON_CLASS: Record<ButtonVariant, string> = {
-  /* The only filled control in the system: iris ground, near-black type, a 1px
-   * top highlight and a tinted cast shadow so it sits above the panel. */
+  /* The only filled control in the system: clear blue with white type. */
   primary: [
     'border-accent-muted bg-accent text-on-accent shadow-accent',
     'enabled:hover:border-accent enabled:hover:bg-accent-strong',
@@ -191,7 +189,7 @@ export function Toggle({
         className={`mt-0.5 inline-flex h-[22px] w-[38px] shrink-0 items-center rounded-full border p-px transition-[background-color,border-color,box-shadow] duration-(--duration-base) ease-smooth ${
           checked
             ? 'border-accent-muted bg-accent shadow-[inset_0_1px_0_rgb(255_255_255/0.22)]'
-            : 'border-line-strong bg-rail shadow-[inset_0_1px_2px_rgb(0_0_0/0.45)]'
+            : 'border-line-strong bg-rail shadow-[inset_0_1px_2px_rgb(15_23_42/0.08)]'
         } ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}
       >
         <span
@@ -220,7 +218,7 @@ export function EmptyState({
   return (
     <div className="flex flex-col items-center gap-3 px-8 py-16 text-center">
       {icon && (
-        <div className="mb-1 grid size-12 place-items-center rounded-2xl border border-line bg-panel-sunken text-ink-faint shadow-[inset_0_1px_0_rgb(255_255_255/0.03)]">
+        <div className="mb-1 grid size-12 place-items-center rounded-2xl border border-line bg-panel-sunken text-ink-faint">
           {icon}
         </div>
       )}

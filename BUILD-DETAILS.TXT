@@ -23,6 +23,19 @@ Two commitments shape the whole build:
      cannot run the address is marked unverifiable rather than deliverable.
 
 
+DESKTOP ONE-CLICK PACKAGE
+--------------------------------------------------------------------------------
+A local desktop package is included so the full backend can run on your own
+computer without Vercel/Cloudflare/Render:
+
+  desktop/Install-Desktop-Shortcut.bat|.command  — creates Desktop shortcut
+  desktop/START-EXTRACTOR.bat|.sh|.command       — starts the app
+  scripts/package-desktop.sh                     — builds Extractor-Desktop-*.zip
+
+Do not convert the project to a single app.py. React + Node + Python remains
+the correct architecture; the local launcher starts that stack on localhost.
+
+
 WHAT CHANGED IN THIS BUILD
 --------------------------------------------------------------------------------
 

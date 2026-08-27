@@ -25,6 +25,7 @@ export type TransportTier =
   | 'curl_cffi'
   | 'patchright'
   | 'camoufox'
+  | 'cloudflare_browser'
   | 'node_http';
 
 export type TransportMode = 'layered_python' | 'node_http_only';

@@ -27,3 +27,9 @@ __MACOSX/
 .env.local
 .env.*.local
 .vercel
+
+# Desktop one-click runtime markers
+.extractor-setup-done
+.extractor.log
+.extractor.pid
+.extractor.pid.lock

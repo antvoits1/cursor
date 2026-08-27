@@ -1,0 +1,5 @@
+# Fast desktop first-run dependencies.
+# Installs the critical TLS-impersonation tier only.
+# Optional browsers (Patchright/Camoufox) are installed later via
+# desktop/Install-Full-Browsers.bat|.sh if you want them.
+curl_cffi>=0.7.0
