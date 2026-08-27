@@ -1,36 +1,30 @@
 ================================================================================
-EXTRACTOR — ONE-CLICK DESKTOP
+EXTRACTOR — ONE-CLICK DESKTOP (FAST)
 ================================================================================
 
 Do you need app.py?
-  No. Keep this React + Node + Python layout. Changing to a single app.py would
-  remove the browser UI and the extraction engine that already works.
+  No. Keep React + Node + Python.
 
-What this does
-  Runs the full extractor on YOUR computer so Patchright and Camoufox can work.
-  No Vercel / Render / Cloudflare required for normal use.
+Fast install (default)
+  First launch installs only the quick backend (curl_cffi).
+  No Chromium/Camoufox download unless you ask for it.
 
 One-time setup
-  1. Install Node.js 20+ from https://nodejs.org
-  2. Install Python 3.11+ from https://www.python.org
-  3. Unzip this folder anywhere (example: Documents\Extractor)
-  4. Double-click Install-Desktop-Shortcut.bat  (Windows)
-     or Install-Desktop-Shortcut.command       (Mac)
+  1. Install Node.js 20+ and Python 3.11+
+  2. Unzip this folder
+  3. Windows: double-click Install-Desktop-Shortcut.bat
+     Mac: double-click Install-Desktop-Shortcut.command
 
 Every time after that
-  Double-click the "Extractor" shortcut on your Desktop.
-  Your browser opens to http://localhost:3000
+  Double-click Desktop "Extractor" → opens http://localhost:3000
 
-First launch takes longer (downloads npm packages, curl_cffi, Chromium,
-Camoufox). Later launches are quick.
+Optional later (large download)
+  Install-Full-Browsers.bat / .sh
+  Adds Patchright + Camoufox for harder JavaScript pages.
 
 Windows files
-  Install-Desktop-Shortcut.bat   — creates the Desktop shortcut once
-  START-EXTRACTOR.bat            — starts the app (what the shortcut runs)
-  STOP-EXTRACTOR.bat             — stops the local server
-
-Mac / Linux files
-  Install-Desktop-Shortcut.command / .sh
-  START-EXTRACTOR.command / .sh
-  STOP-EXTRACTOR.sh
+  Install-Desktop-Shortcut.bat
+  START-EXTRACTOR.bat
+  STOP-EXTRACTOR.bat
+  Install-Full-Browsers.bat
 ================================================================================

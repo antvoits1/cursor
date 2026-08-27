@@ -7,7 +7,6 @@ set "URL=http://127.0.0.1:%PORT%"
 set "MARKER=%CD%\.extractor-setup-done"
 set "VENV=%CD%\.venv"
 set "LOG=%CD%\.extractor.log"
-set "PIDFILE=%CD%\.extractor.pid"
 
 where node >nul 2>&1
 if errorlevel 1 (
@@ -46,7 +45,8 @@ if not errorlevel 1 (
 )
 
 if not exist "%MARKER%" (
-  echo First-time setup — this only happens once...
+  echo Fast first-time setup — installs the quick backend only...
+  echo Optional full browsers can be added later with Install-Full-Browsers.bat
   call npm ci
   if errorlevel 1 goto :fail
   call npm run build
@@ -57,21 +57,17 @@ if not exist "%MARKER%" (
     echo Virtualenv unavailable; installing Python packages for this user instead.
     %PYTHON% -m pip install --user --upgrade pip setuptools wheel
     if errorlevel 1 goto :fail
-    %PYTHON% -m pip install --user -r backend\requirements.txt
+    %PYTHON% -m pip install --user -r backend\requirements-fast.txt
     if errorlevel 1 goto :fail
-    %PYTHON% -m patchright install chromium
-    %PYTHON% -m camoufox fetch
   ) else (
     call "%VENV%\Scripts\activate.bat"
     python -m pip install --upgrade pip setuptools wheel
     if errorlevel 1 goto :fail
-    python -m pip install -r backend\requirements.txt
+    python -m pip install -r backend\requirements-fast.txt
     if errorlevel 1 goto :fail
-    python -m patchright install chromium
-    python -m camoufox fetch
   )
 
-  > "%MARKER%" echo setup-complete
+  > "%MARKER%" echo setup-complete-fast
   echo Setup complete.
 ) else (
   if exist "%VENV%\Scripts\activate.bat" call "%VENV%\Scripts\activate.bat"
@@ -115,7 +111,5 @@ if exist "%LOG%" (
   echo No log file was created.
 )
 echo ----------------------------------------------
-echo.
-echo If you see NODE_ENV or tsx errors, update to the latest desktop ZIP and retry.
 pause
 exit /b 1

@@ -31,6 +31,10 @@ Build a clean download ZIP:
 bash scripts/package-desktop.sh
 ```
 
+The packaged ZIP is slim (~1.6 MB). First launch installs a fast backend
+(`curl_cffi` only). Optional full browsers are a separate later step:
+`desktop/Install-Full-Browsers.bat`.
+
 ## Deploy the full backend on Render
 
 The repository includes two deployment profiles:

@@ -49,7 +49,8 @@ run_first_setup_if_needed() {
     return 0
   fi
 
-  echo "First-time setup — this only happens once..."
+  echo "Fast first-time setup — installs the quick backend only..."
+  echo "Optional full browsers can be added later with desktop/Install-Full-Browsers.sh"
   cd "$ROOT_DIR"
   npm ci
   npm run build
@@ -58,18 +59,14 @@ run_first_setup_if_needed() {
     # shellcheck disable=SC1091
     source "$ROOT_DIR/.venv/bin/activate"
     python -m pip install --upgrade pip setuptools wheel
-    python -m pip install -r backend/requirements.txt
-    python -m patchright install chromium || true
-    python -m camoufox fetch || true
+    python -m pip install -r backend/requirements-fast.txt
   else
     echo "Virtualenv unavailable; installing Python packages for this user instead."
     "$PYTHON" -m pip install --user --upgrade pip setuptools wheel
-    "$PYTHON" -m pip install --user -r backend/requirements.txt
-    "$PYTHON" -m patchright install chromium || true
-    "$PYTHON" -m camoufox fetch || true
+    "$PYTHON" -m pip install --user -r backend/requirements-fast.txt
   fi
 
-  date -u +"%Y-%m-%dT%H:%M:%SZ" > "$MARKER"
+  date -u +"%Y-%m-%dT%H:%M:%SZ setup-complete-fast" > "$MARKER"
   echo "Setup complete."
 }
 
