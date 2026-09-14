@@ -142,6 +142,7 @@ check('Topbar and sidebar bells toggle the same popup', (nav.match(/onClick=\{to
 check('Notifications derive only from lead sms mails calls and follow', has(notifLib,'lead.sms') && has(notifLib,'lead.mails') && has(notifLib,'lead.calls') && has(notifLib,'lead.follow') && not(notifLib+notif,'Apex Dynamics') && not(notifLib+notif,'Sandra Reeves'));
 check('Inbound SMS and WhatsApp are the only message notifications', has(notifLib,"entry.dir !== 'in'"));
 check('Notifications are newest first and capped at 12', has(notifLib,'NOTIF_CAP = 12') && has(notifLib,'.slice(0, NOTIF_CAP)') && has(notifLib,'a.age - b.age'));
+check('Follow-up notifications order by minutes until due', has(notifLib,'function followAge') && has(notifLib,'due - Date.now()') && has(notifLib,'followAge(lead.follow)'));
 check('Notification click routes to messages email calls or lead', has(app,'openNotification') && has(app,"setActivePage('messages')") && has(app,"tab: 'email'") && has(app,"tab: 'calls'") && has(app,'setSelectedId(item.leadId)'));
 check('Notification thread and comm open requests reach the views', has(messages,'openThread') && has(comm,'pendingOpen'));
 check('Notification read state persists locally', has(notifLib,"'forge-crm-notif-read-v16'") && has(notifLib,'localStorage.setItem(NOTIF_READ_KEY') && has(app,'markRead(item.id)'));
