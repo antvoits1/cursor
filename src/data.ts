@@ -124,7 +124,7 @@ export interface Lead {
 }
 
 export const INITIAL_LEADS: Lead[] = [
-  {id:"ns", company:"Northstar Catering Co.", dba:"Northstar", contact:"Elena Voss", title:"Owner / CEO", industry:"Catering · 2 units", city:"Manhattan, NY",
+  {id:"ns", company:"Northstar Catering Co.", dba:"Northstar", contact:"Elena Voss", title:"Owner", industry:"Catering · 2 units", city:"Manhattan, NY",
     avg:250000, ask:150000, offer:125000, pos:"2nd", rep:"Cole Brennan", source:"ISO · Harbor Point FG-NS-1844", employees:34, started:"March 2019", tib:"7 years 6 months",
     entity:"New York S-Corporation", ein:"11-2234419", ssn:"078-05-1120", dob:"March 14, 1984",
     address:"412 W 37th St, New York, NY 10018", statementAddress:"88 Gold St, Long Island City, NY 11101", website:"northstarcatering.com",
