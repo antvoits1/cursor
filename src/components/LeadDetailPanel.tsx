@@ -21,12 +21,6 @@ function PhoneActions({ number, onCall, onMessage, whatsapp = false }: { number:
   );
 }
 
-function positionTone(pos: string): 'teal' | 'amber' | 'neutral' {
-  if (pos.startsWith('1')) return 'teal';
-  if (pos.startsWith('2')) return 'amber';
-  return 'neutral';
-}
-
 function activityMeta(what: string) {
   const text = what.toLowerCase();
   if (text.includes('sms') || text.includes('whatsapp')) return { tone: 'teal' as const, Icon: MessageSquareText };
@@ -64,8 +58,7 @@ export default function LeadDetailPanel({ lead, onCall, onOpenMessages, setViewe
             <h1>{lead.company}</h1>
             <div className="detail-contact-name">{lead.contact} · {lead.title}</div>
             <div className="detail-tags">
-              <span className={`detail-pill ${positionTone(lead.pos)}`}>{lead.pos} position</span>
-              <span className="detail-tag">{lead.city}</span>
+              <span className="detail-tag">{lead.pos} position · {lead.city}</span>
             </div>
           </div>
           {showApproval && <div className="detail-header-approval"><span>Approval</span><strong>{formatFinancialUp(approval)}</strong></div>}

@@ -105,7 +105,7 @@ check('Lead company text uses dashboard name size', has(css,'.forge-lead-copy st
 check('Lead owner text uses dashboard muted size', has(css,'.forge-lead-copy span {\n  margin-top: 2px;') && has(css,'font-size: calc(10.5px + var(--font-offset));'));
 check('Middle company title is large', has(css,'--text-title: 21px;') && has(css,'.detail-company-line h1'));
 check('Owner and title sit directly under company title', has(detail,'detail-contact-name') && has(detail,'{lead.title}'));
-check('Position pill uses accepted accent tints', has(detail,'detail-pill') && has(css,'.detail-pill.teal') && has(css,'.detail-pill.amber'));
+check('Position shows as plain text without a pill box', not(detail,'detail-pill') && not(css,'.detail-pill') && has(detail,'{lead.pos} position'));
 check('Approval is centered in header', has(css,'.detail-header-approval {\n  flex: 0 0 auto;\n  min-width: 132px;\n  text-align: center;'));
 check('Financial strip uses real lead figures', has(detail,'fin-card') && has(detail,'lead.avg') && has(detail,'lead.ask') && has(detail,'lead.offer') && has(detail,'lead.bank.bal'));
 check('Financial strip uses dashboard stat-box styling', has(css,'.fin-card {') && has(css,'.fin-card-bar.blue') && has(css,'.fin-card-bar.teal'));

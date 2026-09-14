@@ -718,24 +718,6 @@ html[data-lead-density="compact"] .forge-lead-row {
   flex-wrap: wrap;
 }
 
-.detail-pill {
-  display: inline-flex;
-  align-items: center;
-  padding: 2px 8px;
-  border-radius: 20px;
-  font-size: calc(10.5px + var(--font-offset));
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.detail-pill.teal { background: var(--accent-teal-light); color: var(--accent-teal); }
-.detail-pill.amber { background: var(--accent-amber-light); color: var(--accent-amber); }
-.detail-pill.neutral {
-  background: var(--bg-panel);
-  color: var(--text-secondary);
-  border: 1px solid var(--border);
-}
-
 .detail-tag {
   color: var(--text-muted);
   font-size: calc(10.5px + var(--font-offset));
