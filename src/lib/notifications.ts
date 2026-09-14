@@ -25,13 +25,6 @@ function shortDate(iso: string): string {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-// Follow-ups are reminders: order by minutes until due, so overdue ones surface first.
-function followAge(iso: string): number {
-  const due = Date.parse(iso);
-  if (Number.isNaN(due)) return ageMinutes(iso);
-  return Math.round((due - Date.now()) / 60000);
-}
-
 export function deriveNotifications(leads: Lead[]): CrmNotification[] {
   const rows: (CrmNotification & { age: number })[] = [];
   leads.forEach(lead => {
@@ -79,7 +72,7 @@ export function deriveNotifications(leads: Lead[]): CrmNotification[] {
       body: `Follow-up · ${shortDate(lead.follow)}`,
       sub: lead.company,
       when: shortDate(lead.follow),
-      age: followAge(lead.follow),
+      age: ageMinutes(lead.follow),
     });
   });
   return rows
