@@ -39,6 +39,7 @@ check('Accepted accents are blue teal amber navy', has(css,'--accent-blue: #3B6F
 check('Navigation defaults to dashboard navy', has(store,"sidebarColor: '#1E2235'"));
 check('Accent light tints are implemented', has(css,'--accent-teal-light: #E5F6F3;') && has(css,'--accent-amber-light: #FDF3E5;') && has(css,'--accent-blue-light: #EAF0FF;'));
 check('Communication rows use accepted accent tints', has(css,'.comm-type-icon.call') && has(css,'.comm-type-icon.email') && has(comm,'comm-type-icon ${item.type}') && has(messages,"messages-list-icon ${isWa ? 'wa' : 'sms'}"));
+check('Icons stand alone without tile backgrounds', not(css,'.comm-type-icon.sms { background') && not(css,'.messages-list-icon.sms { background') && not(css,'.detail-activity-icon.teal { background') && not(css,'.comm-mini-actions a {\n  width: 27px;\n  height: 27px;\n  border: 0;\n  background: var(--bg-panel);'));
 check('Call actions hover teal like the reference', has(css,'.detail-action-call:hover') && has(detail,'detail-action-call'));
 check('Search fields use the dashboard focus ring', has(css,'.comm-search:focus-within') && has(css,'0 0 0 3px var(--accent-blue-light)'));
 check('Neon purple and neon green are absent', !/#25C47A|#6B4EBC/i.test(css+app+nav+leads+detail+comm));

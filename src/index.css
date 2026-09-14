@@ -1099,16 +1099,15 @@ html[data-lead-density="compact"] .forge-lead-row {
 .detail-activity-icon {
   width: 24px;
   height: 24px;
-  border-radius: 6px;
   display: grid;
   place-items: center;
   margin-top: 1px;
 }
 
-.detail-activity-icon.teal { background: var(--accent-teal-light); color: var(--accent-teal); }
-.detail-activity-icon.amber { background: var(--accent-amber-light); color: var(--accent-amber); }
-.detail-activity-icon.blue { background: var(--accent-blue-light); color: var(--accent-blue); }
-.detail-activity-icon.neutral { background: var(--bg-panel); color: var(--text-muted); }
+.detail-activity-icon.teal { color: var(--accent-teal); }
+.detail-activity-icon.amber { color: var(--accent-amber); }
+.detail-activity-icon.blue { color: var(--accent-blue); }
+.detail-activity-icon.neutral { color: var(--text-muted); }
 
 .detail-activity-copy { min-width: 0; }
 
@@ -1283,15 +1282,13 @@ html[data-lead-density="compact"] .forge-lead-row {
   height: 24px;
   display: grid;
   place-items: center;
-  border-radius: 6px;
-  background: var(--bg-panel);
   color: var(--text-muted);
 }
 
-.comm-type-icon.sms { background: var(--accent-blue-light); color: var(--accent-blue); }
+.comm-type-icon.sms { color: var(--accent-blue); }
 .comm-type-icon.wa,
-.comm-type-icon.call { background: var(--accent-teal-light); color: var(--accent-teal); }
-.comm-type-icon.email { background: var(--accent-amber-light); color: var(--accent-amber); }
+.comm-type-icon.call { color: var(--accent-teal); }
+.comm-type-icon.email { color: var(--accent-amber); }
 
 .comm-row-copy { min-width: 0; display: block; }
 
@@ -1444,11 +1441,19 @@ html[data-lead-density="compact"] .forge-lead-row {
   width: 30px;
   height: 30px;
   border: 0;
-  background: var(--bg-panel);
-  color: var(--text-secondary);
   border-radius: 8px;
   display: grid;
   place-items: center;
+}
+
+.comm-channel-toggle {
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+.comm-channel-toggle:hover {
+  background: var(--bg-row-hover);
+  color: var(--accent-blue);
 }
 
 .comm-send { background: var(--accent-blue); color: #fff; }
@@ -1506,11 +1511,16 @@ html[data-lead-density="compact"] .forge-lead-row {
   width: 28px;
   height: 28px;
   border: 0;
-  background: var(--bg-panel);
+  background: transparent;
   color: var(--text-secondary);
   border-radius: 7px;
   display: grid;
   place-items: center;
+}
+
+.comm-detail-actions button:hover {
+  background: var(--bg-row-hover);
+  color: var(--accent-blue);
 }
 
 .comm-contacts {
@@ -1614,12 +1624,20 @@ html[data-lead-density="compact"] .forge-lead-row {
   width: 27px;
   height: 27px;
   border: 0;
-  background: var(--bg-panel);
+  background: transparent;
   color: var(--text-secondary);
   border-radius: 7px;
   display: grid;
   place-items: center;
   text-decoration: none;
+}
+
+.comm-contact-actions button:hover,
+.comm-contact-actions a:hover,
+.comm-mini-actions button:hover,
+.comm-mini-actions a:hover {
+  background: var(--bg-row-hover);
+  color: var(--accent-blue);
 }
 
 .comm-contact-detail-row {
@@ -1771,13 +1789,11 @@ html[data-lead-density="compact"] .forge-lead-row {
   height: 28px;
   display: grid;
   place-items: center;
-  border-radius: 6px;
-  background: var(--bg-panel);
   color: var(--text-muted);
 }
 
-.messages-list-icon.sms { background: var(--accent-blue-light); color: var(--accent-blue); }
-.messages-list-icon.wa { background: var(--accent-teal-light); color: var(--accent-teal); }
+.messages-list-icon.sms { color: var(--accent-blue); }
+.messages-list-icon.wa { color: var(--accent-teal); }
 
 .messages-list-copy { min-width: 0; }
 .messages-list-copy strong { display: block; font-size: calc(12.5px + var(--font-offset)); }
