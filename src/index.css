@@ -128,24 +128,6 @@ a { color: inherit; }
   touch-action: none;
 }
 
-.panel-divider::after {
-  content: '';
-  position: absolute;
-  top: 8px;
-  bottom: 8px;
-  left: 50%;
-  width: 1px;
-  transform: translateX(-50%);
-  background: var(--border-panel);
-  opacity: .75;
-}
-
-.panel-divider:hover::after,
-body.panel-resizing .panel-divider::after {
-  background: var(--text-muted);
-  opacity: 1;
-}
-
 body.panel-resizing {
   cursor: col-resize;
   user-select: none;
