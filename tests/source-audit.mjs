@@ -108,7 +108,7 @@ check('Position pill uses accepted accent tints', has(detail,'detail-pill') && h
 check('Approval is centered in header', has(css,'.detail-header-approval {\n  flex: 0 0 auto;\n  min-width: 132px;\n  text-align: center;'));
 check('Financial strip uses real lead figures', has(detail,'fin-card') && has(detail,'lead.avg') && has(detail,'lead.ask') && has(detail,'lead.offer') && has(detail,'lead.bank.bal'));
 check('Financial strip uses dashboard stat-box styling', has(css,'.fin-card {') && has(css,'.fin-card-bar.blue') && has(css,'.fin-card-bar.teal'));
-check('Statement and bank figures are monospaced', has(css,'.detail-statement-table td.mono') && has(css,'.detail-bank-rows strong.mono') && has(detail,'className="mono"'));
+check('Revenue and financial figures use Inter throughout', not(css,'--font-family-mono') && not(css,'className="mono"') && not(detail,'mono') && not(leads,'mono') && not(html,'JetBrains'));
 check('Sales pitch is a card with the blue accent edge', has(css,'.detail-pitch {') && has(css,'border-left: 3px solid var(--accent-blue);'));
 check('Activity rows use tinted reference icons', has(detail,'detail-activity-icon') && has(css,'.detail-activity-icon.teal') && has(css,'.detail-activity-icon.amber'));
 check('Whole-dollar formatting is shared', has(format,'formatMoneyWhole') && has(leads,'formatMoneyWhole') && has(detail,'formatMoneyWhole'));

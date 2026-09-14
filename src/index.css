@@ -32,7 +32,6 @@
   --ui-scale: .96;
   --font-offset: 0px;
   --font-family-main: 'Inter', system-ui, sans-serif;
-  --font-family-mono: 'JetBrains Mono', ui-monospace, monospace;
   --topbar-h: 52px;
   --text-base: 12.5px;
   --text-md: 13.5px;
@@ -672,7 +671,6 @@ html[data-lead-density="compact"] .forge-lead-row {
   font-size: calc(12px + var(--font-offset));
   font-weight: 600;
   color: var(--text-primary);
-  font-family: var(--font-family-mono);
 }
 
 .forge-lead-side span {
@@ -910,13 +908,6 @@ html[data-lead-density="compact"] .forge-lead-row {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.detail-contact-line > span.mono,
-.detail-statement-table td.mono,
-.detail-bank-rows strong.mono {
-  font-family: var(--font-family-mono);
-  letter-spacing: .2px;
 }
 
 .detail-contact-line.email > span:first-child {
