@@ -367,7 +367,7 @@ body.panel-resizing {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 0 18px;
+  padding: 0 15px 0 18px;
   border-bottom: 1px solid var(--border);
 }
 
@@ -385,12 +385,11 @@ body.panel-resizing {
   display: flex;
   flex-direction: column;
   gap: 0;
-  padding: 12px 0 8px;
+  padding: 20px 0 8px;
 }
 
 .forge-workspace-label {
-  height: 18px;
-  padding: 20px 18px 6px;
+  padding: 0 18px 6px;
   font-size: calc(9.5px + var(--font-offset));
   font-weight: 700;
   letter-spacing: 1.1px;
@@ -400,21 +399,22 @@ body.panel-resizing {
 
 .forge-side-tab {
   width: 100%;
-  height: 38px;
+  height: 36px;
   border: 0;
   background: transparent;
   border-radius: 0;
   display: flex;
   align-items: center;
   gap: 9px;
-  padding: 8px 18px;
+  padding: 8px 15px 8px 18px;
   white-space: nowrap;
   color: inherit;
   border-left: 3px solid transparent;
+  font-size: calc(12.5px + var(--font-offset));
+  font-weight: 500;
 }
 
 .forge-sidebar.slim .forge-side-tab { justify-content: center; padding: 0; }
-.forge-side-tab span { font-size: calc(12.5px + var(--font-offset)); font-weight: 500; }
 
 .forge-sidebar-bottom {
   padding: 14px 18px 18px;
@@ -432,8 +432,8 @@ body.panel-resizing {
 .forge-sidebar.dark .forge-side-tab { color: var(--text-sidebar); }
 .forge-sidebar.dark .forge-side-tab:hover { background: rgba(255, 255, 255, 0.05); color: #fff; }
 .forge-sidebar.dark .forge-side-tab.active {
-  background: rgba(59, 111, 212, 0.18);
-  color: var(--text-sidebar-active);
+  background: var(--accent-blue);
+  color: #fff;
   border-left-color: var(--accent-blue);
 }
 
