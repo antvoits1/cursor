@@ -616,6 +616,7 @@ body.panel-resizing {
 .comm-detail-view,
 .comm-email-view,
 .messages-list,
+.forge-notif-list,
 .settings-scroll {
   scrollbar-width: thin;
   scrollbar-color: transparent transparent;
@@ -630,6 +631,7 @@ body.panel-resizing {
 .comm-detail-view:hover,
 .comm-email-view:hover,
 .messages-list:hover,
+.forge-notif-list:hover,
 .settings-scroll:hover {
   scrollbar-color: var(--border-panel) transparent;
 }
@@ -643,6 +645,7 @@ body.panel-resizing {
 .comm-detail-view::-webkit-scrollbar,
 .comm-email-view::-webkit-scrollbar,
 .messages-list::-webkit-scrollbar,
+.forge-notif-list::-webkit-scrollbar,
 .settings-scroll::-webkit-scrollbar {
   width: 5px;
   height: 5px;
@@ -657,6 +660,7 @@ body.panel-resizing {
 .comm-detail-view::-webkit-scrollbar-thumb,
 .comm-email-view::-webkit-scrollbar-thumb,
 .messages-list::-webkit-scrollbar-thumb,
+.forge-notif-list::-webkit-scrollbar-thumb,
 .settings-scroll::-webkit-scrollbar-thumb {
   background: transparent;
   border-radius: 4px;
@@ -671,6 +675,7 @@ body.panel-resizing {
 .comm-detail-view:hover::-webkit-scrollbar-thumb,
 .comm-email-view:hover::-webkit-scrollbar-thumb,
 .messages-list:hover::-webkit-scrollbar-thumb,
+.forge-notif-list:hover::-webkit-scrollbar-thumb,
 .settings-scroll:hover::-webkit-scrollbar-thumb {
   background: var(--border-panel);
 }

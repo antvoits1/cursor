@@ -20,6 +20,7 @@ interface Props {
   preferredMobile?: string;
   defaultTab?: CommTab;
   openThreadOnLoad?: boolean;
+  initialChannel?: 'sms' | 'wa';
   pendingOpen?: PendingCommOpen | null;
   onSelectLead?: (id: string) => void;
   onCall?: (number: string) => void;
@@ -45,7 +46,7 @@ function TypeIcon({ type, size = 14 }: { type: AllRow['type']; size?: number }) 
 
 export default function IOSCommPanel({
   lead, contacts = [], onBack, fullWidth = false, preferredMobile, defaultTab = 'all', openThreadOnLoad = false,
-  pendingOpen = null, onSelectLead, onCall, onPreferredMobileChange,
+  initialChannel = 'sms', pendingOpen = null, onSelectLead, onCall, onPreferredMobileChange,
 }: Props) {
   const pool = contacts.length ? contacts : (lead ? [lead] : []);
   const [activeTab, setActiveTab] = useState<CommTab>(defaultTab);
@@ -70,9 +71,9 @@ export default function IOSCommPanel({
   useEffect(() => {
     if (openThreadOnLoad && defaultTab === 'messages' && lead?.id) {
       setMessageLeadId(lead.id);
-      setTimeout(() => composerRef.current?.focus(), 0);
+      setMessageChannel(initialChannel);
     }
-  }, [openThreadOnLoad, defaultTab, lead?.id]);
+  }, [openThreadOnLoad, defaultTab, lead?.id, initialChannel]);
 
   const chooseLead = (item: Lead) => {
     onSelectLead?.(item.id);
@@ -125,13 +126,18 @@ export default function IOSCommPanel({
       setOpenEmailKey(mailKey);
       setEmailSubject(found?.entry.sub || '');
       setEmailBody('');
-      setTimeout(() => replyRef.current?.focus(), 0);
     }
     if (pendingOpen.tab === 'calls') {
       const found = pendingOpen.callKey ? callItems.find(row => row.key === pendingOpen.callKey) : null;
       if (found) setOpenCall({ lead: target, entry: found.entry, key: found.key });
     }
   }, [pendingOpen]);
+  useEffect(() => {
+    if (openThreadOnLoad && currentMessageLead) composerRef.current?.focus();
+  }, [currentMessageLead, openThreadOnLoad]);
+  useEffect(() => {
+    if (pendingOpen?.tab === 'email' && activeTab === 'email' && (openEmailKey || emailLeadId)) replyRef.current?.focus();
+  }, [pendingOpen, activeTab, openEmailKey, emailLeadId]);
 
   const openMessageThread = (item: Lead, channel: 'sms' | 'wa' = 'sms') => {
     chooseLead(item); setActiveTab('messages'); setMessageLeadId(item.id); setMessageChannel(channel); setMessageText('');

@@ -5,7 +5,7 @@ import type { CrmNotification } from '../lib/notifications';
 
 interface Props {
   anchorRect: DOMRect;
-  anchor: 'topbar' | 'sidebar';
+  variant: 'topbar' | 'sidebar';
   items: CrmNotification[];
   readIds: Set<string>;
   onOpen: (item: CrmNotification) => void;
@@ -23,9 +23,9 @@ function KindIcon({ kind }: { kind: CrmNotification['kind'] }) {
   return <MessageSquareText size={15} strokeWidth={1.8}/>;
 }
 
-export default function NotificationPopup({ anchorRect, anchor, items, readIds, onOpen, onMarkAllRead }: Props) {
+export default function NotificationPopup({ anchorRect, variant, items, readIds, onOpen, onMarkAllRead }: Props) {
   const unread = items.filter(item => !readIds.has(item.id)).length;
-  const style: CSSProperties = anchor === 'topbar'
+  const style: CSSProperties = variant === 'topbar'
     ? { top: anchorRect.bottom + 8, left: Math.max(8, anchorRect.right - POPUP_WIDTH) }
     : { top: Math.max(8, Math.min(anchorRect.top, window.innerHeight - POPUP_MAX_HEIGHT - 16)), left: anchorRect.right + 8 };
   return createPortal(

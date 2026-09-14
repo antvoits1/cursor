@@ -43,7 +43,7 @@ export default function App() {
   const [viewerDocIndex, setViewerDocIndex] = useState<number | null>(null);
   const [messageNumber, setMessageNumber] = useState('');
   const [notice, setNotice] = useState('');
-  const [pendingThread, setPendingThread] = useState<{ leadId: string; nonce: number } | null>(null);
+  const [pendingThread, setPendingThread] = useState<{ leadId: string; channel: 'sms' | 'wa'; nonce: number } | null>(null);
   const [pendingComm, setPendingComm] = useState<PendingCommOpen | null>(null);
   const [readIds, setReadIds] = useState<Set<string>>(() => loadReadIds());
   const notifications = useMemo(() => deriveNotifications(leads), [leads]);
@@ -93,23 +93,37 @@ export default function App() {
   const isTop = navMode === 'topbar';
   const isWide = navMode === 'sidebar-wide';
   const cycleNavMode = () => setNavMode(navMode === 'topbar' ? 'sidebar-slim' : navMode === 'sidebar-slim' ? 'sidebar-wide' : 'topbar');
-  const openMessages = (number?: string) => { if (number) setMessageNumber(number); else if (lead) setMessageNumber(lead.mobiles?.[0]?.n || ''); setActivePage('messages'); };
-  const handlePageChange = (page: ActivePage) => { if (page === 'messages' && lead) setMessageNumber(lead.mobiles?.[0]?.n || ''); setActivePage(page); };
+  const openMessages = (number?: string) => {
+    setPendingThread(null);
+    setPendingComm(null);
+    if (number) setMessageNumber(number);
+    else if (lead) setMessageNumber(lead.mobiles?.[0]?.n || '');
+    setActivePage('messages');
+  };
+  const handlePageChange = (page: ActivePage) => {
+    setPendingThread(null);
+    setPendingComm(null);
+    if (page === 'messages' && lead) setMessageNumber(lead.mobiles?.[0]?.n || '');
+    setActivePage(page);
+  };
   const markRead = (id: string) => setReadIds(prev => { const next = new Set(prev); next.add(id); saveReadIds(next); return next; });
   const markAllRead = () => setReadIds(prev => { const next = new Set(prev); notifications.forEach(item => next.add(item.id)); saveReadIds(next); return next; });
   const openNotification = (item: CrmNotification) => {
     markRead(item.id);
+    setSelectedId(item.leadId);
+    const target = leads.find(entry => entry.id === item.leadId);
+    if (item.number) setMessageNumber(item.number);
+    else if (target) setMessageNumber(target.mobiles?.[0]?.n || '');
     if (item.kind === 'sms' || item.kind === 'wa') {
-      const target = leads.find(entry => entry.id === item.leadId);
-      setMessageNumber(item.number || target?.mobiles?.[0]?.n || '');
-      setSelectedId(item.leadId);
-      setPendingThread({ leadId: item.leadId, nonce: Date.now() });
+      setPendingComm(null);
+      setPendingThread({ leadId: item.leadId, channel: item.kind, nonce: Date.now() });
       setActivePage('messages');
       return;
     }
-    setSelectedId(item.leadId);
+    setPendingThread(null);
     if (item.kind === 'email') setPendingComm({ tab: 'email', leadId: item.leadId, emailKey: item.mailKey || null, nonce: Date.now() });
-    if (item.kind === 'call') setPendingComm({ tab: 'calls', leadId: item.leadId, callKey: item.callKey || null, nonce: Date.now() });
+    else if (item.kind === 'call') setPendingComm({ tab: 'calls', leadId: item.leadId, callKey: item.callKey || null, nonce: Date.now() });
+    else setPendingComm(null);
     setActivePage('crm');
   };
   const showNotice = (message: string) => {
@@ -166,11 +180,11 @@ export default function App() {
             <section data-panel="communications" className="forge-panel-surface"><IOSCommPanel lead={lead} contacts={leads} preferredMobile={messageNumber} fullWidth defaultTab={defaultCommsTab} pendingOpen={pendingComm} onSelectLead={setSelectedId} onCall={startCall} onPreferredMobileChange={setMessageNumber}/></section>
           </div>
         )}
-        {activePage === 'messages' && <MessagesView leads={leads} selectedLeadId={selectedId} setSelectedLeadId={setSelectedId} preferredNumber={messageNumber} setPreferredNumber={setMessageNumber} onCall={startCall} openThread={pendingThread}/>} 
+        {activePage === 'messages' && <MessagesView leads={leads} selectedLeadId={selectedId} setSelectedLeadId={setSelectedId} preferredNumber={messageNumber} setPreferredNumber={setMessageNumber} onCall={startCall} openThread={pendingThread}/>}
         {!['crm','messages'].includes(activePage) && <div className="forge-placeholder forge-panel-surface"><div><strong>{activePage}</strong><span>This page is not available in this build.</span></div></div>}
       </div>
-      {lead && viewerDocIndex !== null && <StatementViewerOverlay lead={lead} viewerDocIndex={viewerDocIndex} setViewerDocIndex={setViewerDocIndex} minStmtIndex={minStmtIndex} maxStmtIndex={maxStmtIndex}/>} 
-      {showSettings && <SettingsModal settings={settings} setSetting={setSetting} onResetPanels={resetPanels} onClose={() => setShowSettings(false)}/>} 
+      {lead && viewerDocIndex !== null && <StatementViewerOverlay lead={lead} viewerDocIndex={viewerDocIndex} setViewerDocIndex={setViewerDocIndex} minStmtIndex={minStmtIndex} maxStmtIndex={maxStmtIndex}/>}
+      {showSettings && <SettingsModal settings={settings} setSetting={setSetting} onResetPanels={resetPanels} onClose={() => setShowSettings(false)}/>}
       {notice && <div className="forge-toast" role="status" aria-live="polite">{notice}</div>}
     </div>
   );

@@ -11,7 +11,7 @@ interface Props {
   preferredNumber: string;
   setPreferredNumber: (number: string) => void;
   onCall: (number: string) => void;
-  openThread?: { leadId: string; nonce: number } | null;
+  openThread?: { leadId: string; channel?: 'sms' | 'wa'; nonce: number } | null;
 }
 function newestMessage(lead: Lead) {
   return [...(lead.sms || [])].sort((a,b) => ageMinutes(a.t) - ageMinutes(b.t))[0] || null;
@@ -28,7 +28,7 @@ export default function MessagesView({ leads, selectedLeadId, setSelectedLeadId,
   const openedLead = leads.find(item => item.id === openedLeadId) || null;
   if (openedLead) {
     const activeNumber = openedLead.mobiles.some(phone => phone.n === preferredNumber) ? preferredNumber : (openedLead.mobiles[0]?.n || '');
-    return <div className="messages-page messages-thread-page"><IOSCommPanel lead={openedLead} contacts={leads} preferredMobile={activeNumber} fullWidth defaultTab="messages" openThreadOnLoad onBack={() => setOpenedLeadId(null)} onSelectLead={setSelectedLeadId} onPreferredMobileChange={setPreferredNumber} onCall={onCall}/></div>;
+    return <div className="messages-page messages-thread-page"><IOSCommPanel lead={openedLead} contacts={leads} preferredMobile={activeNumber} fullWidth defaultTab="messages" openThreadOnLoad initialChannel={openThread && openedLeadId === openThread.leadId ? (openThread.channel || 'sms') : 'sms'} onBack={() => setOpenedLeadId(null)} onSelectLead={setSelectedLeadId} onPreferredMobileChange={setPreferredNumber} onCall={onCall}/></div>;
   }
   return (
     <div className="messages-page forge-panel-surface">

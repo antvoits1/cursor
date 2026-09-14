@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react';
 import { Users, MessageSquareText, Mail, ScanLine, TerminalSquare, Bell, Settings } from 'lucide-react';
 import { isLightColor } from '../lib/format';
 import type { ActivePage } from '../lib/navigation';
@@ -35,6 +35,11 @@ function TrafficDots({ onClick }: { onClick: () => void }) {
   );
 }
 
+function UnreadBadge({ count }: { count: number }) {
+  if (count <= 0) return null;
+  return <span className="forge-notif-badge">{count > 9 ? '9+' : count}</span>;
+}
+
 export default function NavRail({ isTop, isWide, navColor, activePage, setActivePage, cycleNavMode, onOpenSettings, notifications, readIds, onOpenNotification, onMarkAllRead }: Props) {
   const [accountOpen, setAccountOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
@@ -42,113 +47,107 @@ export default function NavRail({ isTop, isWide, navColor, activePage, setActive
   const menuRef = useRef<HTMLDivElement>(null);
   const bellRef = useRef<HTMLButtonElement>(null);
   const light = isLightColor(navColor);
-  const unread = notifications.filter(item => !readIds.has(item.id)).length;
+  const unreadCount = notifications.reduce((count, item) => readIds.has(item.id) ? count : count + 1, 0);
 
   useEffect(() => {
     const close = (event: MouseEvent) => {
-      if (!menuRef.current?.contains(event.target as Node)) setAccountOpen(false);
-    };
-    document.addEventListener('mousedown', close);
-    return () => document.removeEventListener('mousedown', close);
-  }, []);
-
-  useEffect(() => {
-    if (!notifOpen) return;
-    const onDown = (event: MouseEvent) => {
       const target = event.target as Node;
-      if (bellRef.current?.contains(target)) return;
-      if (target instanceof Element && target.closest('[data-notif-popup]')) return;
+      if (menuRef.current?.contains(target) || bellRef.current?.contains(target)) return;
+      if ((event.target as HTMLElement | null)?.closest?.('[data-notif-popup]')) return;
+      setAccountOpen(false);
       setNotifOpen(false);
     };
-    const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') setNotifOpen(false); };
-    const onResize = () => setNotifOpen(false);
-    document.addEventListener('mousedown', onDown);
-    document.addEventListener('keydown', onKey);
-    window.addEventListener('resize', onResize);
-    return () => {
-      document.removeEventListener('mousedown', onDown);
-      document.removeEventListener('keydown', onKey);
-      window.removeEventListener('resize', onResize);
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setAccountOpen(false);
+        setNotifOpen(false);
+      }
     };
-  }, [notifOpen]);
+    document.addEventListener('mousedown', close);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', close);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, []);
 
-  const toggleNotifications = () => {
-    if (notifOpen) { setNotifOpen(false); return; }
-    const rect = bellRef.current?.getBoundingClientRect();
-    if (!rect) return;
+  const toggleNotifications = (event: ReactMouseEvent<HTMLButtonElement>) => {
     setAccountOpen(false);
-    setAnchorRect(rect);
+    if (notifOpen) {
+      setNotifOpen(false);
+      return;
+    }
+    setAnchorRect(event.currentTarget.getBoundingClientRect());
     setNotifOpen(true);
   };
-  const openItem = (item: CrmNotification) => { setNotifOpen(false); onOpenNotification(item); };
+
+  const openItem = (item: CrmNotification) => {
+    setNotifOpen(false);
+    onOpenNotification(item);
+  };
 
   const popup = notifOpen && anchorRect ? (
-    <NotificationPopup anchorRect={anchorRect} anchor={isTop ? 'topbar' : 'sidebar'} items={notifications} readIds={readIds} onOpen={openItem} onMarkAllRead={onMarkAllRead}/>
+    <NotificationPopup variant={isTop ? 'topbar' : 'sidebar'} anchorRect={anchorRect} items={notifications} readIds={readIds} onOpen={openItem} onMarkAllRead={onMarkAllRead}/>
   ) : null;
-  const badge = unread > 0 ? <span className="forge-notif-badge">{unread > 9 ? '9+' : unread}</span> : null;
 
   if (isTop) {
     return (
-      <>
-        <header className={`forge-topbar ${light ? 'light' : 'dark'}`} style={{ backgroundColor: navColor }}>
-          <TrafficDots onClick={cycleNavMode}/>
-          <div className="forge-brand">Forge<span>CRM</span></div>
-          <nav className="forge-topnav" aria-label="Primary">
-            {NAV_ITEMS.map(item => (
-              <button key={item.id} type="button" onClick={() => setActivePage(item.id)} className={`forge-topnav-tab ${activePage === item.id ? 'active' : ''}`}>
-                {item.label}
-              </button>
-            ))}
-          </nav>
-          <div className="forge-topbar-spacer"/>
-          <button type="button" ref={bellRef} className="forge-tool forge-bell" onClick={toggleNotifications} title="Notifications" aria-label="Notifications" aria-haspopup="dialog" aria-expanded={notifOpen}>
-            <Bell size={20} strokeWidth={1.8}/>
-            {badge}
-          </button>
-          <div className="forge-account" ref={menuRef}>
-            <button type="button" className="forge-avatar" onClick={() => { setNotifOpen(false); setAccountOpen(v => !v); }} aria-expanded={accountOpen} aria-label="Account menu">CB</button>
-            {accountOpen && (
-              <div className="forge-account-menu">
-                <button type="button" onClick={() => { setAccountOpen(false); onOpenSettings(); }}>Settings</button>
-                <button type="button" disabled title="No authentication service is connected to this build">Log Out</button>
-              </div>
-            )}
-          </div>
-        </header>
+      <header className={`forge-topbar ${light ? 'light' : 'dark'}`} style={{ backgroundColor: navColor }}>
+        <TrafficDots onClick={cycleNavMode}/>
+        <div className="forge-brand">Forge<span>CRM</span></div>
+        <nav className="forge-topnav" aria-label="Primary">
+          {NAV_ITEMS.map(item => (
+            <button key={item.id} type="button" onClick={() => setActivePage(item.id)} className={`forge-topnav-tab ${activePage === item.id ? 'active' : ''}`}>
+              {item.label}
+            </button>
+          ))}
+        </nav>
+        <div className="forge-topbar-spacer"/>
+        <button ref={bellRef} type="button" className={`forge-tool forge-bell ${notifOpen ? 'active' : ''}`} onClick={toggleNotifications} title="Notifications" aria-label="Notifications" aria-expanded={notifOpen} aria-haspopup="dialog" data-notif-bell>
+          <Bell size={20} strokeWidth={1.8}/>
+          <UnreadBadge count={unreadCount}/>
+        </button>
         {popup}
-      </>
+        <div className="forge-account" ref={menuRef}>
+          <button type="button" className="forge-avatar" onClick={() => { setNotifOpen(false); setAccountOpen(v => !v); }} aria-expanded={accountOpen} aria-label="Account menu">CB</button>
+          {accountOpen && (
+            <div className="forge-account-menu">
+              <button type="button" onClick={() => { setAccountOpen(false); onOpenSettings(); }}>Settings</button>
+              <button type="button" disabled title="No authentication service is connected to this build">Log Out</button>
+            </div>
+          )}
+        </div>
+      </header>
     );
   }
 
   return (
-    <>
-      <aside className={`forge-sidebar ${isWide ? 'wide' : 'slim'} ${light ? 'light' : 'dark'}`} style={{ backgroundColor: navColor }}>
-        <div className="forge-sidebar-head">
-          <TrafficDots onClick={cycleNavMode}/>
-          {isWide && <div className="forge-sidebar-brand">Forge<span>CRM</span></div>}
-        </div>
-        <nav className="forge-sidebar-nav" aria-label="Primary">
-          {isWide && <div className="forge-workspace-label">WORKSPACE</div>}
-          {NAV_ITEMS.map(item => {
-            const Icon = item.icon;
-            return (
-              <button key={item.id} type="button" onClick={() => setActivePage(item.id)} className={`forge-side-tab ${activePage === item.id ? 'active' : ''}`} title={item.label}>
-                <Icon size={19} strokeWidth={1.7}/>{isWide && <span>{item.label}</span>}
-              </button>
-            );
-          })}
-          <button type="button" ref={bellRef} className="forge-side-tab forge-bell" onClick={toggleNotifications} title="Notifications" aria-haspopup="dialog" aria-expanded={notifOpen}>
-            <Bell size={19} strokeWidth={1.7}/>{isWide && <span>Notifications</span>}
-            {badge}
-          </button>
-        </nav>
-        <div className="forge-sidebar-bottom">
-          <button type="button" onClick={onOpenSettings} className="forge-side-tab" title="Settings">
-            <Settings size={19} strokeWidth={1.7}/>{isWide && <span>Settings</span>}
-          </button>
-        </div>
-      </aside>
-      {popup}
-    </>
+    <aside className={`forge-sidebar ${isWide ? 'wide' : 'slim'} ${light ? 'light' : 'dark'}`} style={{ backgroundColor: navColor }}>
+      <div className="forge-sidebar-head">
+        <TrafficDots onClick={cycleNavMode}/>
+        {isWide && <div className="forge-sidebar-brand">Forge<span>CRM</span></div>}
+      </div>
+      <nav className="forge-sidebar-nav" aria-label="Primary">
+        {isWide && <div className="forge-workspace-label">WORKSPACE</div>}
+        {NAV_ITEMS.map(item => {
+          const Icon = item.icon;
+          return (
+            <button key={item.id} type="button" onClick={() => setActivePage(item.id)} className={`forge-side-tab ${activePage === item.id ? 'active' : ''}`} title={item.label}>
+              <Icon size={19} strokeWidth={1.7}/>{isWide && <span>{item.label}</span>}
+            </button>
+          );
+        })}
+        <button ref={bellRef} type="button" onClick={toggleNotifications} className={`forge-side-tab forge-bell ${notifOpen ? 'active' : ''}`} title="Notifications" aria-expanded={notifOpen} aria-haspopup="dialog" data-notif-bell>
+          <Bell size={19} strokeWidth={1.7}/>{isWide && <span>Notifications</span>}
+          <UnreadBadge count={unreadCount}/>
+        </button>
+        {popup}
+      </nav>
+      <div className="forge-sidebar-bottom">
+        <button type="button" onClick={onOpenSettings} className="forge-side-tab" title="Settings">
+          <Settings size={19} strokeWidth={1.7}/>{isWide && <span>Settings</span>}
+        </button>
+      </div>
+    </aside>
   );
 }

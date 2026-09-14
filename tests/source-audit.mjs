@@ -45,7 +45,7 @@ check('Communication rows use accepted accent tints', has(css,'.comm-type-icon.c
 check('Icons stand alone without tile backgrounds', not(css,'.comm-type-icon.sms { background') && not(css,'.messages-list-icon.sms { background') && not(css,'.detail-activity-icon.teal { background') && not(css,'.comm-mini-actions a {\n  width: 27px;\n  height: 27px;\n  border: 0;\n  background: var(--bg-panel);'));
 check('Call actions hover teal like the reference', has(css,'.detail-action-call:hover') && has(detail,'detail-action-call'));
 check('Search fields use the dashboard focus ring', has(css,'.comm-search:focus-within') && has(css,'0 0 0 3px var(--accent-blue-light)'));
-check('Neon purple and neon green are absent', !/#25C47A|#6B4EBC/i.test(css+app+nav+leads+detail+comm));
+check('Neon purple and neon green are absent', !/#25C47A|#6B4EBC/i.test(css+app+nav+leads+detail+comm+notif+notifLib));
 check('Authoritative CSS has no !important', !css.includes('!important'));
 check('Detail cards use stat-box padding and border', has(css,'.detail-card {') && has(css,'padding: 13px 16px;') && has(css,'border: 1px solid var(--border);'));
 check('Panel divider spacing is exactly 12px', has(app,'const DIVIDER_WIDTH = 12;') && has(css,'min-width: 12px;'));
@@ -135,11 +135,12 @@ check('Original CRM lead records are preserved', has(data,'Northstar Catering Co
 check('Dashboard mock pipeline leads are absent', not(data,'Apex Dynamics') && not(data,'Sandra Reeves') && not(data,'NorthVector'));
 check('Panel scrollbars are hidden until hover', has(css,'scrollbar-color: transparent transparent') && has(css,':hover::-webkit-scrollbar-thumb'));
 check('Scrollbar width is skinny', has(css,'width: 5px;') && has(css,'height: 5px;'));
-check('No form tags exist that can accidentally submit/reload', !/<form\b/i.test(app+nav+comm+detail+leads+messages+settings));
-check('All explicit action buttons use type=button', (app+nav+comm+detail+leads+messages+settings).includes('type="button"'));
+check('No form tags exist that can accidentally submit/reload', !/<form\b/i.test(app+nav+comm+detail+leads+messages+settings+notif));
+check('All explicit action buttons use type=button', (app+nav+comm+detail+leads+messages+settings+notif).includes('type="button"'));
 check('Bell opens a notification popup', has(nav,'NotificationPopup') && has(notif,'forge-notif-popup') && has(notif,'role="dialog"'));
 check('Topbar and sidebar bells toggle the same popup', (nav.match(/onClick=\{toggleNotifications\}/g)||[]).length===2);
 check('Notifications derive only from lead sms mails calls and follow', has(notifLib,'lead.sms') && has(notifLib,'lead.mails') && has(notifLib,'lead.calls') && has(notifLib,'lead.follow') && not(notifLib+notif,'Apex Dynamics') && not(notifLib+notif,'Sandra Reeves'));
+check('Inbound SMS and WhatsApp are the only message notifications', has(notifLib,"entry.dir !== 'in'"));
 check('Notifications are newest first and capped at 12', has(notifLib,'NOTIF_CAP = 12') && has(notifLib,'.slice(0, NOTIF_CAP)') && has(notifLib,'a.age - b.age'));
 check('Notification click routes to messages email calls or lead', has(app,'openNotification') && has(app,"setActivePage('messages')") && has(app,"tab: 'email'") && has(app,"tab: 'calls'") && has(app,'setSelectedId(item.leadId)'));
 check('Notification thread and comm open requests reach the views', has(messages,'openThread') && has(comm,'pendingOpen'));
