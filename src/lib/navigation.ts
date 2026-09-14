@@ -1,1 +1,1 @@
-export type ActivePage = 'crm' | 'messages' | 'email' | 'scanner' | 'command' | 'alerts';
+export type ActivePage = 'crm' | 'messages' | 'email' | 'scanner' | 'command';

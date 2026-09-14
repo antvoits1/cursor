@@ -1,11 +1,12 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useStore, type UISettings } from './store';
 import type { ActivePage } from './lib/navigation';
 import { digitsOnly } from './lib/comm';
+import { deriveNotifications, loadReadIds, saveReadIds, type CrmNotification } from './lib/notifications';
 import NavRail from './components/NavRail';
 import LeadsRail from './components/LeadsRail';
 import LeadDetailPanel from './components/LeadDetailPanel';
-import IOSCommPanel from './components/IOSCommPanel';
+import IOSCommPanel, { type PendingCommOpen } from './components/IOSCommPanel';
 import MessagesView from './components/MessagesView';
 import StatementViewerOverlay from './components/StatementViewerOverlay';
 import SettingsModal from './components/SettingsModal';
@@ -34,7 +35,7 @@ export default function App() {
   const store = useStore();
   const { leads, screenScale, fontSize, navMode, leadDensity, motion, showFinancial, defaultCommsTab, canvasColor, sidebarColor, setSetting, setNavMode } = store;
   const requestedStartPage = document.body.dataset.startPage as ActivePage | undefined;
-  const initialPage: ActivePage = requestedStartPage && ['crm','messages','email','scanner','command','alerts'].includes(requestedStartPage) ? requestedStartPage : 'crm';
+  const initialPage: ActivePage = requestedStartPage && ['crm','messages','email','scanner','command'].includes(requestedStartPage) ? requestedStartPage : 'crm';
 
   const [selectedId, setSelectedId] = useState(leads[0]?.id || '');
   const [activePage, setActivePage] = useState<ActivePage>(initialPage);
@@ -42,6 +43,10 @@ export default function App() {
   const [viewerDocIndex, setViewerDocIndex] = useState<number | null>(null);
   const [messageNumber, setMessageNumber] = useState('');
   const [notice, setNotice] = useState('');
+  const [pendingThread, setPendingThread] = useState<{ leadId: string; nonce: number } | null>(null);
+  const [pendingComm, setPendingComm] = useState<PendingCommOpen | null>(null);
+  const [readIds, setReadIds] = useState<Set<string>>(() => loadReadIds());
+  const notifications = useMemo(() => deriveNotifications(leads), [leads]);
   const [leadsWidth, setLeadsWidth] = useState(() => readSavedWidth(PANEL_KEYS.leads) ?? DEFAULT_LEADS_WIDTH);
   const [commsWidth, setCommsWidth] = useState(() => readSavedWidth(PANEL_KEYS.comms) ?? DEFAULT_COMMS_WIDTH);
   const panelAreaRef = useRef<HTMLDivElement>(null);
@@ -64,7 +69,7 @@ export default function App() {
 
   useEffect(() => {
     if (!lead) return;
-    setMessageNumber(lead.mobiles?.[0]?.n || '');
+    setMessageNumber(current => lead.mobiles?.some(phone => phone.n === current) ? current : (lead.mobiles?.[0]?.n || ''));
   }, [lead?.id]);
 
   const clampPanels = () => {
@@ -90,6 +95,23 @@ export default function App() {
   const cycleNavMode = () => setNavMode(navMode === 'topbar' ? 'sidebar-slim' : navMode === 'sidebar-slim' ? 'sidebar-wide' : 'topbar');
   const openMessages = (number?: string) => { if (number) setMessageNumber(number); else if (lead) setMessageNumber(lead.mobiles?.[0]?.n || ''); setActivePage('messages'); };
   const handlePageChange = (page: ActivePage) => { if (page === 'messages' && lead) setMessageNumber(lead.mobiles?.[0]?.n || ''); setActivePage(page); };
+  const markRead = (id: string) => setReadIds(prev => { const next = new Set(prev); next.add(id); saveReadIds(next); return next; });
+  const markAllRead = () => setReadIds(prev => { const next = new Set(prev); notifications.forEach(item => next.add(item.id)); saveReadIds(next); return next; });
+  const openNotification = (item: CrmNotification) => {
+    markRead(item.id);
+    if (item.kind === 'sms' || item.kind === 'wa') {
+      const target = leads.find(entry => entry.id === item.leadId);
+      setMessageNumber(item.number || target?.mobiles?.[0]?.n || '');
+      setSelectedId(item.leadId);
+      setPendingThread({ leadId: item.leadId, nonce: Date.now() });
+      setActivePage('messages');
+      return;
+    }
+    setSelectedId(item.leadId);
+    if (item.kind === 'email') setPendingComm({ tab: 'email', leadId: item.leadId, emailKey: item.mailKey || null, nonce: Date.now() });
+    if (item.kind === 'call') setPendingComm({ tab: 'calls', leadId: item.leadId, callKey: item.callKey || null, nonce: Date.now() });
+    setActivePage('crm');
+  };
   const showNotice = (message: string) => {
     setNotice(message);
     window.setTimeout(() => setNotice(current => current === message ? '' : current), 2800);
@@ -133,7 +155,7 @@ export default function App() {
 
   return (
     <div className={`forge-app ${isTop ? 'topbar-mode' : 'sidebar-mode'}`}>
-      <NavRail isTop={isTop} isWide={isWide} navColor={sidebarColor} activePage={activePage} setActivePage={handlePageChange} cycleNavMode={cycleNavMode} onOpenSettings={() => setShowSettings(true)}/>
+      <NavRail isTop={isTop} isWide={isWide} navColor={sidebarColor} activePage={activePage} setActivePage={handlePageChange} cycleNavMode={cycleNavMode} onOpenSettings={() => setShowSettings(true)} notifications={notifications} readIds={readIds} onOpenNotification={openNotification} onMarkAllRead={markAllRead}/>
       <div ref={panelAreaRef} className="forge-workspace">
         {activePage === 'crm' && lead && (
           <div className="forge-panel-grid" style={panelGridStyle}>
@@ -141,11 +163,11 @@ export default function App() {
             <div className="panel-divider" role="separator" aria-orientation="vertical" aria-label="Resize leads panel" onPointerDown={e => startResize('leads', e.clientX)} onDoubleClick={resetPanels}/>
             <section data-panel="lead-detail" className="forge-panel-surface"><LeadDetailPanel lead={lead} onCall={startCall} onOpenMessages={openMessages} setViewerDocIndex={setViewerDocIndex} showApproval={showFinancial === 'show'}/></section>
             <div className="panel-divider" role="separator" aria-orientation="vertical" aria-label="Resize communications panel" onPointerDown={e => startResize('comms', e.clientX)} onDoubleClick={resetPanels}/>
-            <section data-panel="communications" className="forge-panel-surface"><IOSCommPanel lead={lead} contacts={leads} preferredMobile={messageNumber} fullWidth defaultTab={defaultCommsTab} onSelectLead={setSelectedId} onCall={startCall} onPreferredMobileChange={setMessageNumber}/></section>
+            <section data-panel="communications" className="forge-panel-surface"><IOSCommPanel lead={lead} contacts={leads} preferredMobile={messageNumber} fullWidth defaultTab={defaultCommsTab} pendingOpen={pendingComm} onSelectLead={setSelectedId} onCall={startCall} onPreferredMobileChange={setMessageNumber}/></section>
           </div>
         )}
-        {activePage === 'messages' && <MessagesView leads={leads} selectedLeadId={selectedId} setSelectedLeadId={setSelectedId} preferredNumber={messageNumber} setPreferredNumber={setMessageNumber} onCall={startCall}/>} 
-        {!['crm','messages'].includes(activePage) && <div className="forge-placeholder forge-panel-surface"><div><strong>{activePage === 'alerts' ? 'Notifications' : activePage}</strong><span>This page is not available in this build.</span></div></div>}
+        {activePage === 'messages' && <MessagesView leads={leads} selectedLeadId={selectedId} setSelectedLeadId={setSelectedId} preferredNumber={messageNumber} setPreferredNumber={setMessageNumber} onCall={startCall} openThread={pendingThread}/>} 
+        {!['crm','messages'].includes(activePage) && <div className="forge-placeholder forge-panel-surface"><div><strong>{activePage}</strong><span>This page is not available in this build.</span></div></div>}
       </div>
       {lead && viewerDocIndex !== null && <StatementViewerOverlay lead={lead} viewerDocIndex={viewerDocIndex} setViewerDocIndex={setViewerDocIndex} minStmtIndex={minStmtIndex} maxStmtIndex={maxStmtIndex}/>} 
       {showSettings && <SettingsModal settings={settings} setSetting={setSetting} onResetPanels={resetPanels} onClose={() => setShowSettings(false)}/>} 

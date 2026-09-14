@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { MessageCircle, MessageSquareText, Search } from 'lucide-react';
 import type { Lead } from '../data';
 import { ageMinutes } from '../lib/comm';
@@ -11,13 +11,15 @@ interface Props {
   preferredNumber: string;
   setPreferredNumber: (number: string) => void;
   onCall: (number: string) => void;
+  openThread?: { leadId: string; nonce: number } | null;
 }
 function newestMessage(lead: Lead) {
   return [...(lead.sms || [])].sort((a,b) => ageMinutes(a.t) - ageMinutes(b.t))[0] || null;
 }
-export default function MessagesView({ leads, selectedLeadId, setSelectedLeadId, preferredNumber, setPreferredNumber, onCall }: Props) {
+export default function MessagesView({ leads, selectedLeadId, setSelectedLeadId, preferredNumber, setPreferredNumber, onCall, openThread }: Props) {
   const [query, setQuery] = useState('');
   const [openedLeadId, setOpenedLeadId] = useState<string | null>(null);
+  useEffect(() => { if (openThread) setOpenedLeadId(openThread.leadId); }, [openThread]);
   const visibleLeads = useMemo(() => {
     const q = query.trim().toLowerCase();
     return leads.filter(item => item.sms?.length && (!q || `${item.contact} ${item.company}`.toLowerCase().includes(q)))

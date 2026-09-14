@@ -4,6 +4,14 @@ import type { Lead, CallEntry, MailEntry } from '../data';
 import type { CommTab } from '../store';
 import { digitsOnly, newestByTime, oldestByTime, whatsappHref } from '../lib/comm';
 
+export interface PendingCommOpen {
+  tab: CommTab;
+  leadId: string;
+  emailKey?: string | null;
+  callKey?: string | null;
+  nonce: number;
+}
+
 interface Props {
   lead?: Lead;
   contacts?: Lead[];
@@ -12,6 +20,7 @@ interface Props {
   preferredMobile?: string;
   defaultTab?: CommTab;
   openThreadOnLoad?: boolean;
+  pendingOpen?: PendingCommOpen | null;
   onSelectLead?: (id: string) => void;
   onCall?: (number: string) => void;
   onPreferredMobileChange?: (number: string) => void;
@@ -36,7 +45,7 @@ function TypeIcon({ type, size = 14 }: { type: AllRow['type']; size?: number }) 
 
 export default function IOSCommPanel({
   lead, contacts = [], onBack, fullWidth = false, preferredMobile, defaultTab = 'all', openThreadOnLoad = false,
-  onSelectLead, onCall, onPreferredMobileChange,
+  pendingOpen = null, onSelectLead, onCall, onPreferredMobileChange,
 }: Props) {
   const pool = contacts.length ? contacts : (lead ? [lead] : []);
   const [activeTab, setActiveTab] = useState<CommTab>(defaultTab);
@@ -51,6 +60,7 @@ export default function IOSCommPanel({
   const [emailSubject, setEmailSubject] = useState('');
   const [emailBody, setEmailBody] = useState('');
   const replyRef = useRef<HTMLTextAreaElement>(null);
+  const composerRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     setActiveTab(defaultTab);
@@ -58,7 +68,10 @@ export default function IOSCommPanel({
     if (!openThreadOnLoad) setMessageLeadId(null);
   }, [defaultTab, openThreadOnLoad]);
   useEffect(() => {
-    if (openThreadOnLoad && defaultTab === 'messages' && lead?.id) setMessageLeadId(lead.id);
+    if (openThreadOnLoad && defaultTab === 'messages' && lead?.id) {
+      setMessageLeadId(lead.id);
+      setTimeout(() => composerRef.current?.focus(), 0);
+    }
   }, [openThreadOnLoad, defaultTab, lead?.id]);
 
   const chooseLead = (item: Lead) => {
@@ -98,6 +111,27 @@ export default function IOSCommPanel({
   const openContact = pool.find(item => item.id === openContactId) || null;
   const activeEmailLead = pool.find(item => item.id === emailLeadId) || lead || pool[0] || null;
   const activeEmail = openEmailKey ? emailItems.find(item => item.key === openEmailKey) : null;
+
+  useEffect(() => {
+    if (!pendingOpen) return;
+    const target = pool.find(item => item.id === pendingOpen.leadId);
+    if (!target) return;
+    onSelectLead?.(target.id);
+    setActiveTab(pendingOpen.tab);
+    if (pendingOpen.tab === 'email') {
+      const mailKey = pendingOpen.emailKey || null;
+      const found = mailKey ? emailItems.find(row => row.key === mailKey) : null;
+      setEmailLeadId(target.id);
+      setOpenEmailKey(mailKey);
+      setEmailSubject(found?.entry.sub || '');
+      setEmailBody('');
+      setTimeout(() => replyRef.current?.focus(), 0);
+    }
+    if (pendingOpen.tab === 'calls') {
+      const found = pendingOpen.callKey ? callItems.find(row => row.key === pendingOpen.callKey) : null;
+      if (found) setOpenCall({ lead: target, entry: found.entry, key: found.key });
+    }
+  }, [pendingOpen]);
 
   const openMessageThread = (item: Lead, channel: 'sms' | 'wa' = 'sms') => {
     chooseLead(item); setActiveTab('messages'); setMessageLeadId(item.id); setMessageChannel(channel); setMessageText('');
@@ -169,7 +203,7 @@ export default function IOSCommPanel({
         {activeTab === 'email' && (openEmailKey || emailLeadId) && <div className="comm-email-view"><div className="comm-thread-toolbar"><button type="button" className="comm-contact-back" onClick={() => { setOpenEmailKey(null); setEmailLeadId(null); setEmailSubject(''); setEmailBody(''); }}><ArrowLeft size={14}/> Email</button>{activeEmail && <button type="button" className="comm-small-action" onClick={() => openEmailComposer(activeEmail.lead,activeEmail.key,true)} title="Reply"><Reply size={14}/></button>}</div>{activeEmail && <article className="comm-email-open"><div className="comm-email-meta"><strong>{activeEmail.entry.from}</strong><time>{activeEmail.entry.when}</time></div><h3>{activeEmail.entry.sub}</h3><p>{activeEmail.entry.preview}</p></article>}{!activeEmail && <div className="comm-email-new-label">New email to {activeEmailLead?.contact || ''}</div>}</div>}
       </div>
 
-      {activeTab === 'messages' && currentMessageLead && <div className="comm-composer"><button type="button" className="comm-channel-toggle" onClick={() => setMessageChannel(c => c === 'sms' ? 'wa' : 'sms')} title="Switch channel"><TypeIcon type={messageChannel}/></button><textarea value={messageText} onChange={e => setMessageText(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }} placeholder={messageChannel === 'wa' ? 'WhatsApp message' : 'Message'} rows={1}/><button type="button" onClick={sendMessage} disabled={!messageText.trim() || !currentMobile} title="Send" className="comm-send"><Send size={15}/></button></div>}
+      {activeTab === 'messages' && currentMessageLead && <div className="comm-composer"><button type="button" className="comm-channel-toggle" onClick={() => setMessageChannel(c => c === 'sms' ? 'wa' : 'sms')} title="Switch channel"><TypeIcon type={messageChannel}/></button><textarea ref={composerRef} value={messageText} onChange={e => setMessageText(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }} placeholder={messageChannel === 'wa' ? 'WhatsApp message' : 'Message'} rows={1}/><button type="button" onClick={sendMessage} disabled={!messageText.trim() || !currentMobile} title="Send" className="comm-send"><Send size={15}/></button></div>}
       {activeTab === 'email' && (openEmailKey || emailLeadId) && <div className="comm-email-compose"><div className="comm-email-address-row"><span>To</span><strong>{activeEmailLead?.emails?.[0]?.n || 'No email'}</strong></div><label className="comm-email-subject"><span>Subject</span><input value={emailSubject} onChange={e => setEmailSubject(e.target.value)} placeholder="Subject"/></label><textarea ref={replyRef} value={emailBody} onChange={e => setEmailBody(e.target.value)} placeholder={activeEmail ? 'Reply…' : 'Write email…'}/><div className="comm-email-actions"><span className="comm-email-from">sales@forgecrm.com</span><button type="button" onClick={sendEmail} disabled={!emailBody.trim() || !activeEmailLead?.emails?.[0]?.n} className="comm-send"><Send size={14}/></button></div></div>}
     </div>
   );
