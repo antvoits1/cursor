@@ -802,7 +802,7 @@ html[data-lead-density="compact"] .forge-lead-row {
 
 .detail-pair {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 12px;
   align-items: stretch;
   margin-bottom: 12px;
@@ -829,10 +829,10 @@ html[data-lead-density="compact"] .forge-lead-row {
   text-transform: uppercase;
 }
 
-.detail-contact-columns {
+.detail-contact-groups {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 22px;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0 22px;
   align-items: start;
 }
 
@@ -846,25 +846,26 @@ html[data-lead-density="compact"] .forge-lead-row {
 }
 
 .detail-email-group {
+  grid-column: 1 / -1;
   margin-top: 17px;
   padding-top: 14px;
   border-top: 1px solid var(--border);
 }
 
 .detail-contact-line {
-  min-height: 35px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 7px;
-  padding: 6px 0;
+  padding: 7px 0;
   border-bottom: 1px solid var(--border);
   min-width: 0;
 }
 
 .detail-contact-line:last-child { border-bottom: 0; }
 
-.detail-contact-line > span:first-child {
+.detail-contact-value {
+  display: block;
   min-width: 0;
   font-size: calc(11.5px + var(--font-offset));
   font-weight: 500;
@@ -874,7 +875,7 @@ html[data-lead-density="compact"] .forge-lead-row {
   text-overflow: ellipsis;
 }
 
-.detail-contact-line.email > span:first-child {
+.detail-contact-line.email .detail-contact-value {
   white-space: normal;
   overflow-wrap: anywhere;
 }

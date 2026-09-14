@@ -79,12 +79,12 @@ export default function LeadDetailPanel({ lead, onCall, onOpenMessages, setViewe
         <div className="detail-pair detail-primary-pair">
           <section className="detail-card detail-contact-card">
             <h3>Contact</h3>
-            <div className="detail-contact-columns">
+            <div className="detail-contact-groups">
               <div className="detail-contact-group">
                 <h4>Mobile</h4>
                 {lead.mobiles.map((item,index) => (
                   <div className="detail-contact-line" key={`${item.n}-${index}`}>
-                    <span>{item.n}</span>
+                    <span className="detail-contact-value">{item.n}</span>
                     <PhoneActions number={item.n} onCall={() => onCall(item.n)} onMessage={() => onOpenMessages(item.n)} whatsapp/>
                   </div>
                 ))}
@@ -93,18 +93,20 @@ export default function LeadDetailPanel({ lead, onCall, onOpenMessages, setViewe
                 <h4>Landline</h4>
                 {lead.landlines.length ? lead.landlines.map((item,index) => (
                   <div className="detail-contact-line" key={`${item.n}-${index}`}>
-                    <span>{item.n}</span><PhoneActions number={item.n} onCall={() => onCall(item.n)}/>
+                    <span className="detail-contact-value">{item.n}</span>
+                    <PhoneActions number={item.n} onCall={() => onCall(item.n)}/>
                   </div>
                 )) : <div className="detail-muted">None provided</div>}
               </div>
-            </div>
-            <div className="detail-contact-group detail-email-group">
-              <h4>Email</h4>
-              {lead.emails.map((item,index) => (
-                <div className="detail-contact-line email" key={`${item.n}-${index}`}>
-                  <span>{item.n}</span><span className="detail-quick-actions"><a href={`mailto:${item.n}`} title="Email" aria-label={`Email ${item.n}`}><Mail size={14} strokeWidth={1.9}/></a></span>
-                </div>
-              ))}
+              <div className="detail-contact-group detail-email-group">
+                <h4>Email</h4>
+                {lead.emails.map((item,index) => (
+                  <div className="detail-contact-line email" key={`${item.n}-${index}`}>
+                    <span className="detail-contact-value">{item.n}</span>
+                    <span className="detail-quick-actions"><a href={`mailto:${item.n}`} title="Email" aria-label={`Email ${item.n}`}><Mail size={14} strokeWidth={1.9}/></a></span>
+                  </div>
+                ))}
+              </div>
             </div>
           </section>
 

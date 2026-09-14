@@ -114,7 +114,9 @@ check('Sales pitch is a card with the blue accent edge', has(css,'.detail-pitch 
 check('Activity rows use tinted reference icons', has(detail,'detail-activity-icon') && has(css,'.detail-activity-icon.teal') && has(css,'.detail-activity-icon.amber'));
 check('Whole-dollar formatting is shared', has(format,'formatMoneyWhole') && has(leads,'formatMoneyWhole') && has(detail,'formatMoneyWhole'));
 check('Employees field is removed', not(detail,"['Employees'"));
-check('Mobile and Landline are two aligned columns', has(css,'.detail-contact-columns {\n  display: grid;\n  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);'));
+check('Contact groups align in an adaptive grid', has(css,'.detail-contact-groups') && has(css,'repeat(auto-fit, minmax(150px, 1fr))'));
+check('Contact lines show values without per-number labels', not(detail,'detail-contact-label') && not(css,'.detail-contact-label'));
+check('Card pairs stack on narrow panels', has(css,'.detail-pair {') && has(css,'repeat(auto-fit, minmax(280px, 1fr))'));
 check('Mobile has call/SMS/WhatsApp actions', has(detail,'onMessage={() => onOpenMessages(item.n)} whatsapp'));
 check('Landline has call action only', has(detail,'detail-landline-group'));
 check('Statements section exists', has(detail,'Statements'));
