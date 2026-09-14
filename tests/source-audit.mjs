@@ -117,6 +117,7 @@ check('Whole-dollar formatting is shared', has(format,'formatMoneyWhole') && has
 check('Employees field is removed', not(detail,"['Employees'"));
 check('Contact groups align in an adaptive grid', has(css,'.detail-contact-groups') && has(css,'repeat(auto-fit, minmax(150px, 1fr))'));
 check('Contact lines show values without per-number labels', not(detail,'detail-contact-label') && not(css,'.detail-contact-label'));
+check('Card content uses larger heavier type', has(css,'.detail-contact-value') && has(css,'font-size: calc(12.5px + var(--font-offset));\n  font-weight: 600;') && has(css,'font-size: calc(11px + var(--font-offset));\n  font-weight: 600;') && has(css,'.detail-bank-rows strong'));
 check('Card pairs stack on narrow panels', has(css,'.detail-pair {') && has(css,'repeat(auto-fit, minmax(280px, 1fr))'));
 check('Mobile has call/SMS/WhatsApp actions', has(detail,'onMessage={() => onOpenMessages(item.n)} whatsapp'));
 check('Landline has call action only', has(detail,'detail-landline-group'));
