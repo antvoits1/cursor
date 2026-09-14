@@ -33,6 +33,7 @@ check('Controls inherit Inter globally', has(css,'button, input, textarea, selec
 check('Statement viewer uses sans/Inter instead of mono', has(statement,'font-sans') && not(statement,'font-mono'));
 check('Canvas uses dashboard page color', has(css,'--bg-canvas: #F2F4F8;') && has(store,"canvasColor: '#F2F4F8'"));
 check('Topbar is thin at 52px', has(css,'--topbar-h: 52px;'));
+check('Traffic dots center in slim sidebar', has(css,'.forge-sidebar.slim .forge-sidebar-head') && has(css,'padding: 6px 0;'));
 check('Rounded panel token is 9px', has(css,'--radius-panel: 9px;'));
 check('Dashboard surface tokens are present', has(css,'--bg-surface: #FFFFFF;') && has(css,'--bg-panel: #F7F8FC;') && has(css,'--accent-navy: #1E2235;'));
 check('Accepted accents are blue teal amber navy', has(css,'--accent-blue: #3B6FD4;') && has(css,'--accent-teal: #1A8F7A;') && has(css,'--accent-amber: #C97B2A;') && has(css,'--accent-navy: #1E2235;'));
