@@ -35,7 +35,7 @@ const DEFAULTS: UISettings = {
   showFinancial: 'show',
   defaultCommsTab: 'all',
   canvasColor: '#F2F4F8',
-  sidebarColor: '#FFFFFF',
+  sidebarColor: '#1E2235',
 };
 const SETTINGS_KEY = 'forge-crm-ui-settings-v16';
 const LEGACY_KEYS = ['forge-crm-ui-settings-v15', 'forge-crm-ui-settings-v14'];

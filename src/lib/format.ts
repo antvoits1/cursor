@@ -20,6 +20,10 @@ export function generateSalesPitch(lead: Lead): string {
   return `${first}, ${lead.company} shows ${revenue} in monthly revenue and ${lead.tib} in business. ${approvalText}. The latest completed statement shows $${latestStmt?.dep.toLocaleString() || 0} in deposits with a $${latestStmt?.end.toLocaleString() || 0} ending balance. Keep the funding discussion centered on ${lead.use} while tying the terms to the numbers already on file.`;
 }
 
+export function formatMoneyWhole(value: number): string {
+  return `$${Math.round(value).toLocaleString('en-US')}`;
+}
+
 export function formatAgo(agoStr: string): string {
   return agoStr
     .replace(' hours ago', 'h')

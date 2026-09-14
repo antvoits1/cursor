@@ -35,7 +35,7 @@ export default function MessagesView({ leads, selectedLeadId, setSelectedLeadId,
         {!visibleLeads.length && <div className="comm-empty">No conversations found.</div>}
         {visibleLeads.map(item => {
           const latest = newestMessage(item); const isWa = latest?.ch === 'wa';
-          return <button type="button" key={item.id} onClick={() => { setSelectedLeadId(item.id); setPreferredNumber(item.mobiles[0]?.n || ''); setOpenedLeadId(item.id); }} className={`messages-list-row ${selectedLeadId === item.id ? 'selected' : ''}`}><span className="messages-list-icon">{isWa ? <MessageCircle size={14}/> : <MessageSquareText size={14}/>}</span><span className="messages-list-copy"><strong>{item.contact}</strong><small>{item.company}</small><p>{latest?.txt || 'No messages'}</p></span><time>{latest?.t || item.lastAgo}</time></button>;
+          return <button type="button" key={item.id} onClick={() => { setSelectedLeadId(item.id); setPreferredNumber(item.mobiles[0]?.n || ''); setOpenedLeadId(item.id); }} className={`messages-list-row ${selectedLeadId === item.id ? 'selected' : ''}`}><span className={`messages-list-icon ${isWa ? 'wa' : 'sms'}`}>{isWa ? <MessageCircle size={14}/> : <MessageSquareText size={14}/>}</span><span className="messages-list-copy"><strong>{item.contact}</strong><small>{item.company}</small><p>{latest?.txt || 'No messages'}</p></span><time>{latest?.t || item.lastAgo}</time></button>;
         })}
       </div>
     </div>
