@@ -10,6 +10,7 @@ import IOSCommPanel, { type PendingCommOpen } from './components/IOSCommPanel';
 import MessagesView from './components/MessagesView';
 import StatementViewerOverlay from './components/StatementViewerOverlay';
 import SettingsModal from './components/SettingsModal';
+import CallDock from './components/CallDock';
 
 const PANEL_KEYS = { leads: 'forge.react.v15.panel.leads', comms: 'forge.react.v15.panel.comms' };
 const DEFAULT_LEADS_WIDTH = 400;
@@ -133,6 +134,24 @@ export default function App() {
   const startCall = async (number: string) => {
     const clean = digitsOnly(number); if (!clean) return;
     const payload = { number: clean, leadId: lead?.id };
+    
+    // Set call state to ringing
+    store.setCallState({
+      status: 'ringing',
+      number: clean,
+      leadId: lead?.id,
+      isMuted: false,
+      isOnHold: false,
+    });
+    
+    // Simulate connection after 2 seconds
+    setTimeout(() => {
+      store.setCallState({
+        status: 'connected',
+        startTime: Date.now()
+      });
+    }, 2000);
+
     const adapter = (window as Window & { ForgeTelephonyAdapter?: { startCall?: (payload: { number: string; leadId?: string }) => Promise<void> | void } }).ForgeTelephonyAdapter;
     if (adapter?.startCall) {
       try { await adapter.startCall(payload); return; }
@@ -185,6 +204,7 @@ export default function App() {
       </div>
       {lead && viewerDocIndex !== null && <StatementViewerOverlay lead={lead} viewerDocIndex={viewerDocIndex} setViewerDocIndex={setViewerDocIndex} minStmtIndex={minStmtIndex} maxStmtIndex={maxStmtIndex}/>}
       {showSettings && <SettingsModal settings={settings} setSetting={setSetting} onResetPanels={resetPanels} onClose={() => setShowSettings(false)}/>}
+      <CallDock />
       {notice && <div className="forge-toast" role="status" aria-live="polite">{notice}</div>}
     </div>
   );

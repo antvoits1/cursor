@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
-import { MessageCircle, MessageSquareText, Search } from 'lucide-react';
+import { MessageCircle, MessageSquare, Search } from 'lucide-react';
 import type { Lead } from '../data';
 import { ageMinutes } from '../lib/comm';
 import IOSCommPanel from './IOSCommPanel';
+import { useStore } from '../store';
 
 interface Props {
   leads: Lead[];
@@ -17,6 +18,7 @@ function newestMessage(lead: Lead) {
   return [...(lead.sms || [])].sort((a,b) => ageMinutes(a.t) - ageMinutes(b.t))[0] || null;
 }
 export default function MessagesView({ leads, selectedLeadId, setSelectedLeadId, preferredNumber, setPreferredNumber, onCall, openThread }: Props) {
+  const { callState } = useStore();
   const [query, setQuery] = useState('');
   const [openedLeadId, setOpenedLeadId] = useState<string | null>(null);
   useEffect(() => { if (openThread) setOpenedLeadId(openThread.leadId); }, [openThread]);
@@ -37,7 +39,7 @@ export default function MessagesView({ leads, selectedLeadId, setSelectedLeadId,
         {!visibleLeads.length && <div className="comm-empty">No conversations found.</div>}
         {visibleLeads.map(item => {
           const latest = newestMessage(item); const isWa = latest?.ch === 'wa';
-          return <button type="button" key={item.id} onClick={() => { setSelectedLeadId(item.id); setPreferredNumber(item.mobiles[0]?.n || ''); setOpenedLeadId(item.id); }} className={`messages-list-row ${selectedLeadId === item.id ? 'selected' : ''}`}><span className={`messages-list-icon ${isWa ? 'wa' : 'sms'}`}>{isWa ? <MessageCircle size={14}/> : <MessageSquareText size={14}/>}</span><span className="messages-list-copy"><strong>{item.contact}</strong><small>{item.company}</small><p>{latest?.txt || 'No messages'}</p></span><time>{latest?.t || item.lastAgo}</time></button>;
+          return <button type="button" key={item.id} onClick={() => { setSelectedLeadId(item.id); setPreferredNumber(item.mobiles[0]?.n || ''); setOpenedLeadId(item.id); }} className={`messages-list-row ${selectedLeadId === item.id ? 'selected' : ''}`}><span className={`messages-list-icon ${isWa ? 'wa' : 'sms'}`}>{isWa ? <MessageCircle size={14}/> : <MessageSquare size={14}/>}</span><span className="messages-list-copy"><strong>{item.contact}</strong><small>{item.company}</small><p>{latest?.txt || 'No messages'}</p></span><time style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}><span>{latest?.t || item.lastAgo}</span><span style={{ fontSize: '10px', color: '#8C93AB' }}>via {callState.activeLine === 'office' ? 'Office Line' : 'Personal iPhone'}</span></time></button>;
         })}
       </div>
     </div>

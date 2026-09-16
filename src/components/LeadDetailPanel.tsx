@@ -1,4 +1,4 @@
-import { FileText, Mail, MessageCircle, MessageSquareText, Phone } from 'lucide-react';
+import { FileText, Mail, MessageCircle, MessageSquare, Phone } from 'lucide-react';
 import type { Lead } from '../data';
 import { formatFinancialUp, formatMoneyWhole, generateSalesPitch } from '../lib/format';
 import { whatsappHref } from '../lib/comm';
@@ -15,7 +15,7 @@ function PhoneActions({ number, onCall, onMessage, whatsapp = false }: { number:
   return (
     <span className="detail-quick-actions">
       <button type="button" className="detail-action-call" onClick={onCall} title="Call" aria-label={`Call ${number}`}><Phone size={14} strokeWidth={1.9}/></button>
-      {onMessage && <button type="button" onClick={onMessage} title="SMS" aria-label={`Message ${number}`}><MessageSquareText size={14} strokeWidth={1.9}/></button>}
+      {onMessage && <button type="button" onClick={onMessage} title="SMS" aria-label={`Message ${number}`}><MessageSquare size={14} strokeWidth={1.9}/></button>}
       {whatsapp && <a href={whatsappHref(number)} target="_blank" rel="noreferrer" title="WhatsApp" aria-label={`WhatsApp ${number}`}><MessageCircle size={14} strokeWidth={1.9}/></a>}
     </span>
   );
@@ -23,7 +23,7 @@ function PhoneActions({ number, onCall, onMessage, whatsapp = false }: { number:
 
 function activityMeta(what: string) {
   const text = what.toLowerCase();
-  if (text.includes('sms') || text.includes('whatsapp')) return { tone: 'teal' as const, Icon: MessageSquareText };
+  if (text.includes('sms') || text.includes('whatsapp')) return { tone: 'teal' as const, Icon: MessageSquare };
   if (text.includes('email')) return { tone: 'amber' as const, Icon: Mail };
   if (text.includes('call')) return { tone: 'blue' as const, Icon: Phone };
   return { tone: 'neutral' as const, Icon: FileText };

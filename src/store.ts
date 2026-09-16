@@ -5,6 +5,19 @@ export type NavMode = 'sidebar-slim' | 'sidebar-wide' | 'topbar';
 export type ScreenScale = 'auto' | 'standard' | 'wide' | 'ultra';
 export type CommTab = 'all' | 'messages' | 'calls' | 'contacts' | 'email';
 
+export type CallStatus = 'idle' | 'ringing' | 'connected';
+export type ActiveLine = 'personal' | 'office';
+
+export interface CallState {
+  status: CallStatus;
+  number: string;
+  leadId?: string;
+  startTime?: number;
+  isMuted: boolean;
+  isOnHold: boolean;
+  activeLine: ActiveLine;
+}
+
 export const CANVAS_COLORS = ['#F2F4F8','#F7F8FC','#FFFFFF','#FAFAF9','#F5F7F9','#F1F4F7','#ECEFF3','#E7EBEF'];
 export const NAV_COLORS = ['#FFFFFF','#F7F8FC','#F2F4F8','#E2E6F0','#C8CCDC','#8C93AB','#5A6078','#1E2235','#181B2A','#334155','#263447','#3B3548'];
 
@@ -22,8 +35,11 @@ export interface UISettings {
 
 interface AppState extends UISettings {
   leads: Lead[];
+  callState: CallState;
   setSetting: <K extends keyof UISettings>(key: K, value: UISettings[K]) => void;
   setNavMode: (mode: NavMode) => void;
+  setCallState: (update: Partial<CallState>) => void;
+  endCall: () => void;
 }
 
 const DEFAULTS: UISettings = {
@@ -94,6 +110,13 @@ function saveSettings(settings: UISettings): void {
 const initial = loadSettings();
 export const useStore = create<AppState>((set) => ({
   leads: INITIAL_LEADS,
+  callState: {
+    status: 'idle',
+    number: '',
+    isMuted: false,
+    isOnHold: false,
+    activeLine: 'office',
+  },
   ...initial,
   setSetting: (key, value) => set((state) => {
     const normalized = key === 'fontSize' ? clampFontSize(value) : value;
@@ -126,4 +149,6 @@ export const useStore = create<AppState>((set) => ({
     });
     return { navMode };
   }),
+  setCallState: (update) => set((state) => ({ callState: { ...state.callState, ...update } })),
+  endCall: () => set((state) => ({ callState: { ...state.callState, status: 'idle', number: '', leadId: undefined, startTime: undefined, isMuted: false, isOnHold: false } })),
 }));

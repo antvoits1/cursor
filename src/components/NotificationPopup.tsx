@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
-import { CalendarClock, Mail, MessageCircle, MessageSquareText, Phone } from 'lucide-react';
+import { CalendarClock, Mail, MessageCircle, MessageSquare, Phone } from 'lucide-react';
 import type { CrmNotification } from '../lib/notifications';
 
 interface Props {
@@ -20,7 +20,7 @@ function KindIcon({ kind }: { kind: CrmNotification['kind'] }) {
   if (kind === 'email') return <Mail size={15} strokeWidth={1.8}/>;
   if (kind === 'call') return <Phone size={15} strokeWidth={1.8}/>;
   if (kind === 'follow') return <CalendarClock size={15} strokeWidth={1.8}/>;
-  return <MessageSquareText size={15} strokeWidth={1.8}/>;
+  return <MessageSquare size={15} strokeWidth={1.8}/>;
 }
 
 export default function NotificationPopup({ anchorRect, variant, items, readIds, onOpen, onMarkAllRead }: Props) {

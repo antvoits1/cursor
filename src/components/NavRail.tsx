@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react';
-import { Users, MessageSquareText, Mail, ScanLine, TerminalSquare, Bell, Settings } from 'lucide-react';
+import { Users, MessageSquare, Mail, ScanLine, TerminalSquare, Bell, Settings } from 'lucide-react';
 import { isLightColor } from '../lib/format';
 import type { ActivePage } from '../lib/navigation';
 import type { CrmNotification } from '../lib/notifications';
@@ -21,7 +21,7 @@ interface Props {
 
 const NAV_ITEMS = [
   { id: 'crm' as const, icon: Users, label: 'Leads' },
-  { id: 'messages' as const, icon: MessageSquareText, label: 'Messages' },
+  { id: 'messages' as const, icon: MessageSquare, label: 'Messages' },
   { id: 'email' as const, icon: Mail, label: 'Email' },
   { id: 'scanner' as const, icon: ScanLine, label: 'Scanner' },
   { id: 'command' as const, icon: TerminalSquare, label: 'Command' },
