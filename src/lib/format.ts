@@ -2,9 +2,9 @@ import { Lead } from '../data';
 
 export function isLightColor(hex: string): boolean {
   const hexValue = hex.replace('#', '');
-  const r = parseInt(hexValue.substr(0, 2), 16) || 0;
-  const g = parseInt(hexValue.substr(2, 2), 16) || 0;
-  const b = parseInt(hexValue.substr(4, 2), 16) || 0;
+  const r = parseInt(hexValue.slice(0, 2), 16) || 0;
+  const g = parseInt(hexValue.slice(2, 4), 16) || 0;
+  const b = parseInt(hexValue.slice(4, 6), 16) || 0;
   return ((0.299 * r + 0.587 * g + 0.114 * b) / 255) > 0.5;
 }
 

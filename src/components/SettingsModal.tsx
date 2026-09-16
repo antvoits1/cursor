@@ -1,4 +1,5 @@
 import { Minus, Plus } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { CANVAS_COLORS, NAV_COLORS, type UISettings } from '../store';
 
 interface Props {
@@ -43,6 +44,6 @@ export default function SettingsModal({ settings, setSetting, onResetPanels, onC
     </div>
   );
 }
-function Setting({ label, help, children }: { label: string; help: string; children: React.ReactNode }) {
+function Setting({ label, help, children }: { label: string; help: string; children: ReactNode }) {
   return <section className="settings-row"><label>{label}</label><p>{help}</p>{children}</section>;
 }

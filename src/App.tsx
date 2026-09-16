@@ -11,7 +11,8 @@ import MessagesView from './components/MessagesView';
 import StatementViewerOverlay from './components/StatementViewerOverlay';
 import SettingsModal from './components/SettingsModal';
 
-const PANEL_KEYS = { leads: 'forge.react.v15.panel.leads', comms: 'forge.react.v15.panel.comms' };
+const PANEL_KEYS = { leads: 'forge.react.v16.panel.leads', comms: 'forge.react.v16.panel.comms' };
+const LEGACY_PANEL_KEYS = { leads: 'forge.react.v15.panel.leads', comms: 'forge.react.v15.panel.comms' };
 const DEFAULT_LEADS_WIDTH = 400;
 const DEFAULT_COMMS_WIDTH = 320;
 const MIN_LEADS_WIDTH = 300;
@@ -19,8 +20,11 @@ const MIN_DETAIL_WIDTH = 340;
 const MIN_COMMS_WIDTH = 270;
 const DIVIDER_WIDTH = 12;
 
-function readSavedWidth(key: string): number | null {
+function readWidth(key: string): number | null {
   try { const value = Number(localStorage.getItem(key)); return Number.isFinite(value) && value > 0 ? value : null; } catch { return null; }
+}
+function readSavedWidth(key: string, legacyKey: string): number | null {
+  return readWidth(key) ?? readWidth(legacyKey);
 }
 function saveWidth(key: string, value: number): void { try { localStorage.setItem(key, String(Math.round(value))); } catch { /* optional */ } }
 function autoScaleMode(): 'standard' | 'wide' | 'ultra' {
@@ -46,8 +50,8 @@ export default function App() {
   const [pendingComm, setPendingComm] = useState<PendingCommOpen | null>(null);
   const [readIds, setReadIds] = useState<Set<string>>(() => loadReadIds());
   const notifications = useMemo(() => deriveNotifications(leads), [leads]);
-  const [leadsWidth, setLeadsWidth] = useState(() => readSavedWidth(PANEL_KEYS.leads) ?? DEFAULT_LEADS_WIDTH);
-  const [commsWidth, setCommsWidth] = useState(() => readSavedWidth(PANEL_KEYS.comms) ?? DEFAULT_COMMS_WIDTH);
+  const [leadsWidth, setLeadsWidth] = useState(() => readSavedWidth(PANEL_KEYS.leads, LEGACY_PANEL_KEYS.leads) ?? DEFAULT_LEADS_WIDTH);
+  const [commsWidth, setCommsWidth] = useState(() => readSavedWidth(PANEL_KEYS.comms, LEGACY_PANEL_KEYS.comms) ?? DEFAULT_COMMS_WIDTH);
   const panelAreaRef = useRef<HTMLDivElement>(null);
   const lead = leads.find(item => item.id === selectedId) || leads[0];
 
@@ -176,7 +180,7 @@ export default function App() {
             <div className="panel-divider" role="separator" aria-orientation="vertical" aria-label="Resize leads panel" onPointerDown={e => startResize('leads', e.clientX)} onDoubleClick={resetPanels}/>
             <section data-panel="lead-detail" className="forge-panel-surface"><LeadDetailPanel lead={lead} onCall={startCall} onOpenMessages={openMessages} setViewerDocIndex={setViewerDocIndex}/></section>
             <div className="panel-divider" role="separator" aria-orientation="vertical" aria-label="Resize communications panel" onPointerDown={e => startResize('comms', e.clientX)} onDoubleClick={resetPanels}/>
-            <section data-panel="communications" className="forge-panel-surface"><IOSCommPanel lead={lead} contacts={leads} preferredMobile={messageNumber} fullWidth defaultTab={defaultCommsTab} pendingOpen={pendingComm} onSelectLead={setSelectedId} onCall={startCall} onPreferredMobileChange={setMessageNumber}/></section>
+            <section data-panel="communications" className="forge-panel-surface"><IOSCommPanel lead={lead} contacts={leads} preferredMobile={messageNumber} defaultTab={defaultCommsTab} pendingOpen={pendingComm} onSelectLead={setSelectedId} onCall={startCall} onPreferredMobileChange={setMessageNumber}/></section>
           </div>
         )}
         {activePage === 'messages' && <MessagesView leads={leads} selectedLeadId={selectedId} setSelectedLeadId={setSelectedId} preferredNumber={messageNumber} setPreferredNumber={setMessageNumber} onCall={startCall} openThread={pendingThread}/>}

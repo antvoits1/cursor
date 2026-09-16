@@ -15,7 +15,6 @@ interface Props {
   lead?: Lead;
   contacts?: Lead[];
   onBack?: () => void;
-  fullWidth?: boolean;
   preferredMobile?: string;
   defaultTab?: CommTab;
   openThreadOnLoad?: boolean;
@@ -44,7 +43,7 @@ function TypeIcon({ type, size = 14 }: { type: AllRow['type']; size?: number }) 
 }
 
 export default function IOSCommPanel({
-  lead, contacts = [], onBack, fullWidth = false, preferredMobile, defaultTab = 'all', openThreadOnLoad = false,
+  lead, contacts = [], onBack, preferredMobile, defaultTab = 'all', openThreadOnLoad = false,
   initialChannel = 'sms', pendingOpen = null, onSelectLead, onCall, onPreferredMobileChange,
 }: Props) {
   const pool = contacts.length ? contacts : (lead ? [lead] : []);
@@ -182,7 +181,7 @@ export default function IOSCommPanel({
     : activeTab.charAt(0).toUpperCase() + activeTab.slice(1);
 
   return (
-    <div className={`comm-panel ${fullWidth ? 'full' : ''}`}>
+    <div className="comm-panel">
       <header className="comm-head">
         <div className="comm-head-side">{onBack && <button type="button" onClick={onBack} className="comm-back"><ArrowLeft size={15}/> Back</button>}</div>
         <div className="comm-head-title"><strong>{displayTitle}</strong>{activeTab === 'all' && lead?.company && <span>{lead.company}</span>}</div>

@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import url from 'node:url';
+import { execSync } from 'node:child_process';
 const here=path.dirname(url.fileURLToPath(import.meta.url));
 const root=path.resolve(here,'..');
 const read=(p)=>fs.readFileSync(path.join(root,p),'utf8');
@@ -33,7 +34,12 @@ check('Fixed wide mobile viewport is present', /width=1200/.test(html) && /user-
 check('Inter font is loaded', /family=Inter/.test(html));
 check('Inter is the global font token', has(css,"--font-family-main: 'Inter'"));
 check('Controls inherit Inter globally', has(css,'button, input, textarea, select, option, a {\n  font-family: var(--font-family-main);\n}'));
-check('Statement viewer uses sans/Inter instead of mono', has(statement,'font-sans') && not(statement,'font-mono'));
+check('Statement viewer uses Inter from the single CSS file', has(css,'.stmt-doc') && has(css,'.stmt-doc {\n  width: 100%;') && has(css,'font-family: var(--font-family-main);') && not(statement,'font-mono') && not(statement,'font-sans') && not(viewer,'font-sans'));
+check('Tailwind is not a project dependency', !pkg.dependencies?.tailwindcss && !pkg.devDependencies?.tailwindcss && !pkg.dependencies?.['@tailwindcss/vite'] && !pkg.devDependencies?.['@tailwindcss/vite']);
+check('Authoritative CSS is a single file without Tailwind import', not(css,'@import "tailwindcss"') && not(css,'@apply ') && not(css,'@tailwind '));
+check('Vite has no Tailwind plugin', not(read('vite.config.ts'),'tailwindcss') && not(read('vite.config.ts'),'tailwind'));
+check('Statement overlay has no Tailwind or inline style patches', not(viewer,'style={{') && not(statement,'style={{') && has(viewer,'stmt-overlay') && has(css,'.stmt-overlay') && has(viewer,'stmt-page') && has(css,'.stmt-page'));
+check('React source has no Tailwind utility overlays', !/\b(font-sans|text-slate-|bg-slate-|bg-white\/|fixed inset-0|md:left-8|backdrop-blur|divide-x|grid-cols-4)\b/.test(app+nav+leads+detail+comm+messages+settings+notif+statement+viewer));
 check('Canvas uses dashboard page color', has(css,'--bg-canvas: #F2F4F8;') && has(store,"canvasColor: '#F2F4F8'"));
 check('Topbar is thin at 52px', has(css,'--topbar-h: 52px;'));
 check('Traffic dots center in slim sidebar', has(css,'.forge-sidebar.slim .forge-sidebar-head') && has(css,'padding: 6px 0;'));
@@ -54,6 +60,7 @@ check('Leads default width is 400px', has(app,'const DEFAULT_LEADS_WIDTH = 400;'
 check('Communications default width is 320px', has(app,'const DEFAULT_COMMS_WIDTH = 320;'));
 check('Middle panel minimum width is protected', has(app,'const MIN_DETAIL_WIDTH = 340;'));
 check('Both panel widths are saved', has(app,'saveWidth(PANEL_KEYS.leads, leadsWidth)') && has(app,'saveWidth(PANEL_KEYS.comms, commsWidth)'));
+check('Panel widths use v16 keys and migrate v15', has(app,"forge.react.v16.panel.leads") && has(app,"forge.react.v16.panel.comms") && has(app,"forge.react.v15.panel.leads") && has(app,'readSavedWidth(PANEL_KEYS.leads, LEGACY_PANEL_KEYS.leads)'));
 check('Both panel dividers are draggable', (app.match(/onPointerDown=/g)||[]).length===2);
 check('Double-click reset exists on both dividers', (app.match(/onDoubleClick=\{resetPanels\}/g)||[]).length===2);
 check('Settings can reset panel widths', has(settings,'onResetPanels'));
@@ -160,5 +167,12 @@ check('Mark all read is available in the popup header', has(notif,'Mark all read
 check('Empty notification state exists', has(notif,'No notifications'));
 check('Alerts placeholder page is no longer a destination', not(app,'alerts') && not(nav,'alerts'));
 check('Notification rows have no initial-circle avatars', not(notif,'avatar') && not(notif,'initial') && not(css,'.forge-notif-avatar'));
+check('Unused fullWidth overlay class is gone', not(comm,'fullWidth') && not(app,'fullWidth') && not(messages,'fullWidth') && not(css,'.comm-panel.full') && not(messages,'messages-thread-page'));
+check('Unused autoprefixer and esbuild deps are gone', !pkg.devDependencies?.autoprefixer && !pkg.dependencies?.esbuild && !pkg.devDependencies?.esbuild);
+check('Lockfile has no Tailwind packages', !JSON.stringify(lock).includes('tailwindcss') && !JSON.stringify(lock).includes('@tailwindcss'));
+const zipList = execSync('unzip -l downloads/Forge-CRM-016.zip', { encoding: 'utf8' });
+check('Download zip is the full CRM package', zipList.includes('Forge-CRM-016/package-lock.json') && zipList.includes('Forge-CRM-016/README.md') && zipList.includes('Forge-CRM-016/tests/source-audit.mjs') && zipList.includes('Forge-CRM-016/src/index.css') && zipList.includes('Forge-CRM-016/scripts/pack-downloads.mjs') && zipList.includes('Forge-CRM-016/.gitignore'));
+check('Download zip has no Tailwind leftover configs', !zipList.includes('tailwind.config') && !zipList.includes('postcss.config'));
+check('One-click source dump covers the CSS and statement files', has(read('downloads/Forge-CRM-016-SOURCE.txt'),'FILE: src/index.css') && has(read('downloads/Forge-CRM-016-SOURCE.txt'),'.stmt-doc') && has(read('downloads/Forge-CRM-016-SOURCE.txt'),'FILE: src/components/StatementDocument.tsx') && not(read('downloads/Forge-CRM-016-SOURCE.txt'),'@import "tailwindcss"'));
 console.log(results.join('\n'));
 console.log(`TOTAL ${passed}/${passed} PASS`);

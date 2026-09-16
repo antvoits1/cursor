@@ -1,6 +1,79 @@
 Forge CRM 0.16 — all source in one file. Copy everything below.
 
 ========================================================================
+FILE: README.md
+========================================================================
+# ReactCRM-016 · Dashboard Visuals
+
+Clean React/Vite source. Build 0.16 restyles 0.15 to the dashboard design system without changing CRM data, lead content, or business logic.
+
+All visual rules live in one file: `src/index.css`. There is no Tailwind, no extra CSS files, and no utility-class overlays.
+
+## Current build
+- Inter throughout, including all revenue and financial figures.
+- Dashboard tokens: canvas `#F2F4F8`, surfaces `#FFFFFF`, wells `#F7F8FC`, navy `#1E2235`, accents blue `#3B6FD4` / teal `#1A8F7A` / amber `#C97B2A` / navy `#1E2235`.
+- Stat-box treatment on detail cards: 1px `#E2E6F0` border, 9px radius, 13×16 padding, small shadow.
+- Panel headers follow the dashboard title + count-pill / section-label layout.
+- Navigation defaults to the dashboard navy `#1E2235`; communication and activity icons use the blue / teal light tints.
+- Middle panel: KPI strip (monthly revenue, approval amount, last balance), carded sales pitch with blue accent edge, tinted activity icons.
+- Account initials sit in a clean ~29px amber circle. Lead rows have no initial circles.
+- Message threads use iOS-style bubbles with corner timestamps and read receipts.
+- Communications still has All / Messages / Calls / Contacts / Email.
+- Panel widths stay draggable, saved locally under `forge.react.v16.panel.*`, and resettable from Settings.
+- UI settings persist under `forge-crm-ui-settings-v16`.
+
+## Calling
+The CRM does not embed a softphone. A call action hands the number to the host
+environment instead:
+
+1. `window.ForgeTelephonyAdapter.startCall({ number, leadId })` when a native
+   shell (Electron / mobile) has installed an adapter.
+2. Otherwise a cancelable `forge:call-request` CustomEvent is dispatched on
+   `window`; a listener calls `preventDefault()` to claim it.
+
+When nothing handles the request the CRM shows "Connect a phone or calling
+provider to place calls." It never navigates the app to a `tel:` URL.
+
+## Downloads
+- `downloads/Forge-CRM-016.zip` — full runnable project (source, lockfile, tests, pack script).
+- `downloads/Forge-CRM-016-SOURCE.txt` — one-file copy of the React source.
+
+Refresh both with `npm run pack`.
+
+## Run
+```bash
+npm ci
+npm run dev
+```
+
+## Verify
+```bash
+npm run lint
+npm run audit
+npm run build
+```
+
+========================================================================
+FILE: index.html
+========================================================================
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=1200, initial-scale=1, maximum-scale=5.0, user-scalable=yes" />
+  <meta name="forge-build" content="ReactCRM-016-20260916-DashboardVisuals-React" />
+  <title>Forge CRM</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body data-start-page="crm">
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+</html>
+
+========================================================================
 FILE: package.json
 ========================================================================
 {
@@ -14,10 +87,10 @@ FILE: package.json
     "preview": "vite preview",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
-    "audit": "node tests/source-audit.mjs"
+    "audit": "node tests/source-audit.mjs",
+    "pack": "node scripts/pack-downloads.mjs"
   },
   "dependencies": {
-    "@tailwindcss/vite": "^4.1.14",
     "@vitejs/plugin-react": "^5.0.4",
     "lucide-react": "^0.546.0",
     "react": "^19.0.1",
@@ -28,50 +101,10 @@ FILE: package.json
     "@types/node": "^22.14.0",
     "@types/react": "^19.0.1",
     "@types/react-dom": "^19.0.1",
-    "autoprefixer": "^10.4.21",
-    "esbuild": "^0.25.0",
-    "tailwindcss": "^4.1.14",
     "typescript": "~5.8.2",
     "vite": "^6.2.3"
   }
 }
-
-========================================================================
-FILE: index.html
-========================================================================
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=1200, initial-scale=1, maximum-scale=5.0, user-scalable=yes" />
-  <meta name="forge-build" content="ReactCRM-016-20260914-DashboardVisuals-React" />
-  <title>Forge CRM</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-</head>
-<body data-start-page="crm">
-  <div id="root"></div>
-  <script type="module" src="/src/main.tsx"></script>
-</body>
-</html>
-
-========================================================================
-FILE: vite.config.ts
-========================================================================
-import tailwindcss from '@tailwindcss/vite';
-import react from '@vitejs/plugin-react';
-import path from 'path';
-import { defineConfig } from 'vite';
-
-export default defineConfig({
-  plugins: [react(), tailwindcss()],
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, '.'),
-    },
-  },
-});
 
 ========================================================================
 FILE: tsconfig.json
@@ -79,8 +112,6 @@ FILE: tsconfig.json
 {
   "compilerOptions": {
     "target": "ES2022",
-    "experimentalDecorators": true,
-    "useDefineForClassFields": false,
     "module": "ESNext",
     "lib": [
       "ES2022",
@@ -91,31 +122,21 @@ FILE: tsconfig.json
     "moduleResolution": "bundler",
     "isolatedModules": true,
     "moduleDetection": "force",
-    "allowJs": true,
     "jsx": "react-jsx",
-    "paths": {
-      "@/*": [
-        "./*"
-      ]
-    },
     "allowImportingTsExtensions": true,
     "noEmit": true
   }
 }
 
 ========================================================================
-FILE: src/main.tsx
+FILE: vite.config.ts
 ========================================================================
-import {StrictMode} from 'react';
-import {createRoot} from 'react-dom/client';
-import App from './App.tsx';
-import './index.css';
+import react from '@vitejs/plugin-react';
+import { defineConfig } from 'vite';
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-);
+export default defineConfig({
+  plugins: [react()],
+});
 
 ========================================================================
 FILE: src/App.tsx
@@ -133,7 +154,8 @@ import MessagesView from './components/MessagesView';
 import StatementViewerOverlay from './components/StatementViewerOverlay';
 import SettingsModal from './components/SettingsModal';
 
-const PANEL_KEYS = { leads: 'forge.react.v15.panel.leads', comms: 'forge.react.v15.panel.comms' };
+const PANEL_KEYS = { leads: 'forge.react.v16.panel.leads', comms: 'forge.react.v16.panel.comms' };
+const LEGACY_PANEL_KEYS = { leads: 'forge.react.v15.panel.leads', comms: 'forge.react.v15.panel.comms' };
 const DEFAULT_LEADS_WIDTH = 400;
 const DEFAULT_COMMS_WIDTH = 320;
 const MIN_LEADS_WIDTH = 300;
@@ -141,8 +163,11 @@ const MIN_DETAIL_WIDTH = 340;
 const MIN_COMMS_WIDTH = 270;
 const DIVIDER_WIDTH = 12;
 
-function readSavedWidth(key: string): number | null {
+function readWidth(key: string): number | null {
   try { const value = Number(localStorage.getItem(key)); return Number.isFinite(value) && value > 0 ? value : null; } catch { return null; }
+}
+function readSavedWidth(key: string, legacyKey: string): number | null {
+  return readWidth(key) ?? readWidth(legacyKey);
 }
 function saveWidth(key: string, value: number): void { try { localStorage.setItem(key, String(Math.round(value))); } catch { /* optional */ } }
 function autoScaleMode(): 'standard' | 'wide' | 'ultra' {
@@ -168,8 +193,8 @@ export default function App() {
   const [pendingComm, setPendingComm] = useState<PendingCommOpen | null>(null);
   const [readIds, setReadIds] = useState<Set<string>>(() => loadReadIds());
   const notifications = useMemo(() => deriveNotifications(leads), [leads]);
-  const [leadsWidth, setLeadsWidth] = useState(() => readSavedWidth(PANEL_KEYS.leads) ?? DEFAULT_LEADS_WIDTH);
-  const [commsWidth, setCommsWidth] = useState(() => readSavedWidth(PANEL_KEYS.comms) ?? DEFAULT_COMMS_WIDTH);
+  const [leadsWidth, setLeadsWidth] = useState(() => readSavedWidth(PANEL_KEYS.leads, LEGACY_PANEL_KEYS.leads) ?? DEFAULT_LEADS_WIDTH);
+  const [commsWidth, setCommsWidth] = useState(() => readSavedWidth(PANEL_KEYS.comms, LEGACY_PANEL_KEYS.comms) ?? DEFAULT_COMMS_WIDTH);
   const panelAreaRef = useRef<HTMLDivElement>(null);
   const lead = leads.find(item => item.id === selectedId) || leads[0];
 
@@ -298,7 +323,7 @@ export default function App() {
             <div className="panel-divider" role="separator" aria-orientation="vertical" aria-label="Resize leads panel" onPointerDown={e => startResize('leads', e.clientX)} onDoubleClick={resetPanels}/>
             <section data-panel="lead-detail" className="forge-panel-surface"><LeadDetailPanel lead={lead} onCall={startCall} onOpenMessages={openMessages} setViewerDocIndex={setViewerDocIndex}/></section>
             <div className="panel-divider" role="separator" aria-orientation="vertical" aria-label="Resize communications panel" onPointerDown={e => startResize('comms', e.clientX)} onDoubleClick={resetPanels}/>
-            <section data-panel="communications" className="forge-panel-surface"><IOSCommPanel lead={lead} contacts={leads} preferredMobile={messageNumber} fullWidth defaultTab={defaultCommsTab} pendingOpen={pendingComm} onSelectLead={setSelectedId} onCall={startCall} onPreferredMobileChange={setMessageNumber}/></section>
+            <section data-panel="communications" className="forge-panel-surface"><IOSCommPanel lead={lead} contacts={leads} preferredMobile={messageNumber} defaultTab={defaultCommsTab} pendingOpen={pendingComm} onSelectLead={setSelectedId} onCall={startCall} onPreferredMobileChange={setMessageNumber}/></section>
           </div>
         )}
         {activePage === 'messages' && <MessagesView leads={leads} selectedLeadId={selectedId} setSelectedLeadId={setSelectedId} preferredNumber={messageNumber} setPreferredNumber={setMessageNumber} onCall={startCall} openThread={pendingThread}/>}
@@ -579,137 +604,8 @@ export const INITIAL_LEADS: Lead[] = [
 ];
 
 ========================================================================
-FILE: src/store.ts
-========================================================================
-import { create } from 'zustand';
-import { INITIAL_LEADS, type Lead } from './data';
-
-export type NavMode = 'sidebar-slim' | 'sidebar-wide' | 'topbar';
-export type ScreenScale = 'auto' | 'standard' | 'wide' | 'ultra';
-export type CommTab = 'all' | 'messages' | 'calls' | 'contacts' | 'email';
-
-export const CANVAS_COLORS = ['#F2F4F8','#F7F8FC','#FFFFFF','#FAFAF9','#F5F7F9','#F1F4F7','#ECEFF3','#E7EBEF'];
-export const NAV_COLORS = ['#FFFFFF','#F7F8FC','#F2F4F8','#E2E6F0','#C8CCDC','#8C93AB','#5A6078','#1E2235','#181B2A','#334155','#263447','#3B3548'];
-
-export interface UISettings {
-  screenScale: ScreenScale;
-  fontSize: number;
-  navMode: NavMode;
-  leadDensity: 'standard' | 'compact';
-  motion: 'normal' | 'reduced';
-  defaultCommsTab: CommTab;
-  canvasColor: string;
-  sidebarColor: string;
-}
-
-interface AppState extends UISettings {
-  leads: Lead[];
-  setSetting: <K extends keyof UISettings>(key: K, value: UISettings[K]) => void;
-  setNavMode: (mode: NavMode) => void;
-}
-
-const DEFAULTS: UISettings = {
-  screenScale: 'auto',
-  fontSize: 16.5,
-  navMode: 'topbar',
-  leadDensity: 'standard',
-  motion: 'normal',
-  defaultCommsTab: 'all',
-  canvasColor: '#F2F4F8',
-  sidebarColor: '#1E2235',
-};
-const SETTINGS_KEY = 'forge-crm-ui-settings-v16';
-const LEGACY_KEYS = ['forge-crm-ui-settings-v15', 'forge-crm-ui-settings-v14'];
-
-function clampFontSize(value: unknown): number {
-  const n = typeof value === 'number' ? value : Number(value);
-  return Number.isFinite(n) ? Math.max(14.5, Math.min(20, Math.round(n * 2) / 2)) : DEFAULTS.fontSize;
-}
-function validColor(value: unknown, fallback: string): string {
-  return typeof value === 'string' && /^#[0-9A-Fa-f]{6}$/.test(value) ? value.toUpperCase() : fallback;
-}
-function sanitize(parsed: Partial<UISettings>): UISettings {
-  return {
-    screenScale: ['auto','standard','wide','ultra'].includes(String(parsed.screenScale)) ? parsed.screenScale as ScreenScale : DEFAULTS.screenScale,
-    fontSize: clampFontSize(parsed.fontSize),
-    navMode: ['topbar','sidebar-slim','sidebar-wide'].includes(String(parsed.navMode)) ? parsed.navMode as NavMode : DEFAULTS.navMode,
-    leadDensity: parsed.leadDensity === 'compact' ? 'compact' : 'standard',
-    motion: parsed.motion === 'reduced' ? 'reduced' : 'normal',
-    defaultCommsTab: ['all','messages','calls','contacts','email'].includes(String(parsed.defaultCommsTab)) ? parsed.defaultCommsTab as CommTab : DEFAULTS.defaultCommsTab,
-    canvasColor: validColor(parsed.canvasColor, DEFAULTS.canvasColor),
-    sidebarColor: validColor(parsed.sidebarColor, DEFAULTS.sidebarColor),
-  };
-}
-function loadSettings(): UISettings {
-  if (typeof localStorage === 'undefined') return DEFAULTS;
-  try {
-    const direct = localStorage.getItem(SETTINGS_KEY);
-    if (direct) return sanitize(JSON.parse(direct));
-    for (const key of LEGACY_KEYS) {
-      const raw = localStorage.getItem(key);
-      if (raw) {
-        const parsed = JSON.parse(raw) as Record<string, unknown>;
-        const migrated: Partial<UISettings> = {
-          screenScale: parsed.screenScale as ScreenScale,
-          fontSize: typeof parsed.fontSize === 'number' ? parsed.fontSize : (typeof parsed.fontOffset === 'number' ? 16.5 + parsed.fontOffset : undefined),
-          navMode: parsed.navMode as NavMode,
-          leadDensity: parsed.leadDensity as 'standard' | 'compact',
-          motion: parsed.motion as 'normal' | 'reduced',
-          defaultCommsTab: parsed.defaultCommsTab as CommTab,
-          canvasColor: (parsed.canvasColor || parsed.bgCanvas) as string,
-          sidebarColor: (parsed.sidebarColor || parsed.bgConsole) as string,
-        };
-        return sanitize(migrated);
-      }
-    }
-  } catch { /* optional preferences must never break the CRM */ }
-  return DEFAULTS;
-}
-function saveSettings(settings: UISettings): void {
-  if (typeof localStorage === 'undefined') return;
-  try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch { /* ignore storage failures */ }
-}
-
-const initial = loadSettings();
-export const useStore = create<AppState>((set) => ({
-  leads: INITIAL_LEADS,
-  ...initial,
-  setSetting: (key, value) => set((state) => {
-    const normalized = key === 'fontSize' ? clampFontSize(value) : value;
-    const next = { ...state, [key]: normalized } as AppState;
-    saveSettings({
-      screenScale: next.screenScale,
-      fontSize: next.fontSize,
-      navMode: next.navMode,
-      leadDensity: next.leadDensity,
-      motion: next.motion,
-      defaultCommsTab: next.defaultCommsTab,
-      canvasColor: next.canvasColor,
-      sidebarColor: next.sidebarColor,
-    });
-    return { [key]: normalized } as Partial<AppState>;
-  }),
-  setNavMode: (navMode) => set((state) => {
-    const next = { ...state, navMode };
-    saveSettings({
-      screenScale: next.screenScale,
-      fontSize: next.fontSize,
-      navMode,
-      leadDensity: next.leadDensity,
-      motion: next.motion,
-      defaultCommsTab: next.defaultCommsTab,
-      canvasColor: next.canvasColor,
-      sidebarColor: next.sidebarColor,
-    });
-    return { navMode };
-  }),
-}));
-
-========================================================================
 FILE: src/index.css
 ========================================================================
-@import "tailwindcss";
-
 :root {
   --bg-canvas: #F2F4F8;
   --bg-surface: #FFFFFF;
@@ -2279,7 +2175,7 @@ html[data-lead-density="compact"] .forge-lead-row {
   white-space: nowrap;
 }
 
-.comm-bubble-meta svg { color: #3B82F6; }
+.comm-bubble-meta svg { color: #fff; }
 
 .comm-composer {
   flex: 0 0 auto;
@@ -2688,6 +2584,243 @@ html[data-lead-density="compact"] .forge-lead-row {
   margin-top: 2px;
 }
 
+/* Statement viewer */
+.stmt-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.95);
+  padding: 16px;
+  overflow: hidden;
+}
+
+.stmt-close {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.7);
+  display: grid;
+  place-items: center;
+  z-index: 120;
+}
+
+.stmt-close:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.stmt-nav {
+  position: fixed;
+  border: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.4);
+  z-index: 110;
+}
+
+.stmt-nav:hover { color: #fff; }
+.stmt-nav-prev { left: 16px; }
+.stmt-nav-next { right: 16px; }
+
+@media (min-width: 768px) {
+  .stmt-nav-prev { left: 32px; }
+  .stmt-nav-next { right: 32px; }
+}
+
+.stmt-page {
+  background: #fff;
+  box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  height: min(calc(86dvh / var(--ui-scale)), calc((88vw / var(--ui-scale)) * 11 / 8.5));
+  aspect-ratio: 8.5 / 11;
+  max-width: calc(88vw / var(--ui-scale));
+}
+
+.stmt-doc {
+  width: 100%;
+  height: 100%;
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-sizing: border-box;
+  background: #fff;
+  color: var(--text-primary);
+  font-family: var(--font-family-main);
+  font-size: calc(12px + var(--font-offset));
+  line-height: 1.6;
+}
+
+.stmt-doc-head,
+.stmt-doc-parties {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.stmt-doc-head {
+  align-items: flex-start;
+  padding-bottom: 20px;
+  margin-bottom: 20px;
+  border-bottom: 2px solid var(--accent-navy);
+}
+
+.stmt-doc-bank { min-width: 0; }
+
+.stmt-doc-bank h1 {
+  margin: 0;
+  font-size: calc(22px + var(--font-offset));
+  font-weight: 700;
+  letter-spacing: -.4px;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stmt-doc-muted {
+  margin-top: 4px;
+  color: var(--text-secondary);
+}
+
+.stmt-doc-title {
+  text-align: right;
+  flex: 0 0 auto;
+}
+
+.stmt-doc-kicker {
+  font-size: calc(16px + var(--font-offset));
+  font-weight: 700;
+  letter-spacing: 1.4px;
+}
+
+.stmt-doc-parties {
+  margin-bottom: 24px;
+  gap: 32px;
+}
+
+.stmt-doc-party { min-width: 0; }
+
+.stmt-doc-company {
+  font-weight: 700;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stmt-doc-address {
+  text-transform: uppercase;
+  font-size: calc(11px + var(--font-offset));
+  line-height: 1.4;
+}
+
+.stmt-doc-meta {
+  text-align: right;
+  flex: 0 0 auto;
+  font-size: calc(11px + var(--font-offset));
+}
+
+.stmt-doc-meta > div { margin-bottom: 4px; }
+.stmt-doc-meta span { margin-right: 12px; color: var(--text-secondary); }
+.stmt-doc-meta strong { font-weight: 700; }
+
+.stmt-doc-summary {
+  margin-bottom: 24px;
+  border: 1px solid #D0D5E2;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.stmt-doc-summary-head {
+  padding: 6px 20px;
+  background: var(--bg-panel);
+  border-bottom: 1px solid #D0D5E2;
+  font-size: calc(12px + var(--font-offset));
+  font-weight: 700;
+}
+
+.stmt-doc-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.stmt-doc-summary-grid > div {
+  padding: 12px;
+  text-align: center;
+  border-right: 1px solid var(--border);
+}
+
+.stmt-doc-summary-grid > div:last-child { border-right: 0; }
+.stmt-doc-ending { background: var(--bg-panel); }
+
+.stmt-doc-label {
+  margin-bottom: 4px;
+  color: var(--text-secondary);
+  font-size: calc(9px + var(--font-offset));
+  font-weight: 600;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+}
+
+.stmt-doc-figure {
+  font-size: calc(14px + var(--font-offset));
+  font-weight: 700;
+}
+
+.stmt-doc-figure.credit,
+.stmt-doc-table td.credit { color: var(--accent-teal); }
+.stmt-doc-figure.debit,
+.stmt-doc-table td.debit { color: var(--accent-red); }
+
+.stmt-doc-activity { flex: 1; min-height: 0; }
+
+.stmt-doc-activity-head {
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid #D0D5E2;
+  font-size: calc(12px + var(--font-offset));
+  font-weight: 700;
+}
+
+.stmt-doc-table {
+  width: 100%;
+  text-align: left;
+  font-size: calc(10px + var(--font-offset));
+  border-collapse: collapse;
+}
+
+.stmt-doc-table th {
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-size: calc(9px + var(--font-offset));
+  font-weight: 500;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+}
+
+.stmt-doc-table th:nth-child(1) { width: 80px; }
+.stmt-doc-table th:nth-child(3),
+.stmt-doc-table th:nth-child(4),
+.stmt-doc-table td:nth-child(3),
+.stmt-doc-table td:nth-child(4) { text-align: right; }
+.stmt-doc-table th:nth-child(4) { width: 112px; }
+
+.stmt-doc-table td {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--bg-panel);
+}
+
+.stmt-doc-running { color: var(--text-muted); }
+
 /* Settings */
 .settings-overlay {
   position: fixed;
@@ -2878,6 +3011,147 @@ html[data-motion="reduced"] *::after {
 }
 
 ========================================================================
+FILE: src/main.tsx
+========================================================================
+import {StrictMode} from 'react';
+import {createRoot} from 'react-dom/client';
+import App from './App.tsx';
+import './index.css';
+
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <App />
+  </StrictMode>,
+);
+
+========================================================================
+FILE: src/store.ts
+========================================================================
+import { create } from 'zustand';
+import { INITIAL_LEADS, type Lead } from './data';
+
+export type NavMode = 'sidebar-slim' | 'sidebar-wide' | 'topbar';
+export type ScreenScale = 'auto' | 'standard' | 'wide' | 'ultra';
+export type CommTab = 'all' | 'messages' | 'calls' | 'contacts' | 'email';
+
+export const CANVAS_COLORS = ['#F2F4F8','#F7F8FC','#FFFFFF','#FAFAF9','#F5F7F9','#F1F4F7','#ECEFF3','#E7EBEF'];
+export const NAV_COLORS = ['#FFFFFF','#F7F8FC','#F2F4F8','#E2E6F0','#C8CCDC','#8C93AB','#5A6078','#1E2235','#181B2A','#334155','#263447','#3B3548'];
+
+export interface UISettings {
+  screenScale: ScreenScale;
+  fontSize: number;
+  navMode: NavMode;
+  leadDensity: 'standard' | 'compact';
+  motion: 'normal' | 'reduced';
+  defaultCommsTab: CommTab;
+  canvasColor: string;
+  sidebarColor: string;
+}
+
+interface AppState extends UISettings {
+  leads: Lead[];
+  setSetting: <K extends keyof UISettings>(key: K, value: UISettings[K]) => void;
+  setNavMode: (mode: NavMode) => void;
+}
+
+const DEFAULTS: UISettings = {
+  screenScale: 'auto',
+  fontSize: 16.5,
+  navMode: 'topbar',
+  leadDensity: 'standard',
+  motion: 'normal',
+  defaultCommsTab: 'all',
+  canvasColor: '#F2F4F8',
+  sidebarColor: '#1E2235',
+};
+const SETTINGS_KEY = 'forge-crm-ui-settings-v16';
+const LEGACY_KEYS = ['forge-crm-ui-settings-v15', 'forge-crm-ui-settings-v14'];
+
+function clampFontSize(value: unknown): number {
+  const n = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(n) ? Math.max(14.5, Math.min(20, Math.round(n * 2) / 2)) : DEFAULTS.fontSize;
+}
+function validColor(value: unknown, fallback: string): string {
+  return typeof value === 'string' && /^#[0-9A-Fa-f]{6}$/.test(value) ? value.toUpperCase() : fallback;
+}
+function sanitize(parsed: Partial<UISettings>): UISettings {
+  return {
+    screenScale: ['auto','standard','wide','ultra'].includes(String(parsed.screenScale)) ? parsed.screenScale as ScreenScale : DEFAULTS.screenScale,
+    fontSize: clampFontSize(parsed.fontSize),
+    navMode: ['topbar','sidebar-slim','sidebar-wide'].includes(String(parsed.navMode)) ? parsed.navMode as NavMode : DEFAULTS.navMode,
+    leadDensity: parsed.leadDensity === 'compact' ? 'compact' : 'standard',
+    motion: parsed.motion === 'reduced' ? 'reduced' : 'normal',
+    defaultCommsTab: ['all','messages','calls','contacts','email'].includes(String(parsed.defaultCommsTab)) ? parsed.defaultCommsTab as CommTab : DEFAULTS.defaultCommsTab,
+    canvasColor: validColor(parsed.canvasColor, DEFAULTS.canvasColor),
+    sidebarColor: validColor(parsed.sidebarColor, DEFAULTS.sidebarColor),
+  };
+}
+function loadSettings(): UISettings {
+  if (typeof localStorage === 'undefined') return DEFAULTS;
+  try {
+    const direct = localStorage.getItem(SETTINGS_KEY);
+    if (direct) return sanitize(JSON.parse(direct));
+    for (const key of LEGACY_KEYS) {
+      const raw = localStorage.getItem(key);
+      if (raw) {
+        const parsed = JSON.parse(raw) as Record<string, unknown>;
+        const migrated: Partial<UISettings> = {
+          screenScale: parsed.screenScale as ScreenScale,
+          fontSize: typeof parsed.fontSize === 'number' ? parsed.fontSize : (typeof parsed.fontOffset === 'number' ? 16.5 + parsed.fontOffset : undefined),
+          navMode: parsed.navMode as NavMode,
+          leadDensity: parsed.leadDensity as 'standard' | 'compact',
+          motion: parsed.motion as 'normal' | 'reduced',
+          defaultCommsTab: parsed.defaultCommsTab as CommTab,
+          canvasColor: (parsed.canvasColor || parsed.bgCanvas) as string,
+          sidebarColor: (parsed.sidebarColor || parsed.bgConsole) as string,
+        };
+        return sanitize(migrated);
+      }
+    }
+  } catch { /* optional preferences must never break the CRM */ }
+  return DEFAULTS;
+}
+function saveSettings(settings: UISettings): void {
+  if (typeof localStorage === 'undefined') return;
+  try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch { /* ignore storage failures */ }
+}
+
+const initial = loadSettings();
+export const useStore = create<AppState>((set) => ({
+  leads: INITIAL_LEADS,
+  ...initial,
+  setSetting: (key, value) => set((state) => {
+    const normalized = key === 'fontSize' ? clampFontSize(value) : value;
+    const next = { ...state, [key]: normalized } as AppState;
+    saveSettings({
+      screenScale: next.screenScale,
+      fontSize: next.fontSize,
+      navMode: next.navMode,
+      leadDensity: next.leadDensity,
+      motion: next.motion,
+      defaultCommsTab: next.defaultCommsTab,
+      canvasColor: next.canvasColor,
+      sidebarColor: next.sidebarColor,
+    });
+    return { [key]: normalized } as Partial<AppState>;
+  }),
+  setNavMode: (navMode) => set((state) => {
+    const next = { ...state, navMode };
+    saveSettings({
+      screenScale: next.screenScale,
+      fontSize: next.fontSize,
+      navMode,
+      leadDensity: next.leadDensity,
+      motion: next.motion,
+      defaultCommsTab: next.defaultCommsTab,
+      canvasColor: next.canvasColor,
+      sidebarColor: next.sidebarColor,
+    });
+    return { navMode };
+  }),
+}));
+
+========================================================================
 FILE: src/vite-env.d.ts
 ========================================================================
 /// <reference types="vite/client" />
@@ -2931,9 +3205,9 @@ import { Lead } from '../data';
 
 export function isLightColor(hex: string): boolean {
   const hexValue = hex.replace('#', '');
-  const r = parseInt(hexValue.substr(0, 2), 16) || 0;
-  const g = parseInt(hexValue.substr(2, 2), 16) || 0;
-  const b = parseInt(hexValue.substr(4, 2), 16) || 0;
+  const r = parseInt(hexValue.slice(0, 2), 16) || 0;
+  const g = parseInt(hexValue.slice(2, 4), 16) || 0;
+  const b = parseInt(hexValue.slice(4, 6), 16) || 0;
   return ((0.299 * r + 0.587 * g + 0.114 * b) / 255) > 0.5;
 }
 
@@ -3093,6 +3367,495 @@ export function loadReadIds(): Set<string> {
 export function saveReadIds(ids: Set<string>): void {
   if (typeof localStorage === 'undefined') return;
   try { localStorage.setItem(NOTIF_READ_KEY, JSON.stringify([...ids])); } catch { /* optional persistence */ }
+}
+
+========================================================================
+FILE: src/components/IOSCommPanel.tsx
+========================================================================
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { ArrowLeft, CheckCheck, Mail, MessageCircle, MessageSquare, Phone, PhoneIncoming, PhoneOutgoing, Reply, Search, Send, SquarePen } from 'lucide-react';
+import type { Lead, CallEntry, MailEntry } from '../data';
+import type { CommTab } from '../store';
+import { digitsOnly, newestByTime, oldestByTime, whatsappHref } from '../lib/comm';
+
+export interface PendingCommOpen {
+  tab: CommTab;
+  leadId: string;
+  emailKey?: string | null;
+  callKey?: string | null;
+}
+
+interface Props {
+  lead?: Lead;
+  contacts?: Lead[];
+  onBack?: () => void;
+  preferredMobile?: string;
+  defaultTab?: CommTab;
+  openThreadOnLoad?: boolean;
+  initialChannel?: 'sms' | 'wa';
+  pendingOpen?: PendingCommOpen | null;
+  onSelectLead?: (id: string) => void;
+  onCall?: (number: string) => void;
+  onPreferredMobileChange?: (number: string) => void;
+}
+
+type AllRow = {
+  key: string;
+  lead: Lead;
+  type: 'sms' | 'wa' | 'call' | 'email';
+  title: string;
+  detail: string;
+  when: string;
+  entry?: CallEntry | MailEntry;
+};
+
+function TypeIcon({ type, size = 14 }: { type: AllRow['type']; size?: number }) {
+  if (type === 'call') return <Phone size={size} strokeWidth={1.75}/>;
+  if (type === 'email') return <Mail size={size} strokeWidth={1.75}/>;
+  if (type === 'wa') return <MessageCircle size={size} strokeWidth={1.75}/>;
+  return <MessageSquare size={size} strokeWidth={1.75}/>;
+}
+
+export default function IOSCommPanel({
+  lead, contacts = [], onBack, preferredMobile, defaultTab = 'all', openThreadOnLoad = false,
+  initialChannel = 'sms', pendingOpen = null, onSelectLead, onCall, onPreferredMobileChange,
+}: Props) {
+  const pool = contacts.length ? contacts : (lead ? [lead] : []);
+  const [activeTab, setActiveTab] = useState<CommTab>(defaultTab);
+  const [messageLeadId, setMessageLeadId] = useState<string | null>(null);
+  const [messageChannel, setMessageChannel] = useState<'sms' | 'wa'>('sms');
+  const [messageText, setMessageText] = useState('');
+  const [contactSearch, setContactSearch] = useState('');
+  const [openContactId, setOpenContactId] = useState<string | null>(null);
+  const [openCall, setOpenCall] = useState<{ lead: Lead; entry: CallEntry; key: string } | null>(null);
+  const [emailLeadId, setEmailLeadId] = useState<string | null>(null);
+  const [openEmailKey, setOpenEmailKey] = useState<string | null>(null);
+  const [emailSubject, setEmailSubject] = useState('');
+  const [emailBody, setEmailBody] = useState('');
+  const replyRef = useRef<HTMLTextAreaElement>(null);
+  const composerRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    setActiveTab(defaultTab);
+    setOpenContactId(null); setOpenCall(null); setEmailLeadId(null); setOpenEmailKey(null); setEmailSubject(''); setEmailBody('');
+    if (!openThreadOnLoad) setMessageLeadId(null);
+  }, [defaultTab, openThreadOnLoad]);
+  useEffect(() => {
+    if (openThreadOnLoad && defaultTab === 'messages' && lead?.id) {
+      setMessageLeadId(lead.id);
+      setMessageChannel(initialChannel);
+    }
+  }, [openThreadOnLoad, defaultTab, lead?.id, initialChannel]);
+
+  const chooseLead = (item: Lead) => {
+    onSelectLead?.(item.id);
+    const mobile = item.mobiles?.[0]?.n || '';
+    if (mobile) onPreferredMobileChange?.(mobile);
+  };
+
+  const messageConversations = useMemo(() => newestByTime(pool.filter(item => item.sms?.length), item => newestByTime(item.sms || [], msg => msg.t)[0]?.t || item.lastAgo), [pool]);
+  const currentMessageLead = pool.find(item => item.id === messageLeadId) || null;
+  const currentMobile = currentMessageLead
+    ? ((preferredMobile && currentMessageLead.mobiles?.some(p => p.n === preferredMobile)) ? preferredMobile : (currentMessageLead.mobiles?.[0]?.n || ''))
+    : '';
+  const threadMessages = useMemo(() => currentMessageLead ? oldestByTime(currentMessageLead.sms || [], msg => msg.t) : [], [currentMessageLead]);
+
+  const allItems = useMemo<AllRow[]>(() => {
+    const rows: AllRow[] = [];
+    pool.forEach(item => {
+      (item.sms || []).forEach((entry,index) => rows.push({ key:`${item.id}-sms-${index}`, lead:item, type:entry.ch === 'wa' ? 'wa' : 'sms', title:item.contact, detail:entry.txt, when:entry.t }));
+      (item.calls || []).forEach((entry,index) => rows.push({ key:`${item.id}-call-${index}`, lead:item, type:'call', title:entry.who || item.contact, detail:`${entry.dir === 'in' ? 'Incoming' : 'Outgoing'} · ${entry.dur}`, when:entry.when, entry }));
+      (item.mails || []).forEach((entry,index) => rows.push({ key:`${item.id}-mail-${index}`, lead:item, type:'email', title:entry.sub, detail:entry.preview, when:entry.when, entry }));
+    });
+    return newestByTime(rows, row => row.when).slice(0,40);
+  }, [pool]);
+  const callItems = useMemo(() => newestByTime(pool.flatMap(item => (item.calls || []).map((entry,index) => ({ key:`${item.id}-call-${index}`, lead:item, entry, when:entry.when }))), row => row.when), [pool]);
+  const emailItems = useMemo(() => newestByTime(pool.flatMap(item => (item.mails || []).map((entry,index) => ({ key:`${item.id}-mail-${index}`, lead:item, entry, when:entry.when }))), row => row.when), [pool]);
+  const contactBook = useMemo(() => {
+    const q = contactSearch.trim().toLowerCase();
+    return [...pool].filter(item => !q || `${item.contact} ${item.company} ${(item.mobiles||[]).map(p=>p.n).join(' ')} ${(item.emails||[]).map(p=>p.n).join(' ')}`.toLowerCase().includes(q)).sort((a,b) => a.contact.localeCompare(b.contact));
+  }, [pool, contactSearch]);
+  const groupedContacts = useMemo(() => {
+    const groups = new Map<string,Lead[]>();
+    contactBook.forEach(item => { const letter = item.contact.trim().charAt(0).toUpperCase() || '#'; groups.set(letter, [...(groups.get(letter) || []), item]); });
+    return Array.from(groups.entries());
+  }, [contactBook]);
+
+  const openContact = pool.find(item => item.id === openContactId) || null;
+  const activeEmailLead = pool.find(item => item.id === emailLeadId) || lead || pool[0] || null;
+  const activeEmail = openEmailKey ? emailItems.find(item => item.key === openEmailKey) : null;
+
+  useEffect(() => {
+    if (!pendingOpen) return;
+    const target = pool.find(item => item.id === pendingOpen.leadId);
+    if (!target) return;
+    onSelectLead?.(target.id);
+    setActiveTab(pendingOpen.tab);
+    if (pendingOpen.tab === 'email') {
+      const mailKey = pendingOpen.emailKey || null;
+      const found = mailKey ? emailItems.find(row => row.key === mailKey) : null;
+      setEmailLeadId(target.id);
+      setOpenEmailKey(mailKey);
+      setEmailSubject(found?.entry.sub || '');
+      setEmailBody('');
+    }
+    if (pendingOpen.tab === 'calls') {
+      const found = pendingOpen.callKey ? callItems.find(row => row.key === pendingOpen.callKey) : null;
+      if (found) setOpenCall({ lead: target, entry: found.entry, key: found.key });
+    }
+  }, [pendingOpen]);
+  useEffect(() => {
+    if (openThreadOnLoad && currentMessageLead) composerRef.current?.focus();
+  }, [currentMessageLead, openThreadOnLoad]);
+  useEffect(() => {
+    if (pendingOpen?.tab === 'email' && activeTab === 'email' && (openEmailKey || emailLeadId)) replyRef.current?.focus();
+  }, [pendingOpen, activeTab, openEmailKey, emailLeadId]);
+
+  const openMessageThread = (item: Lead, channel: 'sms' | 'wa' = 'sms') => {
+    chooseLead(item); setActiveTab('messages'); setMessageLeadId(item.id); setMessageChannel(channel); setMessageText('');
+  };
+  const sendMessage = () => {
+    const text = messageText.trim();
+    if (!currentMobile || !text) return;
+    if (messageChannel === 'wa') window.open(whatsappHref(currentMobile, text), '_blank', 'noopener,noreferrer');
+    else window.location.href = `sms:${digitsOnly(currentMobile)}?body=${encodeURIComponent(text)}`;
+  };
+  const openEmailComposer = (item: Lead, mailKey: string | null = null, reply = false) => {
+    const found = mailKey ? emailItems.find(row => row.key === mailKey) : null;
+    chooseLead(item); setActiveTab('email'); setEmailLeadId(item.id); setOpenEmailKey(mailKey);
+    const subject = found?.entry.sub || '';
+    setEmailSubject(reply && subject ? (subject.startsWith('Re:') ? subject : `Re: ${subject}`) : subject);
+    setEmailBody(''); setTimeout(() => replyRef.current?.focus(), 0);
+  };
+  const sendEmail = () => {
+    const email = activeEmailLead?.emails?.[0]?.n || '';
+    const body = emailBody.trim();
+    if (!email || !body) return;
+    window.location.href = `mailto:${email}?subject=${encodeURIComponent(emailSubject.trim())}&body=${encodeURIComponent(body)}`;
+  };
+  const openAllItem = (item: AllRow) => {
+    chooseLead(item.lead);
+    if (item.type === 'sms' || item.type === 'wa') openMessageThread(item.lead, item.type);
+    else if (item.type === 'call' && item.entry) { setActiveTab('calls'); setOpenCall({ lead:item.lead, entry:item.entry as CallEntry, key:item.key }); }
+    else openEmailComposer(item.lead, item.key, false);
+  };
+  const changeTab = (tab: CommTab) => {
+    setActiveTab(tab);
+    if (tab === 'messages') setMessageLeadId(null);
+    if (tab === 'calls') setOpenCall(null);
+    if (tab === 'contacts') setOpenContactId(null);
+    if (tab === 'email') { setEmailLeadId(null); setOpenEmailKey(null); setEmailSubject(''); setEmailBody(''); }
+  };
+
+  const displayTitle = activeTab === 'messages' && currentMessageLead ? currentMessageLead.contact
+    : activeTab === 'contacts' && openContact ? openContact.contact
+    : activeTab === 'calls' && openCall ? openCall.lead.contact
+    : activeTab === 'email' && activeEmailLead && (openEmailKey || emailLeadId) ? activeEmailLead.contact
+    : activeTab === 'all' ? (lead?.contact || 'Communications')
+    : activeTab.charAt(0).toUpperCase() + activeTab.slice(1);
+
+  return (
+    <div className="comm-panel">
+      <header className="comm-head">
+        <div className="comm-head-side">{onBack && <button type="button" onClick={onBack} className="comm-back"><ArrowLeft size={15}/> Back</button>}</div>
+        <div className="comm-head-title"><strong>{displayTitle}</strong>{activeTab === 'all' && lead?.company && <span>{lead.company}</span>}</div>
+        <div className="comm-head-side end">{activeTab === 'email' && <button type="button" className="comm-icon-button" title="Compose email" onClick={() => lead && openEmailComposer(lead)}><SquarePen size={16}/></button>}</div>
+      </header>
+
+      <div className="comm-tab-wrap"><nav className="comm-tabs">{(['all','messages','calls','contacts','email'] as CommTab[]).map(tab => <button key={tab} type="button" className={activeTab === tab ? 'active' : ''} onClick={() => changeTab(tab)}>{tab === 'calls' ? 'Calls' : tab.charAt(0).toUpperCase()+tab.slice(1)}</button>)}</nav></div>
+
+      <div className="comm-scroll">
+        {activeTab === 'all' && <div className="comm-list"><div className="comm-list-label">Latest communications</div>{!allItems.length && <div className="comm-empty">No communications on file.</div>}{allItems.map(item => <button type="button" key={item.key} className="comm-row" onClick={() => openAllItem(item)}><span className={`comm-type-icon ${item.type}`}><TypeIcon type={item.type}/></span><span className="comm-row-copy"><span className="comm-row-top"><strong>{item.title}</strong><time>{item.when}</time></span><span className="comm-row-sub">{item.lead.company}</span><span className="comm-row-detail">{item.detail}</span></span></button>)}</div>}
+
+        {activeTab === 'messages' && !currentMessageLead && <div className="comm-list"><div className="comm-list-label">Messages</div>{!messageConversations.length && <div className="comm-empty">No message threads found.</div>}{messageConversations.map(item => { const latest = newestByTime(item.sms || [], msg => msg.t)[0]; const type = latest?.ch === 'wa' ? 'wa' : 'sms'; return <button type="button" className="comm-row" key={item.id} onClick={() => openMessageThread(item,type)}><span className={`comm-type-icon ${type}`}><TypeIcon type={type}/></span><span className="comm-row-copy"><span className="comm-row-top"><strong>{item.contact}</strong><time>{latest?.t || item.lastAgo}</time></span><span className="comm-row-sub">{item.company}</span><span className="comm-row-detail">{latest?.txt || 'No messages'}</span></span></button>; })}</div>}
+
+        {activeTab === 'messages' && currentMessageLead && <div className="comm-thread-view"><div className="comm-thread-toolbar"><button type="button" className="comm-contact-back" onClick={() => setMessageLeadId(null)}><ArrowLeft size={14}/> Messages</button><span className="comm-thread-channel"><TypeIcon type={messageChannel}/>{messageChannel === 'wa' ? 'WhatsApp' : 'SMS'}</span></div><div className="comm-thread">{threadMessages.map((msg,index) => { const mine = msg.dir === 'out'; const type = msg.ch === 'wa' ? 'wa' : 'sms'; return <div className="comm-bubble-wrap" key={`${msg.t}-${index}`}><div className={`comm-bubble ${mine ? 'out' : 'in'}`}><span className="comm-bubble-channel"><TypeIcon type={type} size={10}/></span><span>{msg.txt}</span><span className="comm-bubble-meta"><time>{msg.t}</time>{mine && <CheckCheck size={12} strokeWidth={2.5}/>}</span></div></div>; })}</div></div>}
+
+        {activeTab === 'calls' && !openCall && <div className="comm-list"><div className="comm-list-label">Recent calls</div>{!callItems.length && <div className="comm-empty">No calls on file.</div>}{callItems.map(row => <button type="button" className="comm-row" key={row.key} onClick={() => { chooseLead(row.lead); setOpenCall(row); }}><span className="comm-type-icon call">{row.entry.dir === 'out' ? <PhoneOutgoing size={14}/> : <PhoneIncoming size={14}/>}</span><span className="comm-row-copy"><span className="comm-row-top"><strong>{row.entry.who || row.lead.contact}</strong><time>{row.when}</time></span><span className="comm-row-sub">{row.lead.company}</span><span className="comm-row-detail">{row.entry.n} · {row.entry.dur}</span></span></button>)}</div>}
+        {activeTab === 'calls' && openCall && <div className="comm-detail-view"><button type="button" className="comm-contact-back" onClick={() => setOpenCall(null)}><ArrowLeft size={14}/> Calls</button><div className="comm-detail-card"><span className="comm-detail-kicker">{openCall.entry.dir === 'in' ? 'Incoming' : 'Outgoing'} call</span><strong>{openCall.entry.who || openCall.lead.contact}</strong><span>{openCall.lead.company}</span><div className="comm-detail-meta"><b>{openCall.entry.n}</b><span>{openCall.entry.when}</span><span>{openCall.entry.dur}</span></div>{openCall.entry.note && <p>{openCall.entry.note}</p>}<div className="comm-detail-actions"><button type="button" onClick={() => onCall?.(openCall.entry.n)} title="Call"><Phone size={14}/></button></div></div></div>}
+
+        {activeTab === 'contacts' && !openContact && <div className="comm-contacts"><label className="comm-search"><Search size={14}/><input value={contactSearch} onChange={e => setContactSearch(e.target.value)} placeholder="Search contacts"/></label><div className="comm-contact-book">{groupedContacts.map(([letter,items]) => <div className="comm-contact-group" key={letter}><div className="comm-contact-letter">{letter}</div>{items.map(item => <button type="button" className="comm-contact-row" key={item.id} onClick={() => { chooseLead(item); setOpenContactId(item.id); }}><span><strong>{item.contact}</strong><small>{item.company}</small></span><em>{item.mobiles?.[0]?.n || item.emails?.[0]?.n || ''}</em></button>)}</div>)}</div></div>}
+        {activeTab === 'contacts' && openContact && <div className="comm-contact-detail"><button type="button" className="comm-contact-back" onClick={() => setOpenContactId(null)}><ArrowLeft size={14}/> Contacts</button><div className="comm-contact-detail-head"><strong>{openContact.contact}</strong><span>{openContact.company}</span><div className="comm-contact-actions">{openContact.mobiles?.[0]?.n && <><button type="button" onClick={() => onCall?.(openContact.mobiles[0].n)} title="Call"><Phone size={14}/></button><button type="button" onClick={() => openMessageThread(openContact,'sms')} title="SMS"><MessageSquare size={14}/></button><a href={whatsappHref(openContact.mobiles[0].n)} target="_blank" rel="noreferrer" title="WhatsApp"><MessageCircle size={14}/></a></>}{openContact.emails?.[0]?.n && <a href={`mailto:${openContact.emails[0].n}`} title="Email"><Mail size={14}/></a>}</div></div><div className="comm-contact-detail-list">{openContact.mobiles.map((phone,index) => <div className="comm-contact-detail-row" key={`${phone.n}-${index}`}><span><small>{phone.l}</small><strong>{phone.n}</strong></span><div className="comm-mini-actions"><button type="button" onClick={() => onCall?.(phone.n)}><Phone size={13}/></button><button type="button" onClick={() => { onPreferredMobileChange?.(phone.n); openMessageThread(openContact,'sms'); }}><MessageSquare size={13}/></button><a href={whatsappHref(phone.n)} target="_blank" rel="noreferrer"><MessageCircle size={13}/></a></div></div>)}{openContact.landlines.map((phone,index) => <div className="comm-contact-detail-row" key={`${phone.n}-${index}`}><span><small>{phone.l}</small><strong>{phone.n}</strong></span><div className="comm-mini-actions"><button type="button" onClick={() => onCall?.(phone.n)}><Phone size={13}/></button></div></div>)}{openContact.emails.map((email,index) => <div className="comm-contact-detail-row" key={`${email.n}-${index}`}><span><small>{email.l}</small><strong>{email.n}</strong></span><div className="comm-mini-actions"><a href={`mailto:${email.n}`}><Mail size={13}/></a></div></div>)}</div></div>}
+
+        {activeTab === 'email' && !(openEmailKey || emailLeadId) && <div className="comm-list"><div className="comm-list-label comm-list-label-row"><span>Email</span>{lead && <button type="button" className="comm-small-action" onClick={() => openEmailComposer(lead)} title="Compose email"><SquarePen size={14}/></button>}</div>{!emailItems.length && <div className="comm-empty">No email history on file.</div>}{emailItems.map(row => <button type="button" className="comm-row" key={row.key} onClick={() => openEmailComposer(row.lead,row.key,false)}><span className="comm-type-icon email"><Mail size={14}/></span><span className="comm-row-copy"><span className="comm-row-top"><strong>{row.entry.sub}</strong><time>{row.when}</time></span><span className="comm-row-sub">{row.lead.contact} · {row.lead.company}</span><span className="comm-row-detail">{row.entry.preview}</span></span></button>)}</div>}
+        {activeTab === 'email' && (openEmailKey || emailLeadId) && <div className="comm-email-view"><div className="comm-thread-toolbar"><button type="button" className="comm-contact-back" onClick={() => { setOpenEmailKey(null); setEmailLeadId(null); setEmailSubject(''); setEmailBody(''); }}><ArrowLeft size={14}/> Email</button>{activeEmail && <button type="button" className="comm-small-action" onClick={() => openEmailComposer(activeEmail.lead,activeEmail.key,true)} title="Reply"><Reply size={14}/></button>}</div>{activeEmail && <article className="comm-email-open"><div className="comm-email-meta"><strong>{activeEmail.entry.from}</strong><time>{activeEmail.entry.when}</time></div><h3>{activeEmail.entry.sub}</h3><p>{activeEmail.entry.preview}</p></article>}{!activeEmail && <div className="comm-email-new-label">New email to {activeEmailLead?.contact || ''}</div>}</div>}
+      </div>
+
+      {activeTab === 'messages' && currentMessageLead && <div className="comm-composer"><button type="button" className="comm-channel-toggle" onClick={() => setMessageChannel(c => c === 'sms' ? 'wa' : 'sms')} title="Switch channel"><TypeIcon type={messageChannel}/></button><textarea ref={composerRef} value={messageText} onChange={e => setMessageText(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }} placeholder={messageChannel === 'wa' ? 'WhatsApp message' : 'Message'} rows={1}/><button type="button" onClick={sendMessage} disabled={!messageText.trim() || !currentMobile} title="Send" className="comm-send"><Send size={15}/></button></div>}
+      {activeTab === 'email' && (openEmailKey || emailLeadId) && <div className="comm-email-compose"><div className="comm-email-address-row"><span>To</span><strong>{activeEmailLead?.emails?.[0]?.n || 'No email'}</strong></div><label className="comm-email-subject"><span>Subject</span><input value={emailSubject} onChange={e => setEmailSubject(e.target.value)} placeholder="Subject"/></label><textarea ref={replyRef} value={emailBody} onChange={e => setEmailBody(e.target.value)} placeholder={activeEmail ? 'Reply…' : 'Write email…'}/><div className="comm-email-actions"><span className="comm-email-from">sales@forgecrm.com</span><button type="button" onClick={sendEmail} disabled={!emailBody.trim() || !activeEmailLead?.emails?.[0]?.n} className="comm-send"><Send size={14}/></button></div></div>}
+    </div>
+  );
+}
+
+========================================================================
+FILE: src/components/LeadDetailPanel.tsx
+========================================================================
+import { FileText, Mail, MessageCircle, MessageSquare, Phone } from 'lucide-react';
+import type { Lead } from '../data';
+import { formatFinancialUp, formatMoneyWhole, generateSalesPitch } from '../lib/format';
+import { whatsappHref } from '../lib/comm';
+
+interface Props {
+  lead: Lead;
+  onCall: (number: string) => void;
+  onOpenMessages: (number?: string) => void;
+  setViewerDocIndex: (index: number) => void;
+}
+
+function PhoneActions({ number, onCall, onMessage, whatsapp = false }: { number: string; onCall: () => void; onMessage?: () => void; whatsapp?: boolean }) {
+  return (
+    <span className="detail-quick-actions">
+      <button type="button" className="detail-action-call" onClick={onCall} title="Call" aria-label={`Call ${number}`}><Phone size={14} strokeWidth={1.9}/></button>
+      {onMessage && <button type="button" onClick={onMessage} title="SMS" aria-label={`Message ${number}`}><MessageSquare size={14} strokeWidth={1.9}/></button>}
+      {whatsapp && <a href={whatsappHref(number)} target="_blank" rel="noreferrer" title="WhatsApp" aria-label={`WhatsApp ${number}`}><MessageCircle size={14} strokeWidth={1.9}/></a>}
+    </span>
+  );
+}
+
+function activityMeta(what: string) {
+  const text = what.toLowerCase();
+  if (text.includes('sms') || text.includes('whatsapp')) return { tone: 'teal' as const, Icon: MessageSquare };
+  if (text.includes('email')) return { tone: 'amber' as const, Icon: Mail };
+  if (text.includes('call')) return { tone: 'blue' as const, Icon: Phone };
+  return { tone: 'neutral' as const, Icon: FileText };
+}
+
+export default function LeadDetailPanel({ lead, onCall, onOpenMessages, setViewerDocIndex }: Props) {
+  const latestDocIndex = lead.mtd ? -1 : 0;
+  const companyFields: Array<[string,string]> = [
+    ['DBA', lead.dba],
+    ['Industry', lead.industry.split('·')[0].trim()],
+    ['Entity', lead.entity],
+    ['Time in Biz', lead.tib],
+    ['Started', lead.started],
+    ['EIN', lead.ein],
+    ['SSN', lead.ssn],
+    ['DOB', lead.dob],
+    ['Website', lead.website],
+  ];
+  const finCards: Array<{ label: string; value: string; accent?: boolean }> = [
+    { label: 'Monthly revenue', value: formatMoneyWhole(lead.avg) },
+    { label: 'Approval Amount', value: formatMoneyWhole(lead.avg + 150000), accent: true },
+    { label: 'Last balance', value: formatMoneyWhole(lead.bank.bal) },
+  ];
+
+  return (
+    <div className="detail-scroll">
+      <header className="detail-header">
+        <div className="detail-company-line">
+          <div className="detail-company-copy">
+            <h1>{lead.company}</h1>
+            <div className="detail-contact-name">{lead.contact}</div>
+          </div>
+        </div>
+      </header>
+
+      <div className="detail-body">
+        <div className="fin-strip">
+          {finCards.map(card => (
+            <div className="fin-card" key={card.label}>
+              <span className="fin-card-label">{card.label}</span>
+              <strong className={`fin-card-value${card.accent ? ' accent' : ''}`}>{card.value}</strong>
+            </div>
+          ))}
+        </div>
+
+        <div className="detail-pair">
+          <section className="detail-card">
+            <h3>Contact</h3>
+            <div className="detail-contact-groups">
+              <div className="detail-contact-group">
+                <h4>Mobile</h4>
+                {lead.mobiles.map((item,index) => (
+                  <div className="detail-contact-line" key={`${item.n}-${index}`}>
+                    <span className="detail-contact-value">{item.n}</span>
+                    <PhoneActions number={item.n} onCall={() => onCall(item.n)} onMessage={() => onOpenMessages(item.n)} whatsapp/>
+                  </div>
+                ))}
+              </div>
+              <div className="detail-contact-group detail-landline-group">
+                <h4>Landline</h4>
+                {lead.landlines.length ? lead.landlines.map((item,index) => (
+                  <div className="detail-contact-line" key={`${item.n}-${index}`}>
+                    <span className="detail-contact-value">{item.n}</span>
+                    <PhoneActions number={item.n} onCall={() => onCall(item.n)}/>
+                  </div>
+                )) : <div className="detail-muted">None provided</div>}
+              </div>
+              <div className="detail-contact-group detail-email-group">
+                <h4>Email</h4>
+                {lead.emails.map((item,index) => (
+                  <div className="detail-contact-line email" key={`${item.n}-${index}`}>
+                    <span className="detail-contact-value">{item.n}</span>
+                    <span className="detail-quick-actions"><a href={`mailto:${item.n}`} title="Email" aria-label={`Email ${item.n}`}><Mail size={14} strokeWidth={1.9}/></a></span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          <section className="detail-card">
+            <h3>Company</h3>
+            <div className="detail-company-grid">
+              {companyFields.map(([label,value]) => (
+                <div className="detail-company-field" key={label}>
+                  <span>{label}</span>
+                  {label === 'Website' ? <a href={`https://${value}`} target="_blank" rel="noreferrer">{value}</a> : <strong>{value}</strong>}
+                </div>
+              ))}
+              <div className="detail-company-field wide"><span>Address</span><strong>{lead.address}</strong></div>
+            </div>
+          </section>
+        </div>
+
+        <div className="detail-pair">
+          <section className="detail-card">
+            <div className="detail-section-heading"><h3>Statements</h3><button type="button" onClick={() => setViewerDocIndex(latestDocIndex)} title="View latest statement" className="detail-pdf-button"><FileText size={18}/></button></div>
+            <table className="detail-statement-table">
+              <thead><tr><th>Month</th><th>Deposits</th><th>Ending</th></tr></thead>
+              <tbody>
+                {lead.stmts.slice(0,3).map((statement,index) => (
+                  <tr key={`${statement.m}-${index}`} onClick={() => setViewerDocIndex(index)} title="Open statement"><td>{statement.m}</td><td>{formatFinancialUp(statement.dep)}</td><td>{formatFinancialUp(statement.end)}</td></tr>
+                ))}
+                {lead.mtd && <tr onClick={() => setViewerDocIndex(-1)} title="Open interim statement"><td>{lead.mtd.m.slice(0,3)} · MTD</td><td>{formatFinancialUp(lead.mtd.dep)}</td><td>{formatFinancialUp(lead.mtd.bal ?? lead.mtd.end)}</td></tr>}
+              </tbody>
+            </table>
+          </section>
+
+          <section className="detail-card">
+            <h3>Bank Account</h3>
+            <div className="detail-bank-rows">
+              <div><span>Bank</span><strong>{lead.bank.name}</strong></div>
+              <div><span>Account</span><strong>{lead.bank.acct}</strong></div>
+              <div><span>Routing</span><strong>{lead.bank.routing}</strong></div>
+              <div><span>Type</span><strong>{lead.bank.type}</strong></div>
+              <div><span>Avg daily balance</span><strong>{formatFinancialUp(lead.bank.adb)}</strong></div>
+              <div><span>Current balance</span><strong>{formatFinancialUp(lead.bank.bal)}</strong></div>
+            </div>
+          </section>
+        </div>
+
+        <section className="detail-pitch"><h3>Sales Pitch</h3><p>{generateSalesPitch(lead)}</p></section>
+        <section className="detail-activity">
+          <h3>Latest Activity</h3>
+          <div>{lead.activity.slice(0,2).map((item,index) => {
+            const { tone, Icon } = activityMeta(item.what);
+            return (
+              <div className="detail-activity-row" key={`${item.when}-${index}`}>
+                <span className={`detail-activity-icon ${tone}`}><Icon size={12} strokeWidth={1.9}/></span>
+                <div className="detail-activity-copy"><strong>{item.what}</strong><span>{item.when}</span></div>
+              </div>
+            );
+          })}</div>
+        </section>
+      </div>
+    </div>
+  );
+}
+
+========================================================================
+FILE: src/components/LeadsRail.tsx
+========================================================================
+import { useMemo, useState } from 'react';
+import { Search, Filter } from 'lucide-react';
+import type { Lead } from '../data';
+import { formatAgo, formatMoneyWhole } from '../lib/format';
+
+interface Props {
+  leads: Lead[];
+  selectedId: string;
+  setSelectedId: (id: string) => void;
+}
+
+export default function LeadsRail({ leads, selectedId, setSelectedId }: Props) {
+  const [showSearch, setShowSearch] = useState(false);
+  const [query, setQuery] = useState('');
+  const [sortByRevenue, setSortByRevenue] = useState(false);
+  const visibleLeads = useMemo(() => {
+    let result = leads;
+    const q = query.trim().toLowerCase();
+    if (q) result = result.filter(l => `${l.company} ${l.contact}`.toLowerCase().includes(q));
+    if (sortByRevenue) result = [...result].sort((a,b) => b.avg - a.avg);
+    return result;
+  }, [leads, query, sortByRevenue]);
+
+  return (
+    <section data-panel="leads" className="forge-leads-panel forge-panel-surface">
+      <div className="forge-leads-head">
+        <div className="forge-leads-title-row">
+          <h2>Leads</h2>
+          <span className="panel-count">{visibleLeads.length}</span>
+        </div>
+        <div className="forge-leads-actions">
+          <button type="button" onClick={() => setShowSearch(v => !v)} title="Search leads" className={showSearch ? 'active' : ''}><Search size={16}/></button>
+          <button type="button" onClick={() => setSortByRevenue(v => !v)} title="Sort by revenue" className={sortByRevenue ? 'active' : ''}><Filter size={16}/></button>
+        </div>
+      </div>
+      {showSearch && (
+        <label className="forge-leads-search">
+          <Search size={14}/><input autoFocus value={query} onChange={e => setQuery(e.target.value)} placeholder="Search company or owner"/>
+        </label>
+      )}
+      <div className="forge-leads-list">
+        {!visibleLeads.length && <div className="forge-empty">No leads match.</div>}
+        {visibleLeads.map(lead => (
+          <button key={lead.id} type="button" onClick={() => setSelectedId(lead.id)} className={`forge-lead-row ${selectedId === lead.id ? 'active' : ''}`}>
+            <span className="forge-lead-copy"><strong>{lead.company}</strong><span>{lead.contact}</span></span>
+            <span className="forge-lead-side"><strong>{formatMoneyWhole(lead.avg)}</strong><span>{formatAgo(lead.lastAgo)}</span></span>
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+========================================================================
+FILE: src/components/MessagesView.tsx
+========================================================================
+import { useEffect, useMemo, useState } from 'react';
+import { MessageCircle, MessageSquare, Search } from 'lucide-react';
+import type { Lead } from '../data';
+import { ageMinutes } from '../lib/comm';
+import IOSCommPanel from './IOSCommPanel';
+
+interface Props {
+  leads: Lead[];
+  selectedLeadId: string;
+  setSelectedLeadId: (id: string) => void;
+  preferredNumber: string;
+  setPreferredNumber: (number: string) => void;
+  onCall: (number: string) => void;
+  openThread?: { leadId: string; channel?: 'sms' | 'wa' } | null;
+}
+function newestMessage(lead: Lead) {
+  return [...(lead.sms || [])].sort((a,b) => ageMinutes(a.t) - ageMinutes(b.t))[0] || null;
+}
+export default function MessagesView({ leads, selectedLeadId, setSelectedLeadId, preferredNumber, setPreferredNumber, onCall, openThread }: Props) {
+  const [query, setQuery] = useState('');
+  const [openedLeadId, setOpenedLeadId] = useState<string | null>(null);
+  useEffect(() => { if (openThread) setOpenedLeadId(openThread.leadId); }, [openThread]);
+  const visibleLeads = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return leads.filter(item => item.sms?.length && (!q || `${item.contact} ${item.company}`.toLowerCase().includes(q)))
+      .sort((a,b) => ageMinutes(newestMessage(a)?.t || a.lastAgo) - ageMinutes(newestMessage(b)?.t || b.lastAgo));
+  }, [leads, query]);
+  const openedLead = leads.find(item => item.id === openedLeadId) || null;
+  if (openedLead) {
+    const activeNumber = openedLead.mobiles.some(phone => phone.n === preferredNumber) ? preferredNumber : (openedLead.mobiles[0]?.n || '');
+    return <div className="messages-page"><IOSCommPanel lead={openedLead} contacts={leads} preferredMobile={activeNumber} defaultTab="messages" openThreadOnLoad initialChannel={openThread && openedLeadId === openThread.leadId ? (openThread.channel || 'sms') : 'sms'} onBack={() => setOpenedLeadId(null)} onSelectLead={setSelectedLeadId} onPreferredMobileChange={setPreferredNumber} onCall={onCall}/></div>;
+  }
+  return (
+    <div className="messages-page forge-panel-surface">
+      <header className="messages-page-head"><div><h1>Messages</h1><span>Newest conversations first</span></div><label className="messages-search"><Search size={15}/><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search"/></label></header>
+      <div className="messages-list">
+        {!visibleLeads.length && <div className="comm-empty">No conversations found.</div>}
+        {visibleLeads.map(item => {
+          const latest = newestMessage(item); const isWa = latest?.ch === 'wa';
+          return <button type="button" key={item.id} onClick={() => { setSelectedLeadId(item.id); setPreferredNumber(item.mobiles[0]?.n || ''); setOpenedLeadId(item.id); }} className={`messages-list-row ${selectedLeadId === item.id ? 'selected' : ''}`}><span className={`messages-list-icon ${isWa ? 'wa' : 'sms'}`}>{isWa ? <MessageCircle size={14}/> : <MessageSquare size={14}/>}</span><span className="messages-list-copy"><strong>{item.contact}</strong><small>{item.company}</small><p>{latest?.txt || 'No messages'}</p></span><time>{latest?.t || item.lastAgo}</time></button>;
+        })}
+      </div>
+    </div>
+  );
 }
 
 ========================================================================
@@ -3264,496 +4027,6 @@ export default function NavRail({ isTop, isWide, navColor, activePage, setActive
 }
 
 ========================================================================
-FILE: src/components/LeadsRail.tsx
-========================================================================
-import { useMemo, useState } from 'react';
-import { Search, Filter } from 'lucide-react';
-import type { Lead } from '../data';
-import { formatAgo, formatMoneyWhole } from '../lib/format';
-
-interface Props {
-  leads: Lead[];
-  selectedId: string;
-  setSelectedId: (id: string) => void;
-}
-
-export default function LeadsRail({ leads, selectedId, setSelectedId }: Props) {
-  const [showSearch, setShowSearch] = useState(false);
-  const [query, setQuery] = useState('');
-  const [sortByRevenue, setSortByRevenue] = useState(false);
-  const visibleLeads = useMemo(() => {
-    let result = leads;
-    const q = query.trim().toLowerCase();
-    if (q) result = result.filter(l => `${l.company} ${l.contact}`.toLowerCase().includes(q));
-    if (sortByRevenue) result = [...result].sort((a,b) => b.avg - a.avg);
-    return result;
-  }, [leads, query, sortByRevenue]);
-
-  return (
-    <section data-panel="leads" className="forge-leads-panel forge-panel-surface">
-      <div className="forge-leads-head">
-        <div className="forge-leads-title-row">
-          <h2>Leads</h2>
-          <span className="panel-count">{visibleLeads.length}</span>
-        </div>
-        <div className="forge-leads-actions">
-          <button type="button" onClick={() => setShowSearch(v => !v)} title="Search leads" className={showSearch ? 'active' : ''}><Search size={16}/></button>
-          <button type="button" onClick={() => setSortByRevenue(v => !v)} title="Sort by revenue" className={sortByRevenue ? 'active' : ''}><Filter size={16}/></button>
-        </div>
-      </div>
-      {showSearch && (
-        <label className="forge-leads-search">
-          <Search size={14}/><input autoFocus value={query} onChange={e => setQuery(e.target.value)} placeholder="Search company or owner"/>
-        </label>
-      )}
-      <div className="forge-leads-list">
-        {!visibleLeads.length && <div className="forge-empty">No leads match.</div>}
-        {visibleLeads.map(lead => (
-          <button key={lead.id} type="button" onClick={() => setSelectedId(lead.id)} className={`forge-lead-row ${selectedId === lead.id ? 'active' : ''}`}>
-            <span className="forge-lead-copy"><strong>{lead.company}</strong><span>{lead.contact}</span></span>
-            <span className="forge-lead-side"><strong>{formatMoneyWhole(lead.avg)}</strong><span>{formatAgo(lead.lastAgo)}</span></span>
-          </button>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-========================================================================
-FILE: src/components/LeadDetailPanel.tsx
-========================================================================
-import { FileText, Mail, MessageCircle, MessageSquare, Phone } from 'lucide-react';
-import type { Lead } from '../data';
-import { formatFinancialUp, formatMoneyWhole, generateSalesPitch } from '../lib/format';
-import { whatsappHref } from '../lib/comm';
-
-interface Props {
-  lead: Lead;
-  onCall: (number: string) => void;
-  onOpenMessages: (number?: string) => void;
-  setViewerDocIndex: (index: number) => void;
-}
-
-function PhoneActions({ number, onCall, onMessage, whatsapp = false }: { number: string; onCall: () => void; onMessage?: () => void; whatsapp?: boolean }) {
-  return (
-    <span className="detail-quick-actions">
-      <button type="button" className="detail-action-call" onClick={onCall} title="Call" aria-label={`Call ${number}`}><Phone size={14} strokeWidth={1.9}/></button>
-      {onMessage && <button type="button" onClick={onMessage} title="SMS" aria-label={`Message ${number}`}><MessageSquare size={14} strokeWidth={1.9}/></button>}
-      {whatsapp && <a href={whatsappHref(number)} target="_blank" rel="noreferrer" title="WhatsApp" aria-label={`WhatsApp ${number}`}><MessageCircle size={14} strokeWidth={1.9}/></a>}
-    </span>
-  );
-}
-
-function activityMeta(what: string) {
-  const text = what.toLowerCase();
-  if (text.includes('sms') || text.includes('whatsapp')) return { tone: 'teal' as const, Icon: MessageSquare };
-  if (text.includes('email')) return { tone: 'amber' as const, Icon: Mail };
-  if (text.includes('call')) return { tone: 'blue' as const, Icon: Phone };
-  return { tone: 'neutral' as const, Icon: FileText };
-}
-
-export default function LeadDetailPanel({ lead, onCall, onOpenMessages, setViewerDocIndex }: Props) {
-  const latestDocIndex = lead.mtd ? -1 : 0;
-  const companyFields: Array<[string,string]> = [
-    ['DBA', lead.dba],
-    ['Industry', lead.industry.split('·')[0].trim()],
-    ['Entity', lead.entity],
-    ['Time in Biz', lead.tib],
-    ['Started', lead.started],
-    ['EIN', lead.ein],
-    ['SSN', lead.ssn],
-    ['DOB', lead.dob],
-    ['Website', lead.website],
-  ];
-  const finCards: Array<{ label: string; value: string; accent?: boolean }> = [
-    { label: 'Monthly revenue', value: formatMoneyWhole(lead.avg) },
-    { label: 'Approval Amount', value: formatMoneyWhole(lead.avg + 150000), accent: true },
-    { label: 'Last balance', value: formatMoneyWhole(lead.bank.bal) },
-  ];
-
-  return (
-    <div className="detail-scroll">
-      <header className="detail-header">
-        <div className="detail-company-line">
-          <div className="detail-company-copy">
-            <h1>{lead.company}</h1>
-            <div className="detail-contact-name">{lead.contact}</div>
-          </div>
-        </div>
-      </header>
-
-      <div className="detail-body">
-        <div className="fin-strip">
-          {finCards.map(card => (
-            <div className="fin-card" key={card.label}>
-              <span className="fin-card-label">{card.label}</span>
-              <strong className={`fin-card-value${card.accent ? ' accent' : ''}`}>{card.value}</strong>
-            </div>
-          ))}
-        </div>
-
-        <div className="detail-pair detail-primary-pair">
-          <section className="detail-card detail-contact-card">
-            <h3>Contact</h3>
-            <div className="detail-contact-groups">
-              <div className="detail-contact-group">
-                <h4>Mobile</h4>
-                {lead.mobiles.map((item,index) => (
-                  <div className="detail-contact-line" key={`${item.n}-${index}`}>
-                    <span className="detail-contact-value">{item.n}</span>
-                    <PhoneActions number={item.n} onCall={() => onCall(item.n)} onMessage={() => onOpenMessages(item.n)} whatsapp/>
-                  </div>
-                ))}
-              </div>
-              <div className="detail-contact-group detail-landline-group">
-                <h4>Landline</h4>
-                {lead.landlines.length ? lead.landlines.map((item,index) => (
-                  <div className="detail-contact-line" key={`${item.n}-${index}`}>
-                    <span className="detail-contact-value">{item.n}</span>
-                    <PhoneActions number={item.n} onCall={() => onCall(item.n)}/>
-                  </div>
-                )) : <div className="detail-muted">None provided</div>}
-              </div>
-              <div className="detail-contact-group detail-email-group">
-                <h4>Email</h4>
-                {lead.emails.map((item,index) => (
-                  <div className="detail-contact-line email" key={`${item.n}-${index}`}>
-                    <span className="detail-contact-value">{item.n}</span>
-                    <span className="detail-quick-actions"><a href={`mailto:${item.n}`} title="Email" aria-label={`Email ${item.n}`}><Mail size={14} strokeWidth={1.9}/></a></span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </section>
-
-          <section className="detail-card detail-company-card">
-            <h3>Company</h3>
-            <div className="detail-company-grid">
-              {companyFields.map(([label,value]) => (
-                <div className="detail-company-field" key={label}>
-                  <span>{label}</span>
-                  {label === 'Website' ? <a href={`https://${value}`} target="_blank" rel="noreferrer">{value}</a> : <strong>{value}</strong>}
-                </div>
-              ))}
-              <div className="detail-company-field wide"><span>Address</span><strong>{lead.address}</strong></div>
-            </div>
-          </section>
-        </div>
-
-        <div className="detail-pair detail-finance-pair">
-          <section className="detail-card detail-statements-card">
-            <div className="detail-section-heading"><h3>Statements</h3><button type="button" onClick={() => setViewerDocIndex(latestDocIndex)} title="View latest statement" className="detail-pdf-button"><FileText size={18}/></button></div>
-            <table className="detail-statement-table">
-              <thead><tr><th>Month</th><th>Deposits</th><th>Ending</th></tr></thead>
-              <tbody>
-                {lead.stmts.slice(0,3).map((statement,index) => (
-                  <tr key={`${statement.m}-${index}`} onClick={() => setViewerDocIndex(index)} title="Open statement"><td>{statement.m}</td><td>{formatFinancialUp(statement.dep)}</td><td>{formatFinancialUp(statement.end)}</td></tr>
-                ))}
-                {lead.mtd && <tr onClick={() => setViewerDocIndex(-1)} title="Open interim statement"><td>{lead.mtd.m.slice(0,3)} · MTD</td><td>{formatFinancialUp(lead.mtd.dep)}</td><td>{formatFinancialUp(lead.mtd.bal ?? lead.mtd.end)}</td></tr>}
-              </tbody>
-            </table>
-          </section>
-
-          <section className="detail-card detail-bank-card">
-            <h3>Bank Account</h3>
-            <div className="detail-bank-rows">
-              <div><span>Bank</span><strong>{lead.bank.name}</strong></div>
-              <div><span>Account</span><strong>{lead.bank.acct}</strong></div>
-              <div><span>Routing</span><strong>{lead.bank.routing}</strong></div>
-              <div><span>Type</span><strong>{lead.bank.type}</strong></div>
-              <div><span>Avg daily balance</span><strong>{formatFinancialUp(lead.bank.adb)}</strong></div>
-              <div><span>Current balance</span><strong>{formatFinancialUp(lead.bank.bal)}</strong></div>
-            </div>
-          </section>
-        </div>
-
-        <section className="detail-pitch"><h3>Sales Pitch</h3><p>{generateSalesPitch(lead)}</p></section>
-        <section className="detail-activity">
-          <h3>Latest Activity</h3>
-          <div>{lead.activity.slice(0,2).map((item,index) => {
-            const { tone, Icon } = activityMeta(item.what);
-            return (
-              <div className="detail-activity-row" key={`${item.when}-${index}`}>
-                <span className={`detail-activity-icon ${tone}`}><Icon size={12} strokeWidth={1.9}/></span>
-                <div className="detail-activity-copy"><strong>{item.what}</strong><span>{item.when}</span></div>
-              </div>
-            );
-          })}</div>
-        </section>
-      </div>
-    </div>
-  );
-}
-
-========================================================================
-FILE: src/components/IOSCommPanel.tsx
-========================================================================
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, CheckCheck, Mail, MessageCircle, MessageSquare, Phone, PhoneIncoming, PhoneOutgoing, Reply, Search, Send, SquarePen } from 'lucide-react';
-import type { Lead, CallEntry, MailEntry } from '../data';
-import type { CommTab } from '../store';
-import { digitsOnly, newestByTime, oldestByTime, whatsappHref } from '../lib/comm';
-
-export interface PendingCommOpen {
-  tab: CommTab;
-  leadId: string;
-  emailKey?: string | null;
-  callKey?: string | null;
-}
-
-interface Props {
-  lead?: Lead;
-  contacts?: Lead[];
-  onBack?: () => void;
-  fullWidth?: boolean;
-  preferredMobile?: string;
-  defaultTab?: CommTab;
-  openThreadOnLoad?: boolean;
-  initialChannel?: 'sms' | 'wa';
-  pendingOpen?: PendingCommOpen | null;
-  onSelectLead?: (id: string) => void;
-  onCall?: (number: string) => void;
-  onPreferredMobileChange?: (number: string) => void;
-}
-
-type AllRow = {
-  key: string;
-  lead: Lead;
-  type: 'sms' | 'wa' | 'call' | 'email';
-  title: string;
-  detail: string;
-  when: string;
-  entry?: CallEntry | MailEntry;
-};
-
-function TypeIcon({ type, size = 14 }: { type: AllRow['type']; size?: number }) {
-  if (type === 'call') return <Phone size={size} strokeWidth={1.75}/>;
-  if (type === 'email') return <Mail size={size} strokeWidth={1.75}/>;
-  if (type === 'wa') return <MessageCircle size={size} strokeWidth={1.75}/>;
-  return <MessageSquare size={size} strokeWidth={1.75}/>;
-}
-
-export default function IOSCommPanel({
-  lead, contacts = [], onBack, fullWidth = false, preferredMobile, defaultTab = 'all', openThreadOnLoad = false,
-  initialChannel = 'sms', pendingOpen = null, onSelectLead, onCall, onPreferredMobileChange,
-}: Props) {
-  const pool = contacts.length ? contacts : (lead ? [lead] : []);
-  const [activeTab, setActiveTab] = useState<CommTab>(defaultTab);
-  const [messageLeadId, setMessageLeadId] = useState<string | null>(null);
-  const [messageChannel, setMessageChannel] = useState<'sms' | 'wa'>('sms');
-  const [messageText, setMessageText] = useState('');
-  const [contactSearch, setContactSearch] = useState('');
-  const [openContactId, setOpenContactId] = useState<string | null>(null);
-  const [openCall, setOpenCall] = useState<{ lead: Lead; entry: CallEntry; key: string } | null>(null);
-  const [emailLeadId, setEmailLeadId] = useState<string | null>(null);
-  const [openEmailKey, setOpenEmailKey] = useState<string | null>(null);
-  const [emailSubject, setEmailSubject] = useState('');
-  const [emailBody, setEmailBody] = useState('');
-  const replyRef = useRef<HTMLTextAreaElement>(null);
-  const composerRef = useRef<HTMLTextAreaElement>(null);
-
-  useEffect(() => {
-    setActiveTab(defaultTab);
-    setOpenContactId(null); setOpenCall(null); setEmailLeadId(null); setOpenEmailKey(null); setEmailSubject(''); setEmailBody('');
-    if (!openThreadOnLoad) setMessageLeadId(null);
-  }, [defaultTab, openThreadOnLoad]);
-  useEffect(() => {
-    if (openThreadOnLoad && defaultTab === 'messages' && lead?.id) {
-      setMessageLeadId(lead.id);
-      setMessageChannel(initialChannel);
-    }
-  }, [openThreadOnLoad, defaultTab, lead?.id, initialChannel]);
-
-  const chooseLead = (item: Lead) => {
-    onSelectLead?.(item.id);
-    const mobile = item.mobiles?.[0]?.n || '';
-    if (mobile) onPreferredMobileChange?.(mobile);
-  };
-
-  const messageConversations = useMemo(() => newestByTime(pool.filter(item => item.sms?.length), item => newestByTime(item.sms || [], msg => msg.t)[0]?.t || item.lastAgo), [pool]);
-  const currentMessageLead = pool.find(item => item.id === messageLeadId) || null;
-  const currentMobile = currentMessageLead
-    ? ((preferredMobile && currentMessageLead.mobiles?.some(p => p.n === preferredMobile)) ? preferredMobile : (currentMessageLead.mobiles?.[0]?.n || ''))
-    : '';
-  const threadMessages = useMemo(() => currentMessageLead ? oldestByTime(currentMessageLead.sms || [], msg => msg.t) : [], [currentMessageLead]);
-
-  const allItems = useMemo<AllRow[]>(() => {
-    const rows: AllRow[] = [];
-    pool.forEach(item => {
-      (item.sms || []).forEach((entry,index) => rows.push({ key:`${item.id}-sms-${index}`, lead:item, type:entry.ch === 'wa' ? 'wa' : 'sms', title:item.contact, detail:entry.txt, when:entry.t }));
-      (item.calls || []).forEach((entry,index) => rows.push({ key:`${item.id}-call-${index}`, lead:item, type:'call', title:entry.who || item.contact, detail:`${entry.dir === 'in' ? 'Incoming' : 'Outgoing'} · ${entry.dur}`, when:entry.when, entry }));
-      (item.mails || []).forEach((entry,index) => rows.push({ key:`${item.id}-mail-${index}`, lead:item, type:'email', title:entry.sub, detail:entry.preview, when:entry.when, entry }));
-    });
-    return newestByTime(rows, row => row.when).slice(0,40);
-  }, [pool]);
-  const callItems = useMemo(() => newestByTime(pool.flatMap(item => (item.calls || []).map((entry,index) => ({ key:`${item.id}-call-${index}`, lead:item, entry, when:entry.when }))), row => row.when), [pool]);
-  const emailItems = useMemo(() => newestByTime(pool.flatMap(item => (item.mails || []).map((entry,index) => ({ key:`${item.id}-mail-${index}`, lead:item, entry, when:entry.when }))), row => row.when), [pool]);
-  const contactBook = useMemo(() => {
-    const q = contactSearch.trim().toLowerCase();
-    return [...pool].filter(item => !q || `${item.contact} ${item.company} ${(item.mobiles||[]).map(p=>p.n).join(' ')} ${(item.emails||[]).map(p=>p.n).join(' ')}`.toLowerCase().includes(q)).sort((a,b) => a.contact.localeCompare(b.contact));
-  }, [pool, contactSearch]);
-  const groupedContacts = useMemo(() => {
-    const groups = new Map<string,Lead[]>();
-    contactBook.forEach(item => { const letter = item.contact.trim().charAt(0).toUpperCase() || '#'; groups.set(letter, [...(groups.get(letter) || []), item]); });
-    return Array.from(groups.entries());
-  }, [contactBook]);
-
-  const openContact = pool.find(item => item.id === openContactId) || null;
-  const activeEmailLead = pool.find(item => item.id === emailLeadId) || lead || pool[0] || null;
-  const activeEmail = openEmailKey ? emailItems.find(item => item.key === openEmailKey) : null;
-
-  useEffect(() => {
-    if (!pendingOpen) return;
-    const target = pool.find(item => item.id === pendingOpen.leadId);
-    if (!target) return;
-    onSelectLead?.(target.id);
-    setActiveTab(pendingOpen.tab);
-    if (pendingOpen.tab === 'email') {
-      const mailKey = pendingOpen.emailKey || null;
-      const found = mailKey ? emailItems.find(row => row.key === mailKey) : null;
-      setEmailLeadId(target.id);
-      setOpenEmailKey(mailKey);
-      setEmailSubject(found?.entry.sub || '');
-      setEmailBody('');
-    }
-    if (pendingOpen.tab === 'calls') {
-      const found = pendingOpen.callKey ? callItems.find(row => row.key === pendingOpen.callKey) : null;
-      if (found) setOpenCall({ lead: target, entry: found.entry, key: found.key });
-    }
-  }, [pendingOpen]);
-  useEffect(() => {
-    if (openThreadOnLoad && currentMessageLead) composerRef.current?.focus();
-  }, [currentMessageLead, openThreadOnLoad]);
-  useEffect(() => {
-    if (pendingOpen?.tab === 'email' && activeTab === 'email' && (openEmailKey || emailLeadId)) replyRef.current?.focus();
-  }, [pendingOpen, activeTab, openEmailKey, emailLeadId]);
-
-  const openMessageThread = (item: Lead, channel: 'sms' | 'wa' = 'sms') => {
-    chooseLead(item); setActiveTab('messages'); setMessageLeadId(item.id); setMessageChannel(channel); setMessageText('');
-  };
-  const sendMessage = () => {
-    const text = messageText.trim();
-    if (!currentMobile || !text) return;
-    if (messageChannel === 'wa') window.open(whatsappHref(currentMobile, text), '_blank', 'noopener,noreferrer');
-    else window.location.href = `sms:${digitsOnly(currentMobile)}?body=${encodeURIComponent(text)}`;
-  };
-  const openEmailComposer = (item: Lead, mailKey: string | null = null, reply = false) => {
-    const found = mailKey ? emailItems.find(row => row.key === mailKey) : null;
-    chooseLead(item); setActiveTab('email'); setEmailLeadId(item.id); setOpenEmailKey(mailKey);
-    const subject = found?.entry.sub || '';
-    setEmailSubject(reply && subject ? (subject.startsWith('Re:') ? subject : `Re: ${subject}`) : subject);
-    setEmailBody(''); setTimeout(() => replyRef.current?.focus(), 0);
-  };
-  const sendEmail = () => {
-    const email = activeEmailLead?.emails?.[0]?.n || '';
-    const body = emailBody.trim();
-    if (!email || !body) return;
-    window.location.href = `mailto:${email}?subject=${encodeURIComponent(emailSubject.trim())}&body=${encodeURIComponent(body)}`;
-  };
-  const openAllItem = (item: AllRow) => {
-    chooseLead(item.lead);
-    if (item.type === 'sms' || item.type === 'wa') openMessageThread(item.lead, item.type);
-    else if (item.type === 'call' && item.entry) { setActiveTab('calls'); setOpenCall({ lead:item.lead, entry:item.entry as CallEntry, key:item.key }); }
-    else openEmailComposer(item.lead, item.key, false);
-  };
-  const changeTab = (tab: CommTab) => {
-    setActiveTab(tab);
-    if (tab === 'messages') setMessageLeadId(null);
-    if (tab === 'calls') setOpenCall(null);
-    if (tab === 'contacts') setOpenContactId(null);
-    if (tab === 'email') { setEmailLeadId(null); setOpenEmailKey(null); setEmailSubject(''); setEmailBody(''); }
-  };
-
-  const displayTitle = activeTab === 'messages' && currentMessageLead ? currentMessageLead.contact
-    : activeTab === 'contacts' && openContact ? openContact.contact
-    : activeTab === 'calls' && openCall ? openCall.lead.contact
-    : activeTab === 'email' && activeEmailLead && (openEmailKey || emailLeadId) ? activeEmailLead.contact
-    : activeTab === 'all' ? (lead?.contact || 'Communications')
-    : activeTab.charAt(0).toUpperCase() + activeTab.slice(1);
-
-  return (
-    <div className={`comm-panel ${fullWidth ? 'full' : ''}`}>
-      <header className="comm-head">
-        <div className="comm-head-side">{onBack && <button type="button" onClick={onBack} className="comm-back"><ArrowLeft size={15}/> Back</button>}</div>
-        <div className="comm-head-title"><strong>{displayTitle}</strong>{activeTab === 'all' && lead?.company && <span>{lead.company}</span>}</div>
-        <div className="comm-head-side end">{activeTab === 'email' && <button type="button" className="comm-icon-button" title="Compose email" onClick={() => lead && openEmailComposer(lead)}><SquarePen size={16}/></button>}</div>
-      </header>
-
-      <div className="comm-tab-wrap"><nav className="comm-tabs">{(['all','messages','calls','contacts','email'] as CommTab[]).map(tab => <button key={tab} type="button" className={activeTab === tab ? 'active' : ''} onClick={() => changeTab(tab)}>{tab === 'calls' ? 'Calls' : tab.charAt(0).toUpperCase()+tab.slice(1)}</button>)}</nav></div>
-
-      <div className="comm-scroll">
-        {activeTab === 'all' && <div className="comm-list"><div className="comm-list-label">Latest communications</div>{!allItems.length && <div className="comm-empty">No communications on file.</div>}{allItems.map(item => <button type="button" key={item.key} className="comm-row" onClick={() => openAllItem(item)}><span className={`comm-type-icon ${item.type}`}><TypeIcon type={item.type}/></span><span className="comm-row-copy"><span className="comm-row-top"><strong>{item.title}</strong><time>{item.when}</time></span><span className="comm-row-sub">{item.lead.company}</span><span className="comm-row-detail">{item.detail}</span></span></button>)}</div>}
-
-        {activeTab === 'messages' && !currentMessageLead && <div className="comm-list"><div className="comm-list-label">Messages</div>{!messageConversations.length && <div className="comm-empty">No message threads found.</div>}{messageConversations.map(item => { const latest = newestByTime(item.sms || [], msg => msg.t)[0]; const type = latest?.ch === 'wa' ? 'wa' : 'sms'; return <button type="button" className="comm-row" key={item.id} onClick={() => openMessageThread(item,type)}><span className={`comm-type-icon ${type}`}><TypeIcon type={type}/></span><span className="comm-row-copy"><span className="comm-row-top"><strong>{item.contact}</strong><time>{latest?.t || item.lastAgo}</time></span><span className="comm-row-sub">{item.company}</span><span className="comm-row-detail">{latest?.txt || 'No messages'}</span></span></button>; })}</div>}
-
-        {activeTab === 'messages' && currentMessageLead && <div className="comm-thread-view"><div className="comm-thread-toolbar"><button type="button" className="comm-contact-back" onClick={() => setMessageLeadId(null)}><ArrowLeft size={14}/> Messages</button><span className="comm-thread-channel"><TypeIcon type={messageChannel}/>{messageChannel === 'wa' ? 'WhatsApp' : 'SMS'}</span></div><div className="comm-thread">{threadMessages.map((msg,index) => { const mine = msg.dir === 'out'; const type = msg.ch === 'wa' ? 'wa' : 'sms'; return <div className="comm-bubble-wrap" key={`${msg.t}-${index}`}><div className={`comm-bubble ${mine ? 'out' : 'in'}`}><span className="comm-bubble-channel"><TypeIcon type={type} size={10}/></span><span>{msg.txt}</span><span className="comm-bubble-meta"><time>{msg.t}</time>{mine && <CheckCheck size={12} strokeWidth={2.5}/>}</span></div></div>; })}</div></div>}
-
-        {activeTab === 'calls' && !openCall && <div className="comm-list"><div className="comm-list-label">Recent calls</div>{!callItems.length && <div className="comm-empty">No calls on file.</div>}{callItems.map(row => <button type="button" className="comm-row" key={row.key} onClick={() => { chooseLead(row.lead); setOpenCall(row); }}><span className="comm-type-icon call">{row.entry.dir === 'out' ? <PhoneOutgoing size={14}/> : <PhoneIncoming size={14}/>}</span><span className="comm-row-copy"><span className="comm-row-top"><strong>{row.entry.who || row.lead.contact}</strong><time>{row.when}</time></span><span className="comm-row-sub">{row.lead.company}</span><span className="comm-row-detail">{row.entry.n} · {row.entry.dur}</span></span></button>)}</div>}
-        {activeTab === 'calls' && openCall && <div className="comm-detail-view"><button type="button" className="comm-contact-back" onClick={() => setOpenCall(null)}><ArrowLeft size={14}/> Calls</button><div className="comm-detail-card"><span className="comm-detail-kicker">{openCall.entry.dir === 'in' ? 'Incoming' : 'Outgoing'} call</span><strong>{openCall.entry.who || openCall.lead.contact}</strong><span>{openCall.lead.company}</span><div className="comm-detail-meta"><b>{openCall.entry.n}</b><span>{openCall.entry.when}</span><span>{openCall.entry.dur}</span></div>{openCall.entry.note && <p>{openCall.entry.note}</p>}<div className="comm-detail-actions"><button type="button" onClick={() => onCall?.(openCall.entry.n)} title="Call"><Phone size={14}/></button></div></div></div>}
-
-        {activeTab === 'contacts' && !openContact && <div className="comm-contacts"><label className="comm-search"><Search size={14}/><input value={contactSearch} onChange={e => setContactSearch(e.target.value)} placeholder="Search contacts"/></label><div className="comm-contact-book">{groupedContacts.map(([letter,items]) => <div className="comm-contact-group" key={letter}><div className="comm-contact-letter">{letter}</div>{items.map(item => <button type="button" className="comm-contact-row" key={item.id} onClick={() => { chooseLead(item); setOpenContactId(item.id); }}><span><strong>{item.contact}</strong><small>{item.company}</small></span><em>{item.mobiles?.[0]?.n || item.emails?.[0]?.n || ''}</em></button>)}</div>)}</div></div>}
-        {activeTab === 'contacts' && openContact && <div className="comm-contact-detail"><button type="button" className="comm-contact-back" onClick={() => setOpenContactId(null)}><ArrowLeft size={14}/> Contacts</button><div className="comm-contact-detail-head"><strong>{openContact.contact}</strong><span>{openContact.company}</span><div className="comm-contact-actions">{openContact.mobiles?.[0]?.n && <><button type="button" onClick={() => onCall?.(openContact.mobiles[0].n)} title="Call"><Phone size={14}/></button><button type="button" onClick={() => openMessageThread(openContact,'sms')} title="SMS"><MessageSquare size={14}/></button><a href={whatsappHref(openContact.mobiles[0].n)} target="_blank" rel="noreferrer" title="WhatsApp"><MessageCircle size={14}/></a></>}{openContact.emails?.[0]?.n && <a href={`mailto:${openContact.emails[0].n}`} title="Email"><Mail size={14}/></a>}</div></div><div className="comm-contact-detail-list">{openContact.mobiles.map((phone,index) => <div className="comm-contact-detail-row" key={`${phone.n}-${index}`}><span><small>{phone.l}</small><strong>{phone.n}</strong></span><div className="comm-mini-actions"><button type="button" onClick={() => onCall?.(phone.n)}><Phone size={13}/></button><button type="button" onClick={() => { onPreferredMobileChange?.(phone.n); openMessageThread(openContact,'sms'); }}><MessageSquare size={13}/></button><a href={whatsappHref(phone.n)} target="_blank" rel="noreferrer"><MessageCircle size={13}/></a></div></div>)}{openContact.landlines.map((phone,index) => <div className="comm-contact-detail-row" key={`${phone.n}-${index}`}><span><small>{phone.l}</small><strong>{phone.n}</strong></span><div className="comm-mini-actions"><button type="button" onClick={() => onCall?.(phone.n)}><Phone size={13}/></button></div></div>)}{openContact.emails.map((email,index) => <div className="comm-contact-detail-row" key={`${email.n}-${index}`}><span><small>{email.l}</small><strong>{email.n}</strong></span><div className="comm-mini-actions"><a href={`mailto:${email.n}`}><Mail size={13}/></a></div></div>)}</div></div>}
-
-        {activeTab === 'email' && !(openEmailKey || emailLeadId) && <div className="comm-list"><div className="comm-list-label comm-list-label-row"><span>Email</span>{lead && <button type="button" className="comm-small-action" onClick={() => openEmailComposer(lead)} title="Compose email"><SquarePen size={14}/></button>}</div>{!emailItems.length && <div className="comm-empty">No email history on file.</div>}{emailItems.map(row => <button type="button" className="comm-row" key={row.key} onClick={() => openEmailComposer(row.lead,row.key,false)}><span className="comm-type-icon email"><Mail size={14}/></span><span className="comm-row-copy"><span className="comm-row-top"><strong>{row.entry.sub}</strong><time>{row.when}</time></span><span className="comm-row-sub">{row.lead.contact} · {row.lead.company}</span><span className="comm-row-detail">{row.entry.preview}</span></span></button>)}</div>}
-        {activeTab === 'email' && (openEmailKey || emailLeadId) && <div className="comm-email-view"><div className="comm-thread-toolbar"><button type="button" className="comm-contact-back" onClick={() => { setOpenEmailKey(null); setEmailLeadId(null); setEmailSubject(''); setEmailBody(''); }}><ArrowLeft size={14}/> Email</button>{activeEmail && <button type="button" className="comm-small-action" onClick={() => openEmailComposer(activeEmail.lead,activeEmail.key,true)} title="Reply"><Reply size={14}/></button>}</div>{activeEmail && <article className="comm-email-open"><div className="comm-email-meta"><strong>{activeEmail.entry.from}</strong><time>{activeEmail.entry.when}</time></div><h3>{activeEmail.entry.sub}</h3><p>{activeEmail.entry.preview}</p></article>}{!activeEmail && <div className="comm-email-new-label">New email to {activeEmailLead?.contact || ''}</div>}</div>}
-      </div>
-
-      {activeTab === 'messages' && currentMessageLead && <div className="comm-composer"><button type="button" className="comm-channel-toggle" onClick={() => setMessageChannel(c => c === 'sms' ? 'wa' : 'sms')} title="Switch channel"><TypeIcon type={messageChannel}/></button><textarea ref={composerRef} value={messageText} onChange={e => setMessageText(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }} placeholder={messageChannel === 'wa' ? 'WhatsApp message' : 'Message'} rows={1}/><button type="button" onClick={sendMessage} disabled={!messageText.trim() || !currentMobile} title="Send" className="comm-send"><Send size={15}/></button></div>}
-      {activeTab === 'email' && (openEmailKey || emailLeadId) && <div className="comm-email-compose"><div className="comm-email-address-row"><span>To</span><strong>{activeEmailLead?.emails?.[0]?.n || 'No email'}</strong></div><label className="comm-email-subject"><span>Subject</span><input value={emailSubject} onChange={e => setEmailSubject(e.target.value)} placeholder="Subject"/></label><textarea ref={replyRef} value={emailBody} onChange={e => setEmailBody(e.target.value)} placeholder={activeEmail ? 'Reply…' : 'Write email…'}/><div className="comm-email-actions"><span className="comm-email-from">sales@forgecrm.com</span><button type="button" onClick={sendEmail} disabled={!emailBody.trim() || !activeEmailLead?.emails?.[0]?.n} className="comm-send"><Send size={14}/></button></div></div>}
-    </div>
-  );
-}
-
-========================================================================
-FILE: src/components/MessagesView.tsx
-========================================================================
-import { useEffect, useMemo, useState } from 'react';
-import { MessageCircle, MessageSquare, Search } from 'lucide-react';
-import type { Lead } from '../data';
-import { ageMinutes } from '../lib/comm';
-import IOSCommPanel from './IOSCommPanel';
-
-interface Props {
-  leads: Lead[];
-  selectedLeadId: string;
-  setSelectedLeadId: (id: string) => void;
-  preferredNumber: string;
-  setPreferredNumber: (number: string) => void;
-  onCall: (number: string) => void;
-  openThread?: { leadId: string; channel?: 'sms' | 'wa' } | null;
-}
-function newestMessage(lead: Lead) {
-  return [...(lead.sms || [])].sort((a,b) => ageMinutes(a.t) - ageMinutes(b.t))[0] || null;
-}
-export default function MessagesView({ leads, selectedLeadId, setSelectedLeadId, preferredNumber, setPreferredNumber, onCall, openThread }: Props) {
-  const [query, setQuery] = useState('');
-  const [openedLeadId, setOpenedLeadId] = useState<string | null>(null);
-  useEffect(() => { if (openThread) setOpenedLeadId(openThread.leadId); }, [openThread]);
-  const visibleLeads = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return leads.filter(item => item.sms?.length && (!q || `${item.contact} ${item.company}`.toLowerCase().includes(q)))
-      .sort((a,b) => ageMinutes(newestMessage(a)?.t || a.lastAgo) - ageMinutes(newestMessage(b)?.t || b.lastAgo));
-  }, [leads, query]);
-  const openedLead = leads.find(item => item.id === openedLeadId) || null;
-  if (openedLead) {
-    const activeNumber = openedLead.mobiles.some(phone => phone.n === preferredNumber) ? preferredNumber : (openedLead.mobiles[0]?.n || '');
-    return <div className="messages-page messages-thread-page"><IOSCommPanel lead={openedLead} contacts={leads} preferredMobile={activeNumber} fullWidth defaultTab="messages" openThreadOnLoad initialChannel={openThread && openedLeadId === openThread.leadId ? (openThread.channel || 'sms') : 'sms'} onBack={() => setOpenedLeadId(null)} onSelectLead={setSelectedLeadId} onPreferredMobileChange={setPreferredNumber} onCall={onCall}/></div>;
-  }
-  return (
-    <div className="messages-page forge-panel-surface">
-      <header className="messages-page-head"><div><h1>Messages</h1><span>Newest conversations first</span></div><label className="messages-search"><Search size={15}/><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search"/></label></header>
-      <div className="messages-list">
-        {!visibleLeads.length && <div className="comm-empty">No conversations found.</div>}
-        {visibleLeads.map(item => {
-          const latest = newestMessage(item); const isWa = latest?.ch === 'wa';
-          return <button type="button" key={item.id} onClick={() => { setSelectedLeadId(item.id); setPreferredNumber(item.mobiles[0]?.n || ''); setOpenedLeadId(item.id); }} className={`messages-list-row ${selectedLeadId === item.id ? 'selected' : ''}`}><span className={`messages-list-icon ${isWa ? 'wa' : 'sms'}`}>{isWa ? <MessageCircle size={14}/> : <MessageSquare size={14}/>}</span><span className="messages-list-copy"><strong>{item.contact}</strong><small>{item.company}</small><p>{latest?.txt || 'No messages'}</p></span><time>{latest?.t || item.lastAgo}</time></button>;
-        })}
-      </div>
-    </div>
-  );
-}
-
-========================================================================
 FILE: src/components/NotificationPopup.tsx
 ========================================================================
 import type { CSSProperties } from 'react';
@@ -3819,6 +4092,7 @@ export default function NotificationPopup({ anchorRect, variant, items, readIds,
 FILE: src/components/SettingsModal.tsx
 ========================================================================
 import { Minus, Plus } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { CANVAS_COLORS, NAV_COLORS, type UISettings } from '../store';
 
 interface Props {
@@ -3863,7 +4137,7 @@ export default function SettingsModal({ settings, setSetting, onResetPanels, onC
     </div>
   );
 }
-function Setting({ label, help, children }: { label: string; help: string; children: React.ReactNode }) {
+function Setting({ label, help, children }: { label: string; help: string; children: ReactNode }) {
   return <section className="settings-row"><label>{label}</label><p>{help}</p>{children}</section>;
 }
 
@@ -3915,72 +4189,72 @@ export default function StatementDocument({ index, lead }: StatementDocumentProp
   });
 
   return (
-    <div className="w-full h-full bg-white text-slate-900 p-8 flex flex-col text-[calc(12px+var(--font-offset))] font-sans leading-relaxed relative overflow-hidden box-border">
-      <div className="flex justify-between items-start border-b-2 border-slate-800 pb-5 mb-5 gap-6">
-        <div className="min-w-0">
-          <h1 className="text-2xl font-bold font-sans text-slate-900 tracking-tight truncate">{lead.bank.name}</h1>
-          <div className="text-slate-500 mt-1">PO Box 1000, New York, NY 10001</div>
+    <div className="stmt-doc">
+      <div className="stmt-doc-head">
+        <div className="stmt-doc-bank">
+          <h1>{lead.bank.name}</h1>
+          <div className="stmt-doc-muted">PO Box 1000, New York, NY 10001</div>
         </div>
-        <div className="text-right flex-shrink-0">
-          <div className="text-base font-bold tracking-widest text-slate-900">{title}</div>
-          <div className="text-slate-500 mt-1">Page 1 of 1</div>
-        </div>
-      </div>
-
-      <div className="flex justify-between mb-6 gap-8">
-        <div className="min-w-0">
-          <div className="font-bold text-slate-900 uppercase truncate">{lead.company}</div>
-          <div className="uppercase text-[11px] leading-snug">{lead.address}</div>
-        </div>
-        <div className="text-right flex-shrink-0 text-[11px]">
-          <div className="mb-1"><span className="text-slate-500 mr-3">Account Number</span><span className="font-bold">{lead.bank.acct}</span></div>
-          <div className="mb-1"><span className="text-slate-500 mr-3">Routing Number</span><span className="font-bold">{lead.bank.routing}</span></div>
-          <div><span className="text-slate-500 mr-3">Statement Period</span><span className="font-bold">{period}</span></div>
+        <div className="stmt-doc-title">
+          <div className="stmt-doc-kicker">{title}</div>
+          <div className="stmt-doc-muted">Page 1 of 1</div>
         </div>
       </div>
 
-      <div className="border border-slate-300 rounded-lg overflow-hidden mb-6">
-        <div className="bg-slate-100 px-5 py-1.5 font-bold font-sans text-xs text-slate-900 border-b border-slate-300">Account Summary</div>
-        <div className="grid grid-cols-4 divide-x divide-slate-200">
-          <div className="p-3 text-center">
-            <div className="text-[9px] text-slate-500 uppercase tracking-widest mb-1">Beginning Balance</div>
-            <div className="text-sm font-bold">${money(beginningBalance)}</div>
+      <div className="stmt-doc-parties">
+        <div className="stmt-doc-party">
+          <div className="stmt-doc-company">{lead.company}</div>
+          <div className="stmt-doc-address">{lead.address}</div>
+        </div>
+        <div className="stmt-doc-meta">
+          <div><span>Account Number</span><strong>{lead.bank.acct}</strong></div>
+          <div><span>Routing Number</span><strong>{lead.bank.routing}</strong></div>
+          <div><span>Statement Period</span><strong>{period}</strong></div>
+        </div>
+      </div>
+
+      <div className="stmt-doc-summary">
+        <div className="stmt-doc-summary-head">Account Summary</div>
+        <div className="stmt-doc-summary-grid">
+          <div>
+            <div className="stmt-doc-label">Beginning Balance</div>
+            <div className="stmt-doc-figure">${money(beginningBalance)}</div>
           </div>
-          <div className="p-3 text-center">
-            <div className="text-[9px] text-slate-500 uppercase tracking-widest mb-1">Total Deposits</div>
-            <div className="text-sm font-bold text-green-700">+${money(deposits)}</div>
+          <div>
+            <div className="stmt-doc-label">Total Deposits</div>
+            <div className="stmt-doc-figure credit">+${money(deposits)}</div>
           </div>
-          <div className="p-3 text-center">
-            <div className="text-[9px] text-slate-500 uppercase tracking-widest mb-1">Withdrawals</div>
-            <div className="text-sm font-bold text-red-600">-${money(withdrawals)}</div>
+          <div>
+            <div className="stmt-doc-label">Withdrawals</div>
+            <div className="stmt-doc-figure debit">-${money(withdrawals)}</div>
           </div>
-          <div className="p-3 text-center bg-slate-50">
-            <div className="text-[9px] text-slate-500 uppercase tracking-widest mb-1">Ending Balance</div>
-            <div className="text-sm font-bold">${money(endBal)}</div>
+          <div className="stmt-doc-ending">
+            <div className="stmt-doc-label">Ending Balance</div>
+            <div className="stmt-doc-figure">${money(endBal)}</div>
           </div>
         </div>
       </div>
 
-      <div className="flex-1 min-h-0">
-        <div className="font-bold font-sans text-xs text-slate-900 border-b-2 border-slate-300 pb-1.5 mb-2">Transaction Activity</div>
-        <table className="w-full text-left text-[10px]">
+      <div className="stmt-doc-activity">
+        <div className="stmt-doc-activity-head">Transaction Activity</div>
+        <table className="stmt-doc-table">
           <thead>
-            <tr className="text-[9px] text-slate-500 uppercase tracking-widest border-b border-slate-200">
-              <th className="pb-1.5 font-normal w-20">Date</th>
-              <th className="pb-1.5 font-normal">Description</th>
-              <th className="pb-1.5 font-normal text-right">Amount</th>
-              <th className="pb-1.5 font-normal text-right w-28">Balance</th>
+            <tr>
+              <th>Date</th>
+              <th>Description</th>
+              <th>Amount</th>
+              <th>Balance</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody>
             {rowsWithBalance.map((row, rowIndex) => (
               <tr key={`${row.date}-${rowIndex}`}>
-                <td className="py-2">{row.date}</td>
-                <td className="py-2">{row.description}</td>
-                <td className={`py-2 text-right ${row.amount >= 0 ? 'text-green-700' : 'text-red-600'}`}>
+                <td>{row.date}</td>
+                <td>{row.description}</td>
+                <td className={row.amount >= 0 ? 'credit' : 'debit'}>
                   {row.amount >= 0 ? '+' : '-'}${money(Math.abs(row.amount))}
                 </td>
-                <td className="py-2 text-right text-slate-400">${money(row.balance)}</td>
+                <td className="stmt-doc-running">${money(row.balance)}</td>
               </tr>
             ))}
           </tbody>
@@ -4008,7 +4282,7 @@ interface StatementViewerOverlayProps {
 export default function StatementViewerOverlay({ lead, viewerDocIndex, setViewerDocIndex, minStmtIndex, maxStmtIndex }: StatementViewerOverlayProps) {
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-sm p-4 overflow-hidden"
+      className="stmt-overlay"
       onClick={() => setViewerDocIndex(null)}
       role="dialog"
       aria-modal="true"
@@ -4017,7 +4291,7 @@ export default function StatementViewerOverlay({ lead, viewerDocIndex, setViewer
       <button
         type="button"
         onClick={(e) => { e.stopPropagation(); setViewerDocIndex(null); }}
-        className="fixed top-4 right-4 w-10 h-10 rounded-full bg-white/10 text-white/70 hover:text-white hover:bg-white/20 flex items-center justify-center z-[120]"
+        className="stmt-close"
         aria-label="Close statement viewer"
         title="Close"
       >
@@ -4027,7 +4301,7 @@ export default function StatementViewerOverlay({ lead, viewerDocIndex, setViewer
       {viewerDocIndex > minStmtIndex && (
         <button
           type="button"
-          className="fixed left-4 md:left-8 text-white/40 hover:text-white transition-colors z-[110]"
+          className="stmt-nav stmt-nav-prev"
           onClick={(e) => {
             e.stopPropagation();
             setViewerDocIndex(viewerDocIndex === 0 && minStmtIndex === -1 ? -1 : viewerDocIndex - 1);
@@ -4039,22 +4313,14 @@ export default function StatementViewerOverlay({ lead, viewerDocIndex, setViewer
         </button>
       )}
 
-      <div
-        className="bg-white shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-hidden"
-        style={{
-          height: 'min(calc(86dvh / var(--ui-scale)), calc((88vw / var(--ui-scale)) * 11 / 8.5))',
-          aspectRatio: '8.5 / 11',
-          maxWidth: 'calc(88vw / var(--ui-scale))',
-        }}
-        onClick={e => e.stopPropagation()}
-      >
+      <div className="stmt-page" onClick={e => e.stopPropagation()}>
         <StatementDocument index={viewerDocIndex} lead={lead} />
       </div>
 
       {viewerDocIndex < maxStmtIndex && (
         <button
           type="button"
-          className="fixed right-4 md:right-8 text-white/40 hover:text-white transition-colors z-[110]"
+          className="stmt-nav stmt-nav-next"
           onClick={(e) => {
             e.stopPropagation();
             setViewerDocIndex(viewerDocIndex === -1 ? 0 : viewerDocIndex + 1);

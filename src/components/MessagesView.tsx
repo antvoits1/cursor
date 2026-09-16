@@ -28,7 +28,7 @@ export default function MessagesView({ leads, selectedLeadId, setSelectedLeadId,
   const openedLead = leads.find(item => item.id === openedLeadId) || null;
   if (openedLead) {
     const activeNumber = openedLead.mobiles.some(phone => phone.n === preferredNumber) ? preferredNumber : (openedLead.mobiles[0]?.n || '');
-    return <div className="messages-page messages-thread-page"><IOSCommPanel lead={openedLead} contacts={leads} preferredMobile={activeNumber} fullWidth defaultTab="messages" openThreadOnLoad initialChannel={openThread && openedLeadId === openThread.leadId ? (openThread.channel || 'sms') : 'sms'} onBack={() => setOpenedLeadId(null)} onSelectLead={setSelectedLeadId} onPreferredMobileChange={setPreferredNumber} onCall={onCall}/></div>;
+    return <div className="messages-page"><IOSCommPanel lead={openedLead} contacts={leads} preferredMobile={activeNumber} defaultTab="messages" openThreadOnLoad initialChannel={openThread && openedLeadId === openThread.leadId ? (openThread.channel || 'sms') : 'sms'} onBack={() => setOpenedLeadId(null)} onSelectLead={setSelectedLeadId} onPreferredMobileChange={setPreferredNumber} onCall={onCall}/></div>;
   }
   return (
     <div className="messages-page forge-panel-surface">

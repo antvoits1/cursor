@@ -43,72 +43,72 @@ export default function StatementDocument({ index, lead }: StatementDocumentProp
   });
 
   return (
-    <div className="w-full h-full bg-white text-slate-900 p-8 flex flex-col text-[calc(12px+var(--font-offset))] font-sans leading-relaxed relative overflow-hidden box-border">
-      <div className="flex justify-between items-start border-b-2 border-slate-800 pb-5 mb-5 gap-6">
-        <div className="min-w-0">
-          <h1 className="text-2xl font-bold font-sans text-slate-900 tracking-tight truncate">{lead.bank.name}</h1>
-          <div className="text-slate-500 mt-1">PO Box 1000, New York, NY 10001</div>
+    <div className="stmt-doc">
+      <div className="stmt-doc-head">
+        <div className="stmt-doc-bank">
+          <h1>{lead.bank.name}</h1>
+          <div className="stmt-doc-muted">PO Box 1000, New York, NY 10001</div>
         </div>
-        <div className="text-right flex-shrink-0">
-          <div className="text-base font-bold tracking-widest text-slate-900">{title}</div>
-          <div className="text-slate-500 mt-1">Page 1 of 1</div>
-        </div>
-      </div>
-
-      <div className="flex justify-between mb-6 gap-8">
-        <div className="min-w-0">
-          <div className="font-bold text-slate-900 uppercase truncate">{lead.company}</div>
-          <div className="uppercase text-[11px] leading-snug">{lead.address}</div>
-        </div>
-        <div className="text-right flex-shrink-0 text-[11px]">
-          <div className="mb-1"><span className="text-slate-500 mr-3">Account Number</span><span className="font-bold">{lead.bank.acct}</span></div>
-          <div className="mb-1"><span className="text-slate-500 mr-3">Routing Number</span><span className="font-bold">{lead.bank.routing}</span></div>
-          <div><span className="text-slate-500 mr-3">Statement Period</span><span className="font-bold">{period}</span></div>
+        <div className="stmt-doc-title">
+          <div className="stmt-doc-kicker">{title}</div>
+          <div className="stmt-doc-muted">Page 1 of 1</div>
         </div>
       </div>
 
-      <div className="border border-slate-300 rounded-lg overflow-hidden mb-6">
-        <div className="bg-slate-100 px-5 py-1.5 font-bold font-sans text-xs text-slate-900 border-b border-slate-300">Account Summary</div>
-        <div className="grid grid-cols-4 divide-x divide-slate-200">
-          <div className="p-3 text-center">
-            <div className="text-[9px] text-slate-500 uppercase tracking-widest mb-1">Beginning Balance</div>
-            <div className="text-sm font-bold">${money(beginningBalance)}</div>
+      <div className="stmt-doc-parties">
+        <div className="stmt-doc-party">
+          <div className="stmt-doc-company">{lead.company}</div>
+          <div className="stmt-doc-address">{lead.address}</div>
+        </div>
+        <div className="stmt-doc-meta">
+          <div><span>Account Number</span><strong>{lead.bank.acct}</strong></div>
+          <div><span>Routing Number</span><strong>{lead.bank.routing}</strong></div>
+          <div><span>Statement Period</span><strong>{period}</strong></div>
+        </div>
+      </div>
+
+      <div className="stmt-doc-summary">
+        <div className="stmt-doc-summary-head">Account Summary</div>
+        <div className="stmt-doc-summary-grid">
+          <div>
+            <div className="stmt-doc-label">Beginning Balance</div>
+            <div className="stmt-doc-figure">${money(beginningBalance)}</div>
           </div>
-          <div className="p-3 text-center">
-            <div className="text-[9px] text-slate-500 uppercase tracking-widest mb-1">Total Deposits</div>
-            <div className="text-sm font-bold text-green-700">+${money(deposits)}</div>
+          <div>
+            <div className="stmt-doc-label">Total Deposits</div>
+            <div className="stmt-doc-figure credit">+${money(deposits)}</div>
           </div>
-          <div className="p-3 text-center">
-            <div className="text-[9px] text-slate-500 uppercase tracking-widest mb-1">Withdrawals</div>
-            <div className="text-sm font-bold text-red-600">-${money(withdrawals)}</div>
+          <div>
+            <div className="stmt-doc-label">Withdrawals</div>
+            <div className="stmt-doc-figure debit">-${money(withdrawals)}</div>
           </div>
-          <div className="p-3 text-center bg-slate-50">
-            <div className="text-[9px] text-slate-500 uppercase tracking-widest mb-1">Ending Balance</div>
-            <div className="text-sm font-bold">${money(endBal)}</div>
+          <div className="stmt-doc-ending">
+            <div className="stmt-doc-label">Ending Balance</div>
+            <div className="stmt-doc-figure">${money(endBal)}</div>
           </div>
         </div>
       </div>
 
-      <div className="flex-1 min-h-0">
-        <div className="font-bold font-sans text-xs text-slate-900 border-b-2 border-slate-300 pb-1.5 mb-2">Transaction Activity</div>
-        <table className="w-full text-left text-[10px]">
+      <div className="stmt-doc-activity">
+        <div className="stmt-doc-activity-head">Transaction Activity</div>
+        <table className="stmt-doc-table">
           <thead>
-            <tr className="text-[9px] text-slate-500 uppercase tracking-widest border-b border-slate-200">
-              <th className="pb-1.5 font-normal w-20">Date</th>
-              <th className="pb-1.5 font-normal">Description</th>
-              <th className="pb-1.5 font-normal text-right">Amount</th>
-              <th className="pb-1.5 font-normal text-right w-28">Balance</th>
+            <tr>
+              <th>Date</th>
+              <th>Description</th>
+              <th>Amount</th>
+              <th>Balance</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody>
             {rowsWithBalance.map((row, rowIndex) => (
               <tr key={`${row.date}-${rowIndex}`}>
-                <td className="py-2">{row.date}</td>
-                <td className="py-2">{row.description}</td>
-                <td className={`py-2 text-right ${row.amount >= 0 ? 'text-green-700' : 'text-red-600'}`}>
+                <td>{row.date}</td>
+                <td>{row.description}</td>
+                <td className={row.amount >= 0 ? 'credit' : 'debit'}>
                   {row.amount >= 0 ? '+' : '-'}${money(Math.abs(row.amount))}
                 </td>
-                <td className="py-2 text-right text-slate-400">${money(row.balance)}</td>
+                <td className="stmt-doc-running">${money(row.balance)}</td>
               </tr>
             ))}
           </tbody>

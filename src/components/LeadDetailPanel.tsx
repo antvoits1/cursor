@@ -68,8 +68,8 @@ export default function LeadDetailPanel({ lead, onCall, onOpenMessages, setViewe
           ))}
         </div>
 
-        <div className="detail-pair detail-primary-pair">
-          <section className="detail-card detail-contact-card">
+        <div className="detail-pair">
+          <section className="detail-card">
             <h3>Contact</h3>
             <div className="detail-contact-groups">
               <div className="detail-contact-group">
@@ -102,7 +102,7 @@ export default function LeadDetailPanel({ lead, onCall, onOpenMessages, setViewe
             </div>
           </section>
 
-          <section className="detail-card detail-company-card">
+          <section className="detail-card">
             <h3>Company</h3>
             <div className="detail-company-grid">
               {companyFields.map(([label,value]) => (
@@ -116,8 +116,8 @@ export default function LeadDetailPanel({ lead, onCall, onOpenMessages, setViewe
           </section>
         </div>
 
-        <div className="detail-pair detail-finance-pair">
-          <section className="detail-card detail-statements-card">
+        <div className="detail-pair">
+          <section className="detail-card">
             <div className="detail-section-heading"><h3>Statements</h3><button type="button" onClick={() => setViewerDocIndex(latestDocIndex)} title="View latest statement" className="detail-pdf-button"><FileText size={18}/></button></div>
             <table className="detail-statement-table">
               <thead><tr><th>Month</th><th>Deposits</th><th>Ending</th></tr></thead>
@@ -130,7 +130,7 @@ export default function LeadDetailPanel({ lead, onCall, onOpenMessages, setViewe
             </table>
           </section>
 
-          <section className="detail-card detail-bank-card">
+          <section className="detail-card">
             <h3>Bank Account</h3>
             <div className="detail-bank-rows">
               <div><span>Bank</span><strong>{lead.bank.name}</strong></div>
