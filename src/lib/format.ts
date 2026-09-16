@@ -52,10 +52,3 @@ export function formatFinancialUp(val: number): string {
   }
   return `$${rounded.toLocaleString('en-US', {maximumFractionDigits: 0})}`;
 }
-
-// Formats whole seconds as a call-duration clock, e.g. 75 -> "1:15".
-export function formatCallDuration(totalSeconds: number): string {
-  const m = Math.floor(totalSeconds / 60);
-  const s = totalSeconds % 60;
-  return `${m}:${s.toString().padStart(2, '0')}`;
-}

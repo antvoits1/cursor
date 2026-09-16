@@ -31,7 +31,6 @@ function activityMeta(what: string) {
 
 export default function LeadDetailPanel({ lead, onCall, onOpenMessages, setViewerDocIndex, showApproval }: Props) {
   const latestDocIndex = lead.mtd ? -1 : 0;
-  const approval = lead.avg + 150000;
   const companyFields: Array<[string,string]> = [
     ['DBA', lead.dba],
     ['Industry', lead.industry.split('·')[0].trim()],
@@ -45,7 +44,7 @@ export default function LeadDetailPanel({ lead, onCall, onOpenMessages, setViewe
   ];
   const finCards: Array<{ label: string; value: string }> = [
     { label: 'Monthly revenue', value: formatMoneyWhole(lead.avg) },
-    { label: 'Approval Amount', value: formatMoneyWhole(lead.avg + 150000) },
+    ...(showApproval ? [{ label: 'Approval Amount', value: formatMoneyWhole(lead.avg + 150000) }] : []),
     { label: 'Offer on file', value: lead.offer ? formatMoneyWhole(lead.offer) : 'Pending' },
     { label: 'Current balance', value: formatMoneyWhole(lead.bank.bal) },
   ];
