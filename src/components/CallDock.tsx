@@ -72,7 +72,8 @@ export default function CallDock() {
         border: '1px solid #E2E6F0',
         padding: '8px 12px',
         gap: '16px',
-        fontFamily: 'var(--font-family-main)'
+        fontFamily: 'var(--font-family-main)',
+        zIndex: 9999
       }}>
         {/* Info Section */}
         <div style={{ display: 'flex', flexDirection: 'column', minWidth: '120px' }}>
