@@ -30,10 +30,11 @@ When nothing handles the request the CRM shows "Connect a phone or calling
 provider to place calls." It never navigates the app to a `tel:` URL.
 
 ## Downloads
-- `downloads/Forge-CRM-016.zip` — full runnable project (source, lockfile, tests, pack script).
-- `downloads/Forge-CRM-016-SOURCE.txt` — one-file copy of the React source.
+The right column is an iPhone: status bar, iOS pages, and a home indicator.
 
-Refresh both with `npm run pack`.
+- `downloads/Forge-CRM-016.zip` — only the files needed to run the app.
+
+Refresh with `npm run pack`.
 
 ## Run
 ```bash

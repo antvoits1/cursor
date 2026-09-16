@@ -7,17 +7,18 @@ import NavRail from './components/NavRail';
 import LeadsRail from './components/LeadsRail';
 import LeadDetailPanel from './components/LeadDetailPanel';
 import IOSCommPanel, { type PendingCommOpen } from './components/IOSCommPanel';
+import IPhoneFrame from './components/IPhoneFrame';
 import MessagesView from './components/MessagesView';
 import StatementViewerOverlay from './components/StatementViewerOverlay';
 import SettingsModal from './components/SettingsModal';
 
 const PANEL_KEYS = { leads: 'forge.react.v16.panel.leads', comms: 'forge.react.v16.panel.comms' };
 const LEGACY_PANEL_KEYS = { leads: 'forge.react.v15.panel.leads', comms: 'forge.react.v15.panel.comms' };
-const DEFAULT_LEADS_WIDTH = 400;
-const DEFAULT_COMMS_WIDTH = 320;
-const MIN_LEADS_WIDTH = 300;
+const DEFAULT_LEADS_WIDTH = 320;
+const DEFAULT_COMMS_WIDTH = 390;
+const MIN_LEADS_WIDTH = 260;
 const MIN_DETAIL_WIDTH = 340;
-const MIN_COMMS_WIDTH = 270;
+const MIN_COMMS_WIDTH = 340;
 const DIVIDER_WIDTH = 12;
 
 function readWidth(key: string): number | null {
@@ -178,9 +179,13 @@ export default function App() {
           <div className="forge-panel-grid" style={panelGridStyle}>
             <LeadsRail leads={leads} selectedId={selectedId} setSelectedId={setSelectedId}/>
             <div className="panel-divider" role="separator" aria-orientation="vertical" aria-label="Resize leads panel" onPointerDown={e => startResize('leads', e.clientX)} onDoubleClick={resetPanels}/>
-            <section data-panel="lead-detail" className="forge-panel-surface"><LeadDetailPanel lead={lead} onCall={startCall} onOpenMessages={openMessages} setViewerDocIndex={setViewerDocIndex}/></section>
+            <section data-panel="lead-detail" className="forge-panel-surface forge-detail-column"><LeadDetailPanel lead={lead} onCall={startCall} onOpenMessages={openMessages} setViewerDocIndex={setViewerDocIndex}/></section>
             <div className="panel-divider" role="separator" aria-orientation="vertical" aria-label="Resize communications panel" onPointerDown={e => startResize('comms', e.clientX)} onDoubleClick={resetPanels}/>
-            <section data-panel="communications" className="forge-panel-surface"><IOSCommPanel lead={lead} contacts={leads} preferredMobile={messageNumber} defaultTab={defaultCommsTab} pendingOpen={pendingComm} onSelectLead={setSelectedId} onCall={startCall} onPreferredMobileChange={setMessageNumber}/></section>
+            <section data-panel="communications" className="forge-phone-column">
+              <IPhoneFrame>
+                <IOSCommPanel lead={lead} contacts={leads} preferredMobile={messageNumber} defaultTab={defaultCommsTab} pendingOpen={pendingComm} onSelectLead={setSelectedId} onCall={startCall} onPreferredMobileChange={setMessageNumber}/>
+              </IPhoneFrame>
+            </section>
           </div>
         )}
         {activePage === 'messages' && <MessagesView leads={leads} selectedLeadId={selectedId} setSelectedLeadId={setSelectedId} preferredNumber={messageNumber} setPreferredNumber={setMessageNumber} onCall={startCall} openThread={pendingThread}/>}
