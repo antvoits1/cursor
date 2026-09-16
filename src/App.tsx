@@ -10,7 +10,6 @@ import IOSCommPanel, { type PendingCommOpen } from './components/IOSCommPanel';
 import MessagesView from './components/MessagesView';
 import StatementViewerOverlay from './components/StatementViewerOverlay';
 import SettingsModal from './components/SettingsModal';
-import { telephony } from './lib/telephony';
 
 const PANEL_KEYS = { leads: 'forge.react.v15.panel.leads', comms: 'forge.react.v15.panel.comms' };
 const DEFAULT_LEADS_WIDTH = 400;
@@ -33,8 +32,7 @@ function autoScaleMode(): 'standard' | 'wide' | 'ultra' {
 function scaleValue(mode: string): number { return mode === 'ultra' ? 1.04 : mode === 'wide' ? 1 : .96; }
 
 export default function App() {
-  const store = useStore();
-  const { leads, screenScale, fontSize, navMode, leadDensity, motion, showFinancial, defaultCommsTab, canvasColor, sidebarColor, setSetting, setNavMode } = store;
+  const { leads, screenScale, fontSize, navMode, leadDensity, motion, showFinancial, defaultCommsTab, canvasColor, sidebarColor, setSetting, setNavMode } = useStore();
   const requestedStartPage = document.body.dataset.startPage as ActivePage | undefined;
   const initialPage: ActivePage = requestedStartPage && ['crm','messages','email','scanner','command'].includes(requestedStartPage) ? requestedStartPage : 'crm';
 
@@ -44,7 +42,7 @@ export default function App() {
   const [viewerDocIndex, setViewerDocIndex] = useState<number | null>(null);
   const [messageNumber, setMessageNumber] = useState('');
   const [notice, setNotice] = useState('');
-  const [pendingThread, setPendingThread] = useState<{ leadId: string; channel: 'sms' | 'wa'; nonce: number } | null>(null);
+  const [pendingThread, setPendingThread] = useState<{ leadId: string; channel: 'sms' | 'wa' } | null>(null);
   const [pendingComm, setPendingComm] = useState<PendingCommOpen | null>(null);
   const [readIds, setReadIds] = useState<Set<string>>(() => loadReadIds());
   const notifications = useMemo(() => deriveNotifications(leads), [leads]);
@@ -117,13 +115,13 @@ export default function App() {
     else if (target) setMessageNumber(target.mobiles?.[0]?.n || '');
     if (item.kind === 'sms' || item.kind === 'wa') {
       setPendingComm(null);
-      setPendingThread({ leadId: item.leadId, channel: item.kind, nonce: Date.now() });
+      setPendingThread({ leadId: item.leadId, channel: item.kind });
       setActivePage('messages');
       return;
     }
     setPendingThread(null);
-    if (item.kind === 'email') setPendingComm({ tab: 'email', leadId: item.leadId, emailKey: item.mailKey || null, nonce: Date.now() });
-    else if (item.kind === 'call') setPendingComm({ tab: 'calls', leadId: item.leadId, callKey: item.callKey || null, nonce: Date.now() });
+    if (item.kind === 'email') setPendingComm({ tab: 'email', leadId: item.leadId, emailKey: item.mailKey || null });
+    else if (item.kind === 'call') setPendingComm({ tab: 'calls', leadId: item.leadId, callKey: item.callKey || null });
     else setPendingComm(null);
     setActivePage('crm');
   };
@@ -133,28 +131,15 @@ export default function App() {
   };
   const startCall = async (number: string) => {
     const clean = digitsOnly(number); if (!clean) return;
-
-    // Optimistically show ringing; real state transitions are driven by the
-    // Twilio Device "accept"/"disconnect" events inside the telephony adapter.
-    store.setCallState({
-      status: 'ringing',
-      number: clean,
-      leadId: lead?.id,
-      isMuted: false,
-      isOnHold: false,
-      error: undefined,
-    });
-
-    const result = await telephony.placeCall(clean);
-    if (!result.configured) {
-      if (result.handedOff) {
-        // A native shell (Electron/mobile) accepted the call handoff.
-        store.endCall();
-      } else {
-        store.setCallState({ status: 'idle' });
-        showNotice('Connect a phone or calling provider to place calls.');
-      }
+    const payload = { number: clean, leadId: lead?.id };
+    const adapter = (window as Window & { ForgeTelephonyAdapter?: { startCall?: (payload: { number: string; leadId?: string }) => Promise<void> | void } }).ForgeTelephonyAdapter;
+    if (adapter?.startCall) {
+      try { await adapter.startCall(payload); return; }
+      catch { showNotice('Phone connection failed. Check the connected device or provider.'); return; }
     }
+    const event = new CustomEvent('forge:call-request', { detail: payload, cancelable: true });
+    const unhandled = window.dispatchEvent(event);
+    if (unhandled) showNotice('Connect a phone or calling provider to place calls.');
   };
 
   const startResize = (side: 'leads' | 'comms', clientX: number) => {

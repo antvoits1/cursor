@@ -1,8 +1,7 @@
-import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, Mail, MessageCircle, MessageSquare, Phone, PhoneIncoming, PhoneOutgoing, Reply, Search, Send, SquarePen, CheckCheck } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { ArrowLeft, CheckCheck, Mail, MessageCircle, MessageSquare, Phone, PhoneIncoming, PhoneOutgoing, Reply, Search, Send, SquarePen } from 'lucide-react';
 import type { Lead, CallEntry, MailEntry } from '../data';
 import type { CommTab } from '../store';
-import { useStore } from '../store';
 import { digitsOnly, newestByTime, oldestByTime, whatsappHref } from '../lib/comm';
 
 export interface PendingCommOpen {
@@ -10,7 +9,6 @@ export interface PendingCommOpen {
   leadId: string;
   emailKey?: string | null;
   callKey?: string | null;
-  nonce: number;
 }
 
 interface Props {
@@ -49,7 +47,6 @@ export default function IOSCommPanel({
   lead, contacts = [], onBack, fullWidth = false, preferredMobile, defaultTab = 'all', openThreadOnLoad = false,
   initialChannel = 'sms', pendingOpen = null, onSelectLead, onCall, onPreferredMobileChange,
 }: Props) {
-  const { callState } = useStore();
   const pool = contacts.length ? contacts : (lead ? [lead] : []);
   const [activeTab, setActiveTab] = useState<CommTab>(defaultTab);
   const [messageLeadId, setMessageLeadId] = useState<string | null>(null);
@@ -199,7 +196,7 @@ export default function IOSCommPanel({
 
         {activeTab === 'messages' && !currentMessageLead && <div className="comm-list"><div className="comm-list-label">Messages</div>{!messageConversations.length && <div className="comm-empty">No message threads found.</div>}{messageConversations.map(item => { const latest = newestByTime(item.sms || [], msg => msg.t)[0]; const type = latest?.ch === 'wa' ? 'wa' : 'sms'; return <button type="button" className="comm-row" key={item.id} onClick={() => openMessageThread(item,type)}><span className={`comm-type-icon ${type}`}><TypeIcon type={type}/></span><span className="comm-row-copy"><span className="comm-row-top"><strong>{item.contact}</strong><time>{latest?.t || item.lastAgo}</time></span><span className="comm-row-sub">{item.company}</span><span className="comm-row-detail">{latest?.txt || 'No messages'}</span></span></button>; })}</div>}
 
-        {activeTab === 'messages' && currentMessageLead && <div className="comm-thread-view"><div className="comm-thread-toolbar"><button type="button" className="comm-contact-back" onClick={() => setMessageLeadId(null)}><ArrowLeft size={14}/> Messages</button><span className="comm-thread-channel"><TypeIcon type={messageChannel}/>{messageChannel === 'wa' ? 'WhatsApp' : 'SMS'}</span></div><div className="comm-thread">{threadMessages.map((msg,index) => { const mine = msg.dir === 'out'; const type = msg.ch === 'wa' ? 'wa' : 'sms'; return <Fragment key={`${msg.t}-${index}`}><div className={`comm-bubble-wrap ${mine ? 'out' : 'in'}`} style={{ display: 'flex', flexDirection: 'column', alignItems: mine ? 'flex-end' : 'flex-start', marginBottom: '8px' }}><div className={`comm-bubble ${mine ? 'out' : 'in'}`} style={{ position: 'relative', paddingBottom: '18px' }}><span className="comm-bubble-channel"><TypeIcon type={type} size={10}/></span><span>{msg.txt}</span><div style={{ position: 'absolute', bottom: '4px', right: '8px', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px', opacity: 0.7 }}><span style={{ whiteSpace: 'nowrap' }}>{msg.t} · via {callState.activeLine === 'office' ? 'Office Line' : 'Personal iPhone'}</span>{mine && <CheckCheck size={12} color="#3B82F6" strokeWidth={2.5} />}</div></div></div></Fragment>; })}</div></div>}
+        {activeTab === 'messages' && currentMessageLead && <div className="comm-thread-view"><div className="comm-thread-toolbar"><button type="button" className="comm-contact-back" onClick={() => setMessageLeadId(null)}><ArrowLeft size={14}/> Messages</button><span className="comm-thread-channel"><TypeIcon type={messageChannel}/>{messageChannel === 'wa' ? 'WhatsApp' : 'SMS'}</span></div><div className="comm-thread">{threadMessages.map((msg,index) => { const mine = msg.dir === 'out'; const type = msg.ch === 'wa' ? 'wa' : 'sms'; return <div className="comm-bubble-wrap" key={`${msg.t}-${index}`}><div className={`comm-bubble ${mine ? 'out' : 'in'}`}><span className="comm-bubble-channel"><TypeIcon type={type} size={10}/></span><span>{msg.txt}</span><span className="comm-bubble-meta"><time>{msg.t}</time>{mine && <CheckCheck size={12} strokeWidth={2.5}/>}</span></div></div>; })}</div></div>}
 
         {activeTab === 'calls' && !openCall && <div className="comm-list"><div className="comm-list-label">Recent calls</div>{!callItems.length && <div className="comm-empty">No calls on file.</div>}{callItems.map(row => <button type="button" className="comm-row" key={row.key} onClick={() => { chooseLead(row.lead); setOpenCall(row); }}><span className="comm-type-icon call">{row.entry.dir === 'out' ? <PhoneOutgoing size={14}/> : <PhoneIncoming size={14}/>}</span><span className="comm-row-copy"><span className="comm-row-top"><strong>{row.entry.who || row.lead.contact}</strong><time>{row.when}</time></span><span className="comm-row-sub">{row.lead.company}</span><span className="comm-row-detail">{row.entry.n} · {row.entry.dur}</span></span></button>)}</div>}
         {activeTab === 'calls' && openCall && <div className="comm-detail-view"><button type="button" className="comm-contact-back" onClick={() => setOpenCall(null)}><ArrowLeft size={14}/> Calls</button><div className="comm-detail-card"><span className="comm-detail-kicker">{openCall.entry.dir === 'in' ? 'Incoming' : 'Outgoing'} call</span><strong>{openCall.entry.who || openCall.lead.contact}</strong><span>{openCall.lead.company}</span><div className="comm-detail-meta"><b>{openCall.entry.n}</b><span>{openCall.entry.when}</span><span>{openCall.entry.dur}</span></div>{openCall.entry.note && <p>{openCall.entry.note}</p>}<div className="comm-detail-actions"><button type="button" onClick={() => onCall?.(openCall.entry.n)} title="Call"><Phone size={14}/></button></div></div></div>}
