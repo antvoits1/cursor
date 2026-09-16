@@ -16,6 +16,9 @@ export interface CallState {
   isMuted: boolean;
   isOnHold: boolean;
   activeLine: ActiveLine;
+  dialString: string;
+  configured: boolean;
+  error?: string;
 }
 
 export const CANVAS_COLORS = ['#F2F4F8','#F7F8FC','#FFFFFF','#FAFAF9','#F5F7F9','#F1F4F7','#ECEFF3','#E7EBEF'];
@@ -116,6 +119,8 @@ export const useStore = create<AppState>((set) => ({
     isMuted: false,
     isOnHold: false,
     activeLine: 'office',
+    dialString: '',
+    configured: false,
   },
   ...initial,
   setSetting: (key, value) => set((state) => {
@@ -150,5 +155,12 @@ export const useStore = create<AppState>((set) => ({
     return { navMode };
   }),
   setCallState: (update) => set((state) => ({ callState: { ...state.callState, ...update } })),
-  endCall: () => set((state) => ({ callState: { ...state.callState, status: 'idle', number: '', leadId: undefined, startTime: undefined, isMuted: false, isOnHold: false } })),
+  endCall: () => set((state) => ({ callState: { ...state.callState, status: 'idle', number: '', leadId: undefined, startTime: undefined, isMuted: false, isOnHold: false, error: undefined } })),
 }));
+
+// Dev-only convenience: expose the store on window so the call UI can be
+// exercised from the console / automated screenshots without a live Twilio
+// session. This is a debugging aid, not part of the production call path.
+if (import.meta.env.DEV && typeof window !== 'undefined') {
+  (window as unknown as { useStore?: typeof useStore }).useStore = useStore;
+}
