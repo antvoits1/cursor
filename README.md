@@ -32,7 +32,7 @@ provider to place calls." It never navigates the app to a `tel:` URL.
 ## Downloads
 The right column is an iPhone: status bar, iOS pages, and a home indicator.
 
-- `downloads/Forge-CRM-016.zip` — only the files needed to run the app.
+- `downloads/DeskPhoneCRM-016.zip` — only the files needed to run the app.
 
 Refresh with `npm run pack`.
 

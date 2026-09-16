@@ -5,8 +5,8 @@ import { execSync } from 'node:child_process';
 
 const root = path.resolve(path.dirname(url.fileURLToPath(import.meta.url)), '..');
 const downloads = path.join(root, 'downloads');
-const stagingName = 'Forge-CRM-016';
-const zipName = 'Forge-CRM-016.zip';
+const stagingName = 'DeskPhoneCRM-016';
+const zipName = 'DeskPhoneCRM-016.zip';
 
 const zipFiles = [
   'index.html',
@@ -44,6 +44,7 @@ function assertPresent(file) {
 
 fs.mkdirSync(downloads, { recursive: true });
 fs.rmSync(path.join(downloads, 'Forge-CRM-016-SOURCE.txt'), { force: true });
+fs.rmSync(path.join(downloads, 'Forge-CRM-016.zip'), { force: true });
 
 const staging = path.join(downloads, stagingName);
 fs.rmSync(staging, { recursive: true, force: true });

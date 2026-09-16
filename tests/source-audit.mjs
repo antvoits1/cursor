@@ -173,8 +173,9 @@ check('Notification rows have no initial-circle avatars', not(notif,'avatar') &&
 check('Unused fullWidth overlay class is gone', not(comm,'fullWidth') && not(app,'fullWidth') && not(messages,'fullWidth') && not(css,'.comm-panel.full') && not(messages,'messages-thread-page'));
 check('Unused autoprefixer and esbuild deps are gone', !pkg.devDependencies?.autoprefixer && !pkg.dependencies?.esbuild && !pkg.devDependencies?.esbuild);
 check('Lockfile has no Tailwind packages', !JSON.stringify(lock).includes('tailwindcss') && !JSON.stringify(lock).includes('@tailwindcss'));
-const zipList = execSync('unzip -l downloads/Forge-CRM-016.zip', { encoding: 'utf8' });
-check('Download zip is the runnable CRM only', zipList.includes('Forge-CRM-016/package-lock.json') && zipList.includes('Forge-CRM-016/package.json') && zipList.includes('Forge-CRM-016/src/index.css') && zipList.includes('Forge-CRM-016/src/components/IPhoneFrame.tsx') && zipList.includes('Forge-CRM-016/vite.config.ts'));
+const zipList = execSync('unzip -l downloads/DeskPhoneCRM-016.zip', { encoding: 'utf8' });
+check('Download zip uses the new DeskPhoneCRM-016 name', zipList.includes('DeskPhoneCRM-016/package-lock.json') && zipList.includes('DeskPhoneCRM-016/package.json') && zipList.includes('DeskPhoneCRM-016/src/index.css') && zipList.includes('DeskPhoneCRM-016/src/components/IPhoneFrame.tsx') && zipList.includes('DeskPhoneCRM-016/vite.config.ts'));
+check('Old Forge-CRM-016 zip name is gone', absent('downloads/Forge-CRM-016.zip') && !zipList.includes('Forge-CRM-016/'));
 check('Download zip has no leftover docs tests or dumps', !zipList.includes('README.md') && !zipList.includes('source-audit') && !zipList.includes('pack-downloads') && !zipList.includes('SOURCE.txt') && !zipList.includes('.gitignore'));
 check('Download zip has no Tailwind leftover configs', !zipList.includes('tailwind.config') && !zipList.includes('postcss.config'));
 console.log(results.join('\n'));
