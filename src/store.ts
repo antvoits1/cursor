@@ -14,7 +14,6 @@ export interface UISettings {
   navMode: NavMode;
   leadDensity: 'standard' | 'compact';
   motion: 'normal' | 'reduced';
-  showFinancial: 'show' | 'hide';
   defaultCommsTab: CommTab;
   canvasColor: string;
   sidebarColor: string;
@@ -32,7 +31,6 @@ const DEFAULTS: UISettings = {
   navMode: 'topbar',
   leadDensity: 'standard',
   motion: 'normal',
-  showFinancial: 'show',
   defaultCommsTab: 'all',
   canvasColor: '#F2F4F8',
   sidebarColor: '#1E2235',
@@ -54,7 +52,6 @@ function sanitize(parsed: Partial<UISettings>): UISettings {
     navMode: ['topbar','sidebar-slim','sidebar-wide'].includes(String(parsed.navMode)) ? parsed.navMode as NavMode : DEFAULTS.navMode,
     leadDensity: parsed.leadDensity === 'compact' ? 'compact' : 'standard',
     motion: parsed.motion === 'reduced' ? 'reduced' : 'normal',
-    showFinancial: parsed.showFinancial === 'hide' ? 'hide' : 'show',
     defaultCommsTab: ['all','messages','calls','contacts','email'].includes(String(parsed.defaultCommsTab)) ? parsed.defaultCommsTab as CommTab : DEFAULTS.defaultCommsTab,
     canvasColor: validColor(parsed.canvasColor, DEFAULTS.canvasColor),
     sidebarColor: validColor(parsed.sidebarColor, DEFAULTS.sidebarColor),
@@ -75,7 +72,6 @@ function loadSettings(): UISettings {
           navMode: parsed.navMode as NavMode,
           leadDensity: parsed.leadDensity as 'standard' | 'compact',
           motion: parsed.motion as 'normal' | 'reduced',
-          showFinancial: parsed.showFinancial as 'show' | 'hide',
           defaultCommsTab: parsed.defaultCommsTab as CommTab,
           canvasColor: (parsed.canvasColor || parsed.bgCanvas) as string,
           sidebarColor: (parsed.sidebarColor || parsed.bgConsole) as string,
@@ -104,7 +100,6 @@ export const useStore = create<AppState>((set) => ({
       navMode: next.navMode,
       leadDensity: next.leadDensity,
       motion: next.motion,
-      showFinancial: next.showFinancial,
       defaultCommsTab: next.defaultCommsTab,
       canvasColor: next.canvasColor,
       sidebarColor: next.sidebarColor,
@@ -119,7 +114,6 @@ export const useStore = create<AppState>((set) => ({
       navMode,
       leadDensity: next.leadDensity,
       motion: next.motion,
-      showFinancial: next.showFinancial,
       defaultCommsTab: next.defaultCommsTab,
       canvasColor: next.canvasColor,
       sidebarColor: next.sidebarColor,

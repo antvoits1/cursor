@@ -32,7 +32,7 @@ function autoScaleMode(): 'standard' | 'wide' | 'ultra' {
 function scaleValue(mode: string): number { return mode === 'ultra' ? 1.04 : mode === 'wide' ? 1 : .96; }
 
 export default function App() {
-  const { leads, screenScale, fontSize, navMode, leadDensity, motion, showFinancial, defaultCommsTab, canvasColor, sidebarColor, setSetting, setNavMode } = useStore();
+  const { leads, screenScale, fontSize, navMode, leadDensity, motion, defaultCommsTab, canvasColor, sidebarColor, setSetting, setNavMode } = useStore();
   const requestedStartPage = document.body.dataset.startPage as ActivePage | undefined;
   const initialPage: ActivePage = requestedStartPage && ['crm','messages','email','scanner','command'].includes(requestedStartPage) ? requestedStartPage : 'crm';
 
@@ -164,7 +164,7 @@ export default function App() {
   const minStmtIndex = lead?.mtd ? -1 : 0;
   const maxStmtIndex = lead ? lead.stmts.length - 1 : 0;
   const panelGridStyle = { gridTemplateColumns: `${leadsWidth}px ${DIVIDER_WIDTH}px minmax(${MIN_DETAIL_WIDTH}px,1fr) ${DIVIDER_WIDTH}px ${commsWidth}px` };
-  const settings: UISettings = { screenScale, fontSize, navMode, leadDensity, motion, showFinancial, defaultCommsTab, canvasColor, sidebarColor };
+  const settings: UISettings = { screenScale, fontSize, navMode, leadDensity, motion, defaultCommsTab, canvasColor, sidebarColor };
 
   return (
     <div className={`forge-app ${isTop ? 'topbar-mode' : 'sidebar-mode'}`}>
@@ -174,7 +174,7 @@ export default function App() {
           <div className="forge-panel-grid" style={panelGridStyle}>
             <LeadsRail leads={leads} selectedId={selectedId} setSelectedId={setSelectedId}/>
             <div className="panel-divider" role="separator" aria-orientation="vertical" aria-label="Resize leads panel" onPointerDown={e => startResize('leads', e.clientX)} onDoubleClick={resetPanels}/>
-            <section data-panel="lead-detail" className="forge-panel-surface"><LeadDetailPanel lead={lead} onCall={startCall} onOpenMessages={openMessages} setViewerDocIndex={setViewerDocIndex} showApproval={showFinancial === 'show'}/></section>
+            <section data-panel="lead-detail" className="forge-panel-surface"><LeadDetailPanel lead={lead} onCall={startCall} onOpenMessages={openMessages} setViewerDocIndex={setViewerDocIndex}/></section>
             <div className="panel-divider" role="separator" aria-orientation="vertical" aria-label="Resize communications panel" onPointerDown={e => startResize('comms', e.clientX)} onDoubleClick={resetPanels}/>
             <section data-panel="communications" className="forge-panel-surface"><IOSCommPanel lead={lead} contacts={leads} preferredMobile={messageNumber} fullWidth defaultTab={defaultCommsTab} pendingOpen={pendingComm} onSelectLead={setSelectedId} onCall={startCall} onPreferredMobileChange={setMessageNumber}/></section>
           </div>

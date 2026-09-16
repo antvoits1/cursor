@@ -115,9 +115,9 @@ check('Lead owner text uses dashboard muted size', has(css,'.forge-lead-copy spa
 check('Middle company title is large', has(css,'--text-title: 19px;') && has(css,'.detail-company-line h1'));
 check('Contact name sits directly under company title', has(detail,'detail-contact-name'));
 check('Lead header shows the contact name only, without title or position', has(detail,'{lead.contact}</div>') && not(detail,'lead.pos') && not(detail,'lead.title') && not(detail,'detail-tag') && not(css,'.detail-tag'));
-check('Approval is a KPI stat box, not a header figure', has(detail,"label: 'Approval Amount'") && has(detail,'showApproval ?') && not(detail,'detail-header-approval') && not(css,'.detail-header-approval'));
-check('Financial strip uses real lead figures', has(detail,'fin-card') && has(detail,'lead.avg') && has(detail,'lead.offer') && has(detail,'lead.bank.bal'));
-check('Financial strip uses dashboard stat-box styling', has(css,'.fin-card {'));
+check('Approval is a KPI stat box, not a header figure', has(detail,"label: 'Approval Amount'") && has(detail,'accent: true') && not(detail,'detail-header-approval') && not(css,'.detail-header-approval') && not(settings,'Approval Amount'));
+check('Financial strip uses three real lead figures', has(detail,'fin-card') && has(detail,'lead.avg') && has(detail,'lead.avg + 150000') && has(detail,'lead.bank.bal') && has(detail,"label: 'Last balance'") && not(detail,'Offer on file'));
+check('Financial strip uses dashboard stat-box styling', has(css,'.fin-card {') && has(css,'flex: 1;') && has(css,'gap: 24px;') && has(css,'.fin-card-value.accent { color: var(--accent-green);') && has(css,'--accent-green: #1F8A5F;'));
 check('Revenue and financial figures use Inter throughout', not(css,'--font-family-mono') && not(css,'className="mono"') && not(detail,'mono') && not(leads,'mono') && not(html,'JetBrains'));
 check('Sales pitch is a card with the blue accent edge', has(css,'.detail-pitch {') && has(css,'border-left: 3px solid var(--accent-blue);'));
 check('Activity rows use tinted reference icons', has(detail,'detail-activity-icon') && has(css,'.detail-activity-icon.teal') && has(css,'.detail-activity-icon.amber'));

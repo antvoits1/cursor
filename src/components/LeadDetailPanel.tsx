@@ -8,7 +8,6 @@ interface Props {
   onCall: (number: string) => void;
   onOpenMessages: (number?: string) => void;
   setViewerDocIndex: (index: number) => void;
-  showApproval: boolean;
 }
 
 function PhoneActions({ number, onCall, onMessage, whatsapp = false }: { number: string; onCall: () => void; onMessage?: () => void; whatsapp?: boolean }) {
@@ -29,7 +28,7 @@ function activityMeta(what: string) {
   return { tone: 'neutral' as const, Icon: FileText };
 }
 
-export default function LeadDetailPanel({ lead, onCall, onOpenMessages, setViewerDocIndex, showApproval }: Props) {
+export default function LeadDetailPanel({ lead, onCall, onOpenMessages, setViewerDocIndex }: Props) {
   const latestDocIndex = lead.mtd ? -1 : 0;
   const companyFields: Array<[string,string]> = [
     ['DBA', lead.dba],
@@ -42,11 +41,10 @@ export default function LeadDetailPanel({ lead, onCall, onOpenMessages, setViewe
     ['DOB', lead.dob],
     ['Website', lead.website],
   ];
-  const finCards: Array<{ label: string; value: string }> = [
+  const finCards: Array<{ label: string; value: string; accent?: boolean }> = [
     { label: 'Monthly revenue', value: formatMoneyWhole(lead.avg) },
-    ...(showApproval ? [{ label: 'Approval Amount', value: formatMoneyWhole(lead.avg + 150000) }] : []),
-    { label: 'Offer on file', value: lead.offer ? formatMoneyWhole(lead.offer) : 'Pending' },
-    { label: 'Current balance', value: formatMoneyWhole(lead.bank.bal) },
+    { label: 'Approval Amount', value: formatMoneyWhole(lead.avg + 150000), accent: true },
+    { label: 'Last balance', value: formatMoneyWhole(lead.bank.bal) },
   ];
 
   return (
@@ -65,7 +63,7 @@ export default function LeadDetailPanel({ lead, onCall, onOpenMessages, setViewe
           {finCards.map(card => (
             <div className="fin-card" key={card.label}>
               <span className="fin-card-label">{card.label}</span>
-              <strong className="fin-card-value">{card.value}</strong>
+              <strong className={`fin-card-value${card.accent ? ' accent' : ''}`}>{card.value}</strong>
             </div>
           ))}
         </div>

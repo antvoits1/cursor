@@ -29,9 +29,6 @@ export default function SettingsModal({ settings, setSetting, onResetPanels, onC
           <Setting label="Panel Density" help="Comfortable adds breathing room. Compact shows more lead rows.">
             <select value={settings.leadDensity} onChange={e => setSetting('leadDensity', e.target.value as UISettings['leadDensity'])}><option value="standard">Comfortable</option><option value="compact">Compact</option></select>
           </Setting>
-          <Setting label="Approval Amount" help="Show or hide the Approval Amount stat box in the lead record.">
-            <select value={settings.showFinancial} onChange={e => setSetting('showFinancial', e.target.value as UISettings['showFinancial'])}><option value="show">Show</option><option value="hide">Hide</option></select>
-          </Setting>
           <Setting label="Default Communications Tab" help="Choose which Communications view opens first.">
             <select value={settings.defaultCommsTab} onChange={e => setSetting('defaultCommsTab', e.target.value as UISettings['defaultCommsTab'])}><option value="all">All</option><option value="messages">Messages</option><option value="calls">Call log</option><option value="contacts">Contacts</option><option value="email">Email</option></select>
           </Setting>
