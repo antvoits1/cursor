@@ -244,13 +244,15 @@ body.panel-resizing {
 .forge-topbar-spacer { flex: 1; }
 
 .forge-tool {
-  width: 34px;
-  height: 34px;
+  width: 36px;
+  height: 36px;
   border: 0;
   background: transparent;
-  border-radius: 6px;
+  border-radius: 50%;
   display: grid;
   place-items: center;
+  transition: all 0.2s ease;
+  cursor: pointer;
 }
 
 .forge-topbar.light { color: var(--text-primary); }
@@ -258,11 +260,14 @@ body.panel-resizing {
 .forge-topbar.light .forge-topnav-tab,
 .forge-topbar.light .forge-tool { color: var(--text-secondary); }
 .forge-topbar.light .forge-topnav-tab:hover,
-.forge-topbar.light .forge-topnav-tab.active,
-.forge-topbar.light .forge-tool:hover,
-.forge-topbar.light .forge-tool.active {
+.forge-topbar.light .forge-topnav-tab.active {
   background: var(--accent-blue-light);
   color: var(--accent-blue);
+}
+.forge-topbar.light .forge-tool:hover,
+.forge-topbar.light .forge-tool.active {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--text-primary);
 }
 
 .forge-topbar.dark {
@@ -274,29 +279,38 @@ body.panel-resizing {
 .forge-topbar.dark .forge-topnav-tab,
 .forge-topbar.dark .forge-tool { color: var(--text-sidebar); }
 .forge-topbar.dark .forge-topnav-tab:hover,
-.forge-topbar.dark .forge-topnav-tab.active,
+.forge-topbar.dark .forge-topnav-tab.active {
+  background: rgba(59, 111, 212, 0.18);
+  color: var(--text-sidebar-active);
+}
 .forge-topbar.dark .forge-tool:hover,
 .forge-topbar.dark .forge-tool.active {
-  background: rgba(59, 111, 212, 0.18);
+  background: rgba(255, 255, 255, 0.1);
   color: var(--text-sidebar-active);
 }
 
 .forge-account { position: relative; }
 
 .forge-avatar {
-  width: 15px;
-  height: 15px;
+  width: 36px;
+  height: 36px;
   border: 0;
-  border-radius: 4px;
+  border-radius: 50%;
   background: var(--accent-blue);
   color: #fff;
-  font-size: calc(7px + var(--font-offset));
-  font-weight: 700;
+  font-size: calc(14px + var(--font-offset));
+  font-weight: 600;
   letter-spacing: .2px;
   display: flex;
   align-items: center;
   justify-content: center;
   line-height: 1;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.forge-avatar:hover {
+  opacity: 0.9;
+  box-shadow: 0 0 0 2px rgba(59, 111, 212, 0.2);
 }
 
 .forge-account-menu {
@@ -335,13 +349,13 @@ body.panel-resizing {
 .forge-account-menu button:not(:disabled):hover { background: var(--bg-row-hover); }
 
 .forge-avatar-chip {
-  width: 15px;
-  height: 15px;
-  border-radius: 4px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
   background: var(--accent-blue);
   color: #fff;
-  font-size: calc(7px + var(--font-offset));
-  font-weight: 700;
+  font-size: calc(10px + var(--font-offset));
+  font-weight: 600;
   letter-spacing: .2px;
   display: flex;
   align-items: center;
