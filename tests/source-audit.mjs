@@ -105,13 +105,13 @@ check('Call action supports ForgeTelephonyAdapter', has(app,'ForgeTelephonyAdapt
 check('Call action supports Electron/mobile event handoff', has(app,"new CustomEvent('forge:call-request'"));
 check('Unhandled call request shows a notice', has(app,'Connect a phone or calling provider to place calls.'));
 check('Lead list has no avatar/initial circle', not(leads,'avatar') && not(leads,'initial') && not(leads,'lead-avatar'));
-check('Account avatar is a clean ~29px blue circle with ~12.5px initials', has(css,'.forge-avatar {\n  width: 29px;\n  height: 29px;') && has(css,'font-size: calc(12.5px + var(--font-offset));') && has(css,'background: var(--accent-blue);'));
+check('Account avatar is a clean ~29px amber circle with initials that fit', has(css,'.forge-avatar {\n  width: 29px;\n  height: 29px;') && has(css,'font-size: calc(10.5px + var(--font-offset));') && has(css,'background: var(--accent-amber);'));
 check('Lead header uses dashboard title and count pill', has(leads,'forge-leads-title-row') && has(leads,'panel-count'));
-check('Lead company text uses dashboard name size', has(css,'.forge-lead-copy strong {\n  font-size: calc(12.5px + var(--font-offset));'));
+check('Lead company text uses dashboard name size', has(css,'.forge-lead-copy strong {\n  font-size: calc(13.5px + var(--font-offset));'));
 check('Lead owner text uses dashboard muted size', has(css,'.forge-lead-copy span {\n  margin-top: 2px;') && has(css,'font-size: calc(10.5px + var(--font-offset));'));
-check('Middle company title is large', has(css,'--text-title: 21px;') && has(css,'.detail-company-line h1'));
-check('Owner and title sit directly under company title', has(detail,'detail-contact-name') && has(detail,'{lead.title}'));
-check('Position shows as plain text without a pill box', not(detail,'detail-pill') && not(css,'.detail-pill') && has(detail,'{lead.pos} position'));
+check('Middle company title is large', has(css,'--text-title: 19px;') && has(css,'.detail-company-line h1'));
+check('Contact name sits directly under company title', has(detail,'detail-contact-name'));
+check('Lead header shows the contact name only, without title or position', has(detail,'{lead.contact}</div>') && not(detail,'lead.pos') && not(detail,'lead.title') && not(detail,'detail-tag') && not(css,'.detail-tag'));
 check('Approval is a KPI stat box, not a header figure', has(detail,"label: 'Approval Amount'") && has(detail,'showApproval ?') && not(detail,'detail-header-approval') && not(css,'.detail-header-approval'));
 check('Financial strip uses real lead figures', has(detail,'fin-card') && has(detail,'lead.avg') && has(detail,'lead.offer') && has(detail,'lead.bank.bal'));
 check('Financial strip uses dashboard stat-box styling', has(css,'.fin-card {'));

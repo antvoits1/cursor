@@ -34,7 +34,7 @@
   --topbar-h: 52px;
   --text-base: 12.5px;
   --text-md: 13.5px;
-  --text-title: 21px;
+  --text-title: 19px;
   --radius-panel: 9px;
 }
 
@@ -295,11 +295,11 @@ body.panel-resizing {
   height: 29px;
   border: 0;
   border-radius: 50%;
-  background: var(--accent-blue);
+  background: var(--accent-amber);
   color: #fff;
-  font-size: calc(12.5px + var(--font-offset));
+  font-size: calc(10.5px + var(--font-offset));
   font-weight: 600;
-  letter-spacing: .2px;
+  letter-spacing: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -351,11 +351,11 @@ body.panel-resizing {
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  background: var(--accent-blue);
+  background: var(--accent-amber);
   color: #fff;
-  font-size: calc(10px + var(--font-offset));
+  font-size: calc(8.5px + var(--font-offset));
   font-weight: 600;
-  letter-spacing: .2px;
+  letter-spacing: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -835,7 +835,7 @@ html[data-lead-density="compact"] .forge-lead-row {
 }
 
 .forge-lead-copy strong {
-  font-size: calc(12.5px + var(--font-offset));
+  font-size: calc(13.5px + var(--font-offset));
   font-weight: 600;
   color: var(--text-primary);
   white-space: nowrap;
@@ -889,7 +889,7 @@ html[data-lead-density="compact"] .forge-lead-row {
 }
 
 .detail-header {
-  padding: 16px 16px 12px;
+  padding: 11px 16px 10px;
   background: var(--bg-surface);
   border-bottom: 1px solid var(--border);
 }
@@ -914,27 +914,14 @@ html[data-lead-density="compact"] .forge-lead-row {
 }
 
 .detail-contact-name {
-  margin-top: 4px;
+  margin-top: 3px;
   color: var(--text-secondary);
-  font-size: calc(11.5px + var(--font-offset));
+  font-size: calc(13.5px + var(--font-offset));
   font-weight: 500;
   line-height: 1.25;
 }
 
-.detail-tags {
-  margin-top: 8px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.detail-tag {
-  color: var(--text-muted);
-  font-size: calc(10.5px + var(--font-offset));
-}
-
-.detail-body { padding: 16px 16px 40px; }
+.detail-body { padding: 14px 16px 40px; }
 
 .fin-strip {
   display: flex;
@@ -2172,7 +2159,7 @@ html[data-motion="reduced"] *::after {
   :root {
     --text-base: 14px;
     --text-md: 15px;
-    --text-title: 24px;
+    --text-title: 22px;
     --topbar-h: 60px;
   }
 }

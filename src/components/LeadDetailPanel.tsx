@@ -55,10 +55,7 @@ export default function LeadDetailPanel({ lead, onCall, onOpenMessages, setViewe
         <div className="detail-company-line">
           <div className="detail-company-copy">
             <h1>{lead.company}</h1>
-            <div className="detail-contact-name">{lead.contact} · {lead.title}</div>
-            <div className="detail-tags">
-              <span className="detail-tag">{lead.pos} position · {lead.city}</span>
-            </div>
+            <div className="detail-contact-name">{lead.contact}</div>
           </div>
         </div>
       </header>
