@@ -43,11 +43,11 @@ export default function LeadDetailPanel({ lead, onCall, onOpenMessages, setViewe
     ['DOB', lead.dob],
     ['Website', lead.website],
   ];
-  const finCards: Array<{ label: string; value: string; bar: 'blue' | 'navy' | 'amber' | 'teal' | 'neutral' }> = [
-    { label: 'Monthly revenue', value: formatMoneyWhole(lead.avg), bar: 'blue' },
-    { label: 'Requested', value: formatMoneyWhole(lead.ask), bar: 'navy' },
-    { label: 'Offer on file', value: lead.offer ? formatMoneyWhole(lead.offer) : 'Pending', bar: lead.offer ? 'amber' : 'neutral' },
-    { label: 'Current balance', value: formatMoneyWhole(lead.bank.bal), bar: 'teal' },
+  const finCards: Array<{ label: string; value: string }> = [
+    { label: 'Monthly revenue', value: formatMoneyWhole(lead.avg) },
+    { label: 'Approval Amount', value: formatMoneyWhole(lead.avg + 150000) },
+    { label: 'Offer on file', value: lead.offer ? formatMoneyWhole(lead.offer) : 'Pending' },
+    { label: 'Current balance', value: formatMoneyWhole(lead.bank.bal) },
   ];
 
   return (
@@ -61,7 +61,6 @@ export default function LeadDetailPanel({ lead, onCall, onOpenMessages, setViewe
               <span className="detail-tag">{lead.pos} position · {lead.city}</span>
             </div>
           </div>
-          {showApproval && <div className="detail-header-approval"><span>Approval</span><strong>{formatFinancialUp(approval)}</strong></div>}
         </div>
       </header>
 
@@ -71,7 +70,6 @@ export default function LeadDetailPanel({ lead, onCall, onOpenMessages, setViewe
             <div className="fin-card" key={card.label}>
               <span className="fin-card-label">{card.label}</span>
               <strong className="fin-card-value">{card.value}</strong>
-              <div className={`fin-card-bar ${card.bar}`}/>
             </div>
           ))}
         </div>

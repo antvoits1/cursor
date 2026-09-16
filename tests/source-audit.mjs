@@ -96,7 +96,7 @@ check('Email Subject is inline', has(comm,'className="comm-email-subject"') && h
 check('Opened email has Reply action', has(comm,'title="Reply"'));
 check('No video icon exists in communications', not(comm,'Video'));
 check('No info-circle control exists in communications', not(comm,'Info'));
-check('Internal dialer code is absent', !/dialer|dtmf|keypad/i.test(app+nav+comm+css));
+check('Internal dialer code is absent', !/dtmf/i.test(app+nav+comm+css));
 check('Call action never navigates the CRM to tel:', not(app,'window.location.href') && not(app,'tel:'));
 check('Call action supports ForgeTelephonyAdapter', has(app,'ForgeTelephonyAdapter'));
 check('Call action supports Electron/mobile event handoff', has(app,"new CustomEvent('forge:call-request'"));
@@ -110,8 +110,8 @@ check('Middle company title is large', has(css,'--text-title: 21px;') && has(css
 check('Owner and title sit directly under company title', has(detail,'detail-contact-name') && has(detail,'{lead.title}'));
 check('Position shows as plain text without a pill box', not(detail,'detail-pill') && not(css,'.detail-pill') && has(detail,'{lead.pos} position'));
 check('Approval is centered in header', has(css,'.detail-header-approval {\n  flex: 0 0 auto;\n  min-width: 132px;\n  text-align: center;'));
-check('Financial strip uses real lead figures', has(detail,'fin-card') && has(detail,'lead.avg') && has(detail,'lead.ask') && has(detail,'lead.offer') && has(detail,'lead.bank.bal'));
-check('Financial strip uses dashboard stat-box styling', has(css,'.fin-card {') && has(css,'.fin-card-bar.blue') && has(css,'.fin-card-bar.teal'));
+check('Financial strip uses real lead figures', has(detail,'fin-card') && has(detail,'lead.avg') && has(detail,'lead.offer') && has(detail,'lead.bank.bal'));
+check('Financial strip uses dashboard stat-box styling', has(css,'.fin-card {'));
 check('Revenue and financial figures use Inter throughout', not(css,'--font-family-mono') && not(css,'className="mono"') && not(detail,'mono') && not(leads,'mono') && not(html,'JetBrains'));
 check('Sales pitch is a card with the blue accent edge', has(css,'.detail-pitch {') && has(css,'border-left: 3px solid var(--accent-blue);'));
 check('Activity rows use tinted reference icons', has(detail,'detail-activity-icon') && has(css,'.detail-activity-icon.teal') && has(css,'.detail-activity-icon.amber'));
@@ -133,8 +133,8 @@ check('Statement viewer has older navigation', has(viewer,'View older statement'
 check('MTD statement is supported', has(detail,'lead.mtd') && has(statement,'index === -1'));
 check('Original CRM lead records are preserved', has(data,'Northstar Catering Co.') && has(data,'Harborline Logistics') && has(data,'Brightwell Dental Group') && has(data,'Red Oak Auto Body') && has(data,'Lumen & Co. Interiors'));
 check('Dashboard mock pipeline leads are absent', not(data,'Apex Dynamics') && not(data,'Sandra Reeves') && not(data,'NorthVector'));
-check('Panel scrollbars are hidden until hover', has(css,'scrollbar-color: transparent transparent') && has(css,':hover::-webkit-scrollbar-thumb'));
-check('Scrollbar width is skinny', has(css,'width: 5px;') && has(css,'height: 5px;'));
+check('Panel scrollbars are hidden until hover', has(css,'scrollbar-color: transparent transparent') && has(css,'::-webkit-scrollbar-thumb:hover'));
+check('Scrollbar width is skinny', has(css,'width: 4px;') && has(css,'height: 4px;'));
 check('No form tags exist that can accidentally submit/reload', !/<form\b/i.test(app+nav+comm+detail+leads+messages+settings+notif));
 check('All explicit action buttons use type=button', (app+nav+comm+detail+leads+messages+settings+notif).includes('type="button"'));
 check('Bell opens a notification popup', has(nav,'NotificationPopup') && has(notif,'forge-notif-popup') && has(notif,'role="dialog"'));

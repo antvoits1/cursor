@@ -287,12 +287,12 @@ body.panel-resizing {
   width: 15px;
   height: 15px;
   border: 0;
-  border-radius: 50%;
+  border-radius: 4px;
   background: var(--accent-blue);
   color: #fff;
-  font-size: calc(6.5px + var(--font-offset));
-  font-weight: 600;
-  letter-spacing: .3px;
+  font-size: calc(7px + var(--font-offset));
+  font-weight: 700;
+  letter-spacing: .2px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -313,6 +313,13 @@ body.panel-resizing {
   box-shadow: var(--shadow-md);
 }
 
+.forge-account-menu.bottom-up {
+  top: auto;
+  bottom: 42px;
+  right: auto;
+  left: 10px;
+}
+
 .forge-account-menu button {
   width: 100%;
   height: 34px;
@@ -326,6 +333,28 @@ body.panel-resizing {
 }
 
 .forge-account-menu button:not(:disabled):hover { background: var(--bg-row-hover); }
+
+.forge-avatar-chip {
+  width: 15px;
+  height: 15px;
+  border-radius: 4px;
+  background: var(--accent-blue);
+  color: #fff;
+  font-size: calc(7px + var(--font-offset));
+  font-weight: 700;
+  letter-spacing: .2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.forge-side-tab.forge-avatar-btn {
+  padding-left: 19px;
+}
+.forge-sidebar.slim .forge-side-tab.forge-avatar-btn {
+  padding-left: 0;
+}
 
 .forge-bell { position: relative; }
 
@@ -622,20 +651,6 @@ body.panel-resizing {
   scrollbar-color: transparent transparent;
 }
 
-.forge-leads-list:hover,
-.detail-scroll:hover,
-.comm-scroll:hover,
-.comm-thread:hover,
-.comm-contact-book:hover,
-.comm-contact-detail:hover,
-.comm-detail-view:hover,
-.comm-email-view:hover,
-.messages-list:hover,
-.forge-notif-list:hover,
-.settings-scroll:hover {
-  scrollbar-color: var(--border-panel) transparent;
-}
-
 .forge-leads-list::-webkit-scrollbar,
 .detail-scroll::-webkit-scrollbar,
 .comm-scroll::-webkit-scrollbar,
@@ -647,8 +662,8 @@ body.panel-resizing {
 .messages-list::-webkit-scrollbar,
 .forge-notif-list::-webkit-scrollbar,
 .settings-scroll::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 4px;
+  height: 4px;
 }
 
 .forge-leads-list::-webkit-scrollbar-thumb,
@@ -666,17 +681,17 @@ body.panel-resizing {
   border-radius: 4px;
 }
 
-.forge-leads-list:hover::-webkit-scrollbar-thumb,
-.detail-scroll:hover::-webkit-scrollbar-thumb,
-.comm-scroll:hover::-webkit-scrollbar-thumb,
-.comm-thread:hover::-webkit-scrollbar-thumb,
-.comm-contact-book:hover::-webkit-scrollbar-thumb,
-.comm-contact-detail:hover::-webkit-scrollbar-thumb,
-.comm-detail-view:hover::-webkit-scrollbar-thumb,
-.comm-email-view:hover::-webkit-scrollbar-thumb,
-.messages-list:hover::-webkit-scrollbar-thumb,
-.forge-notif-list:hover::-webkit-scrollbar-thumb,
-.settings-scroll:hover::-webkit-scrollbar-thumb {
+.forge-leads-list::-webkit-scrollbar-thumb:hover,
+.detail-scroll::-webkit-scrollbar-thumb:hover,
+.comm-scroll::-webkit-scrollbar-thumb:hover,
+.comm-thread::-webkit-scrollbar-thumb:hover,
+.comm-contact-book::-webkit-scrollbar-thumb:hover,
+.comm-contact-detail::-webkit-scrollbar-thumb:hover,
+.comm-detail-view::-webkit-scrollbar-thumb:hover,
+.comm-email-view::-webkit-scrollbar-thumb:hover,
+.messages-list::-webkit-scrollbar-thumb:hover,
+.forge-notif-list::-webkit-scrollbar-thumb:hover,
+.settings-scroll::-webkit-scrollbar-thumb:hover {
   background: var(--border-panel);
 }
 
@@ -933,32 +948,34 @@ html[data-lead-density="compact"] .forge-lead-row {
 .detail-body { padding: 16px 16px 40px; }
 
 .fin-strip {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 12px;
-  margin-bottom: 12px;
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 16px;
 }
 
 .fin-card {
+  flex: 1;
   min-width: 0;
   background: var(--bg-surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-panel);
-  padding: 13px 16px;
+  padding: 10px 12px;
   box-shadow: var(--shadow-sm);
   transition: box-shadow .15s;
+  text-align: center;
 }
 
 .fin-card:hover { box-shadow: var(--shadow-md); }
 
 .fin-card-label {
   display: block;
-  font-size: calc(10.5px + var(--font-offset));
+  font-size: calc(9px + var(--font-offset));
   font-weight: 600;
-  letter-spacing: .4px;
+  letter-spacing: .6px;
   text-transform: uppercase;
   color: var(--text-muted);
-  margin-bottom: 5px;
+  margin-bottom: 4px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -966,22 +983,15 @@ html[data-lead-density="compact"] .forge-lead-row {
 
 .fin-card-value {
   display: block;
-  font-size: calc(19px + var(--font-offset));
+  font-size: calc(17px + var(--font-offset));
   font-weight: 700;
-  letter-spacing: -.5px;
+  letter-spacing: -.3px;
   line-height: 1.1;
   color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-
-.fin-card-bar { height: 3px; border-radius: 2px; margin-top: 10px; }
-.fin-card-bar.blue { background: var(--accent-blue); }
-.fin-card-bar.navy { background: var(--accent-navy); }
-.fin-card-bar.amber { background: var(--accent-amber); }
-.fin-card-bar.teal { background: var(--accent-teal); }
-.fin-card-bar.neutral { background: var(--border-panel); }
 
 .detail-pair {
   display: grid;
@@ -2156,5 +2166,17 @@ html[data-motion="reduced"] *::after {
     min-width: 0;
     height: calc(100dvh / var(--ui-scale));
     touch-action: pan-x pan-y pinch-zoom;
+  }
+}
+
+@media (min-width: 1920px) {
+  html {
+    font-size: 112.5%;
+  }
+  :root {
+    --text-base: 14px;
+    --text-md: 15px;
+    --text-title: 24px;
+    --topbar-h: 60px;
   }
 }
