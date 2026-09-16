@@ -1,455 +1,268 @@
-@import 'tailwindcss';
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg-page:#F2F4F8;--bg-surface:#FFFFFF;--bg-panel:#F7F8FC;--bg-sidebar:#1E2235;
+  --bg-row-hover:#EFF2FB;--bg-row-sel:#E6ECFA;--text-primary:#1E2235;--text-secondary:#5A6078;
+  --text-muted:#8C93AB;--text-sidebar:#C8CCDC;--text-sidebar-active:#FFFFFF;--accent-blue:#3B6FD4;
+  --accent-blue-light:#EAF0FF;--accent-teal:#1A8F7A;--accent-teal-light:#E5F6F3;--accent-amber:#C97B2A;
+  --accent-amber-light:#FDF3E5;--accent-red:#C43B3B;--accent-purple:#6B4EBC;--accent-indigo:#5367B7;
+  --border:#E2E6F0;--border-panel:#D8DDE8;--shadow-sm:0 1px 3px rgba(30,34,53,.08);
+  --sidebar-w:220px;--header-h:52px;--ios-blue:#007AFF;--ios-gray:#E9E9EE;
+}
+html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg-page);color:var(--text-primary);font-size:13px;line-height:1.5;overflow:hidden;font-synthesis:none;font-optical-sizing:auto;font-style:normal}
+body *{font-family:'Inter',sans-serif!important;font-synthesis:none;font-feature-settings:'liga' 1,'calt' 1}
+button,input,textarea,select{font:inherit}button{color:inherit}
+.app{display:flex;height:100vh;flex-direction:column;min-width:1200px}
 
-/*
- * Extractor design system — "Obsidian / Iris".
- *
- * Dark-first, built for long sessions in front of dense data. Three ideas hold
- * it together:
- *
- *   1. Elevation is expressed twice — once in luminance, once with a hairline
- *      border. Dark interfaces that rely on luminance alone read as muddy, so
- *      every surface here carries a border token as well as a value.
- *   2. One accent. An iris/periwinkle that is light enough to pass AA as link
- *      text on any surface, and saturated enough to carry a primary button with
- *      near-black type on it.
- *   3. Data is monospaced. Phone numbers, URLs, IDs and confidence scores all
- *      sit on the mono stack with tabular figures and a slashed zero.
- *
- * Every foreground/background pair used by the app was checked against WCAG:
- * body text clears 4.5:1 on the surface it sits on, and primary/secondary text
- * clears 7:1.
- */
-@theme {
-  /* ---------------------------------------------------------------------
-   * Surfaces — the elevation ladder, darkest to lightest.
-   *
-   *   canvas-deep   app chrome recess, below the page
-   *   canvas        the page itself
-   *   rail          inert tracks and rails (toggle, progress, scrollbar)
-   *   panel-sunken  wells cut into a panel (inputs, table heads, segments)
-   *   panel         the primary card surface
-   *   panel-raised  a card sitting on a card (rows, stat tiles)
-   *   panel-overlay dialogs and popovers, floating clear of everything
-   * ------------------------------------------------------------------ */
-  --color-canvas-deep: #05070b;
-  --color-canvas: #0b0e14;
-  --color-rail: #0f131b;
-  --color-panel-sunken: #12161f;
-  --color-panel: #171b25;
-  --color-panel-raised: #1d222d;
-  --color-panel-overlay: #212734;
+/* ── Topbar ─────────────────────────────────────────────────────────── */
+.topbar{height:var(--header-h);background:var(--bg-surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:16px;position:relative;z-index:40;flex-shrink:0;box-shadow:var(--shadow-sm)}
+.topbar-logo{font-size:15px;font-weight:700;letter-spacing:-.4px;color:var(--accent-blue);display:flex;align-items:center;gap:7px;margin-right:8px;flex-shrink:0}.topbar-logo svg{opacity:.85}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:12px;flex-shrink:0}
+.topbar-btn{background:none;border:none;cursor:pointer;color:var(--text-secondary);padding:6px;border-radius:6px;display:flex;align-items:center;transition:background .12s,color .12s}
+.topbar-btn:hover{background:var(--bg-row-hover);color:var(--text-primary)}
 
-  /* Hairlines. Low contrast but never absent — this is what keeps the dark
-   * surfaces reading as crisp planes rather than one soft wash. */
-  --color-line: #2a3142;
-  --color-line-strong: #3a4356;
-  --color-line-hover: #4a5570;
+/* ── Inline dialer (embedded in topbar) ─────────────────────────────── */
+.dialer{flex:1;min-width:0;display:flex;justify-content:center}
+.dialer-inner{position:relative;display:flex;align-items:center;gap:6px;background:var(--bg-panel);border:1px solid var(--border);border-radius:9px;padding:3px 4px 3px 8px;height:38px;min-width:430px;max-width:560px}
+.dialer-device-wrap{position:relative;flex-shrink:0}
+.dialer-device{display:flex;align-items:center;gap:6px;border:0;background:transparent;border-radius:6px;padding:4px 6px;cursor:pointer;color:var(--text-secondary);max-width:158px}
+.dialer-device:hover{background:var(--bg-row-hover)}
+.dialer-device-dot{width:6px;height:6px;border-radius:50%;background:var(--accent-red);flex-shrink:0}
+.dialer-device-dot.connected{background:var(--accent-teal)}
+.dialer-device-name{font-size:10.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dialer-device svg{flex-shrink:0;color:var(--text-muted)}
+.dialer-sep{width:1px;height:20px;background:var(--border);flex-shrink:0}
+.dialer-field{flex:1;min-width:0;display:flex;align-items:center;gap:6px}
+.dialer-input{flex:1;min-width:0;border:0;background:transparent;outline:0;font-size:12.5px;font-weight:600;letter-spacing:.2px;color:var(--text-primary);padding:5px 2px}
+.dialer-input::placeholder{color:var(--text-muted);font-weight:500}
+.dialer-input.live{color:var(--accent-teal)}
+.dialer-timer{font-size:10px;font-weight:600;color:var(--text-muted);font-variant-numeric:tabular-nums;white-space:nowrap;flex-shrink:0}
+.dialer-btn{width:28px;height:28px;border:0;background:transparent;border-radius:6px;display:grid;place-items:center;color:var(--text-muted);cursor:pointer;flex-shrink:0}
+.dialer-btn:hover{background:var(--bg-row-hover);color:var(--accent-blue)}
+.dialer-btn.on{color:var(--accent-blue);background:var(--accent-blue-light)}
+.dialer-call{width:30px;height:30px;border-radius:50%;border:0;display:grid;place-items:center;cursor:pointer;flex-shrink:0;background:var(--accent-teal);color:#fff;transition:background .12s,opacity .12s}
+.dialer-call:hover:not(:disabled){filter:brightness(1.06)}
+.dialer-call:disabled{opacity:.35;cursor:default}
+.dialer-call.end{background:var(--accent-red)}
+.dialer-pop{position:absolute;top:34px;z-index:60;background:#fff;border:1px solid var(--border);border-radius:10px;box-shadow:0 10px 28px rgba(30,34,53,.14)}
+.dialer-devices-pop{left:0;width:214px;padding:5px}
+.device-option{width:100%;border:0;background:transparent;display:flex;align-items:center;gap:9px;padding:8px 9px;border-radius:6px;cursor:pointer;text-align:left;color:var(--text-secondary)}
+.device-option:hover{background:var(--bg-row-hover)}
+.device-option.active{background:var(--accent-blue-light);color:var(--accent-blue)}
+.device-option svg{flex:0 0 auto}
+.device-option-main{min-width:0;flex:1}
+.device-name{font-size:10.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.device-state{font-size:8.8px;color:var(--text-muted);margin-top:1px;display:block}
+.device-option.active .device-state{color:#7086B9}
+.dialer-keypad-pop{right:4px;top:40px;padding:10px;width:204px}
+.dialer-keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+.dialer-key{width:100%;height:34px;border:1px solid var(--border);background:var(--bg-panel);border-radius:7px;font-size:13px;font-weight:600;color:var(--text-secondary);cursor:pointer;display:grid;place-items:center}
+.dialer-key:hover{background:var(--bg-row-hover);color:var(--accent-blue)}
+.dialer-key:active{background:var(--accent-blue-light)}
 
-  /* Foreground ramp. `ink-invert` is the maximum-contrast foreground used over
-   * the deep chrome; `on-accent` is the near-black used over accent and
-   * semantic fills. */
-  --color-ink: #e9ecf3;
-  --color-ink-soft: #b0b9c9;
-  --color-ink-faint: #8b95a8;
-  --color-ink-invert: #f8fafc;
-  --color-on-accent: #080a12;
+/* ── Sidebar ────────────────────────────────────────────────────────── */
+.body-area{display:flex;flex:1;overflow:hidden;min-height:0}
+.sidebar{width:var(--sidebar-w);background:var(--bg-sidebar);flex-shrink:0;display:flex;flex-direction:column;overflow:hidden}
+.sidebar-section-label{font-size:9.5px;font-weight:700;letter-spacing:1.1px;color:#4A5070;text-transform:uppercase;padding:20px 18px 6px}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 18px;color:var(--text-sidebar);font-size:12.5px;font-weight:500;cursor:pointer;transition:background .12s,color .12s;border-left:3px solid transparent;background:none;border-top:0;border-right:0;border-bottom:0;width:100%;text-align:left}
+.nav-item:hover{background:rgba(255,255,255,.05);color:#fff}
+.nav-item.active{background:rgba(59,111,212,.18);color:var(--text-sidebar-active);border-left-color:var(--accent-blue)}
+.nav-item svg{flex-shrink:0;opacity:.75}.nav-item.active svg{opacity:1}
+.sidebar-footer{margin-top:auto;padding:14px 18px 18px;border-top:1px solid rgba(255,255,255,.07)}
+.sidebar-user{display:flex;align-items:center;gap:9px}
+.sidebar-user-name{font-size:12px;font-weight:600;color:var(--text-sidebar-active)}
+.sidebar-user-role{font-size:10.5px;color:#5A6080}
 
-  /* Accent — iris. */
-  --color-accent: #7c8cf8;
-  --color-accent-strong: #9aa6fb;
-  --color-accent-muted: #6874ea;
-  --color-accent-soft: rgb(124 140 248 / 0.16);
-  --color-accent-border: rgb(124 140 248 / 0.34);
-  --color-accent-ring: rgb(124 140 248 / 0.42);
+/* ── Panel grid ─────────────────────────────────────────────────────── */
+.workspace{flex:1;min-width:0;overflow:auto;background:var(--bg-page);padding:0}
+.crm-panels{height:calc(100% - 4px);width:100%;display:grid;grid-template-columns:460px minmax(620px,1.28fr) minmax(450px,.9fr);gap:8px;min-width:1546px;background:var(--bg-page);margin-top:4px;padding-left:2px}
+.panel{background:var(--bg-surface);min-width:0;display:flex;flex-direction:column;overflow:hidden;border:1px solid var(--border);border-top:0;border-bottom:0}
+.panel:last-child{border-right:0}
+.panel-head{height:48px;flex:0 0 48px;border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;gap:10px;background:var(--bg-surface)}
+.panel-title{font-size:13.5px;font-weight:700;letter-spacing:-.2px;color:var(--text-secondary)}
+#leadsPanel .panel-title{font-size:14.5px}
+.panel-muted{font-size:10.5px;color:var(--text-muted)}
+.head-spacer{margin-left:auto}
+.icon-btn{width:28px;height:28px;border:0;background:transparent;border-radius:6px;display:grid;place-items:center;color:var(--text-muted);cursor:pointer}
+.icon-btn:hover{background:var(--bg-row-hover);color:var(--accent-blue)}
 
-  /* Semantic tones. Desaturated and lifted so they stay legible on dark, each
-   * with a solid tone, a low-alpha tinted background and a border tone. */
-  --color-good: #4fd3a0;
-  --color-good-soft: rgb(79 211 160 / 0.15);
-  --color-good-border: rgb(79 211 160 / 0.32);
+/* ── Panel 1 · Leads ────────────────────────────────────────────────── */
+.lead-filter-menu{margin-left:auto;position:relative}
+.filter-menu-btn{width:28px;height:28px;border:0;background:transparent;border-radius:6px;color:var(--text-muted);display:grid;place-items:center;cursor:pointer}
+.filter-menu-btn:hover,.filter-menu-btn.active{background:var(--bg-row-hover);color:var(--accent-blue)}
+.filter-menu-pop{position:absolute;top:32px;right:0;z-index:30;min-width:112px;background:#fff;border:1px solid var(--border);border-radius:7px;box-shadow:0 6px 18px rgba(30,34,53,.12);padding:4px}
+.lead-filter{width:100%;border:0;background:transparent;color:var(--text-secondary);font-size:10px;font-weight:600;cursor:pointer;text-align:left;padding:7px 8px;border-radius:5px}
+.lead-filter:hover{background:var(--bg-row-hover)}
+.lead-filter.active{color:var(--accent-blue);background:var(--accent-blue-light)}
+.lead-list{overflow:auto;flex:1}
+.lead-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;padding:11px 14px;border-bottom:1px solid var(--border);cursor:pointer;background:#fff;width:100%;border-top:0;border-left:0;border-right:0;text-align:left}
+.lead-row:hover{background:var(--bg-row-hover)}
+.lead-row.active{background:var(--bg-row-sel)}
+.lead-main{min-width:0}
+.lead-company{font-size:12px;font-weight:600;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lead-owner{font-size:10.5px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.lead-side{text-align:right}
+.lead-revenue{font-size:11px;font-weight:500;color:var(--text-secondary)}
+.lead-activity{font-size:9.5px;color:var(--text-muted);margin-top:2px;white-space:nowrap}
 
-  --color-warn: #efb45f;
-  --color-warn-soft: rgb(239 180 95 / 0.15);
-  --color-warn-border: rgb(239 180 95 / 0.32);
+/* ── Panel 2 · Company ──────────────────────────────────────────────── */
+.detail-scroll{flex:1;overflow:auto}
+.lead-profile{padding:14px 16px 12px;border-bottom:1px solid var(--border)}
+.profile-line{display:flex;align-items:flex-start;gap:10px}
+.profile-main{min-width:0}
+.profile-company{font-size:15.5px;font-weight:600;letter-spacing:-.35px;color:var(--text-secondary);line-height:1.2}
+.profile-owner{font-size:10.5px;color:var(--text-muted);margin-top:3px}
+.profile-approval{margin-left:auto;text-align:center;flex-shrink:0;min-width:94px}
+.profile-approval-label{font-size:8.5px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.55px;font-weight:700;transform:translateX(-3px)}
+.profile-approval-value{font-size:14px;font-weight:600;color:var(--accent-teal)}
+.detail-section{padding:13px 18px;border-bottom:1px solid var(--border)}
+.section-title{font-size:10px;font-weight:700;letter-spacing:.72px;text-transform:uppercase;color:var(--text-muted);margin-bottom:11px;display:flex;align-items:center;gap:6px;height:18px;white-space:nowrap}
+.section-title svg{color:var(--text-muted)}
+.section-title.accent-blue svg{color:var(--accent-blue)}
+.section-title.accent-green svg{color:var(--accent-teal)}
+.section-title.accent-amber svg{color:var(--accent-amber)}
+.split-top{display:grid;grid-template-columns:minmax(0,46fr) minmax(0,54fr);gap:34px;align-items:start}
+.box-compact{min-width:0}
+.info-list{display:flex;flex-direction:column}
+.info-line{display:flex;align-items:center;min-height:26px;border-bottom:0;gap:8px}
+.info-label{font-size:10px;color:var(--text-muted);width:64px;flex:0 0 64px;white-space:nowrap}
+.info-value{font-size:11px;color:var(--text-secondary);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.link{color:var(--accent-blue);text-decoration:none;font-weight:500;background:none;border:0;padding:0;cursor:pointer;font-size:inherit;text-align:left}
+.link:hover{text-decoration:underline}
+.contact-actions{display:inline-flex;align-items:center;gap:3px;margin-left:6px;vertical-align:middle}
+.mini-action{width:19px;height:19px;border:0;background:transparent;border-radius:0;color:var(--text-muted);display:inline-grid;place-items:center;cursor:pointer;text-decoration:none;flex:0 0 auto;padding:0}
+.mini-action:hover{background:transparent;color:var(--accent-blue)}
+.contact-field-grid,.app-grid{display:grid;grid-auto-rows:48px;align-items:start}
+.contact-field-grid{grid-template-columns:repeat(3,minmax(0,1fr));column-gap:18px;row-gap:8px}
+.app-grid{grid-template-columns:repeat(4,minmax(0,1fr));column-gap:24px;row-gap:8px}
+.contact-field,.app-item{padding:0;min-width:0;align-self:start}
+.app-item.wide{grid-column:span 2}
+.app-item.full{grid-column:1/-1}
+.contact-key,.app-key{font-size:8.7px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.46px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;height:15px;line-height:15px}
+.contact-val,.app-val{font-size:11.2px;color:var(--text-secondary);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:4px;line-height:18px;height:18px}
+.contact-val{display:flex;align-items:center;min-width:0}
+.contact-val>button.link{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bank-statement-grid{display:grid;grid-template-columns:1.08fr .92fr;gap:14px}
+.statement-table{width:100%;border-collapse:collapse}
+.statement-table th{font-size:8.5px;text-transform:uppercase;letter-spacing:.45px;color:var(--text-muted);font-weight:700;text-align:left;padding:0 0 5px;border-bottom:1px solid var(--border)}
+.statement-table th:nth-child(n+2),.statement-table td:nth-child(n+2){text-align:right}
+.statement-table td{font-size:10.5px;color:var(--text-secondary);padding:6px 0;border-bottom:0}
+.statement-table td:first-child{font-weight:600}
+.bank-list .info-label{width:74px;flex-basis:74px}
+.pitch{font-size:10.7px;color:var(--text-secondary);line-height:1.55}
+.activity-line{padding:6px 0;border-bottom:0;display:flex;gap:8px;align-items:flex-start}
+.activity-icon{width:18px;height:18px;display:grid;place-items:center;color:var(--text-muted);flex:0 0 18px}
+.activity-copy{font-size:10.5px;color:var(--text-secondary)}
+.activity-time{font-size:9.3px;color:var(--text-muted);margin-top:1px}
 
-  --color-bad: #f57a76;
-  --color-bad-soft: rgb(245 122 118 / 0.15);
-  --color-bad-border: rgb(245 122 118 / 0.32);
+/* ── Panel 3 · Communications ───────────────────────────────────────── */
+.comm-tabs{height:48px;display:grid;grid-template-columns:repeat(5,1fr);border-bottom:1px solid var(--border);background:#fff;flex:0 0 48px}
+.comm-tab{border:0;background:transparent;color:var(--text-muted);font-size:9.2px;font-weight:700;letter-spacing:.18px;cursor:pointer;border-bottom:2px solid transparent}
+.comm-tab.active{color:var(--accent-blue);border-bottom-color:var(--accent-blue)}
+.comm-view{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden;background:#fff}
+.comm-toolbar{height:38px;flex:0 0 38px;border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 10px;gap:6px}
+.comm-toolbar-title{font-size:11.5px;font-weight:600;color:var(--text-secondary)}
+.comm-toolbar .icon-btn{width:26px;height:26px}
+.ios-list{flex:1;overflow:auto}
+.ios-row{display:flex;align-items:center;gap:9px;padding:10px 11px;border-bottom:1px solid #EEF0F5;cursor:pointer;width:100%;background:none;border-top:0;border-left:0;border-right:0;text-align:left}
+.ios-row:hover{background:#F8F9FC}
+.event-icon{width:18px;height:22px;border-radius:0;display:grid;place-items:center;flex:0 0 18px;background:transparent;color:var(--text-muted)}
+.ios-row-main{min-width:0;flex:1}
+.ios-row-top{display:flex;align-items:center;gap:8px}
+.ios-row-name{font-size:11.5px;font-weight:600;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ios-row-time{margin-left:auto;font-size:9.3px;color:var(--text-muted);white-space:nowrap}
+.ios-row-preview{font-size:10.4px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.ios-chevron{color:#B4BAC9;font-size:15px}
+.thread{display:flex;flex-direction:column;height:100%;min-height:0;background:#fff}
+.thread-head{height:44px;flex:0 0 44px;border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 9px;gap:7px}
+.back-btn{border:0;background:transparent;color:var(--accent-blue);cursor:pointer;display:flex;align-items:center}
+.thread-name{font-size:11.5px;font-weight:600;color:var(--text-secondary)}
+.thread-sub{font-size:9px;color:var(--text-muted)}
+.messages{flex:1;overflow:auto;padding:13px 11px;background:#fff}
+.timestamp{text-align:center;font-size:9px;color:#9A9EAA;margin:8px 0 5px}
+.bubble-row{display:flex;margin:4px 0}
+.bubble-row.me{justify-content:flex-end}
+.bubble{max-width:79%;padding:7px 10px;border-radius:16px;font-size:11px;line-height:1.35;background:var(--ios-gray);color:#1E2235;white-space:pre-wrap;word-break:break-word}
+.bubble-row.me .bubble{background:var(--ios-blue);color:#fff}
+.delivery{text-align:right;font-size:8.5px;color:#9A9EAA;margin-top:-1px}
+.composer{display:flex;align-items:flex-end;gap:7px;padding:8px 9px 10px;border-top:1px solid var(--border);background:#fff}
+.compose-field{flex:1;border:1px solid #D8DCE6;border-radius:18px;min-height:34px;max-height:78px;padding:7px 11px;resize:none;outline:none;font-size:11px;color:var(--text-primary);line-height:1.35}
+.compose-field:focus{border-color:#B8C7E8}
+.send-btn{width:30px;height:30px;border-radius:50%;border:0;background:var(--ios-blue);color:#fff;display:grid;place-items:center;cursor:pointer;flex:0 0 30px}
+.send-btn:disabled{opacity:.38;cursor:default}
+.call-row{display:grid;grid-template-columns:18px minmax(0,1fr) auto auto;gap:8px;align-items:center;padding:9px 11px;border-bottom:1px solid #EEF0F5}
+.call-icon{width:18px;height:22px;border-radius:0;background:transparent;display:grid;place-items:center;color:var(--text-muted)}
+.call-name{font-size:11.4px;font-weight:600;color:var(--text-secondary)}
+.call-meta{font-size:9.6px;color:var(--text-muted);margin-top:1px}
+.call-time{font-size:9.2px;color:var(--text-muted);white-space:nowrap}
+.call-actions{display:flex;gap:1px}
+.call-actions .mini-action{width:22px;height:22px}
+.contact-list{overflow:auto;flex:1}
+.contact-letter{font-size:9px;font-weight:700;color:var(--text-muted);background:#F7F8FC;padding:4px 11px;border-bottom:1px solid #EEF0F5}
+.contact-row{padding:8px 11px;border-bottom:1px solid #EEF0F5}
+.contact-name{font-size:11.5px;font-weight:600;color:var(--text-secondary)}
+.contact-company{font-size:9.5px;color:var(--text-muted);margin-top:1px}
+.contact-links{display:flex;gap:10px;align-items:center;margin-top:4px;min-width:0}
+.contact-links a,.contact-links button.link{font-size:9.8px;color:var(--accent-blue);text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.contact-links a:hover,.contact-links button.link:hover{text-decoration:underline}
+.folder-select{border:0;background:var(--bg-panel);color:var(--text-secondary);font-size:10.5px;font-weight:600;border-radius:6px;padding:5px 7px;outline:none;cursor:pointer}
+.mail-list{flex:1;overflow:auto}
+.mail-row{padding:9px 11px;border-bottom:1px solid #EEF0F5;cursor:pointer;width:100%;background:none;border-top:0;border-left:0;border-right:0;text-align:left;display:block}
+.mail-row:hover{background:#F8F9FC}
+.mail-row.unread .mail-from,.mail-row.unread .mail-subject{font-weight:700}
+.mail-top{display:flex;gap:8px}
+.mail-from{font-size:11px;color:var(--text-secondary);font-weight:600}
+.mail-time{margin-left:auto;font-size:9.2px;color:var(--text-muted)}
+.mail-subject{font-size:10.7px;color:var(--text-secondary);font-weight:600;margin-top:2px}
+.mail-preview{font-size:9.8px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.mail-open,.compose-pane{height:100%;display:flex;flex-direction:column;background:#fff;min-height:0}
+.mail-head{padding:11px;border-bottom:1px solid #EEF0F5}
+.mail-subject-open{font-size:13px;font-weight:600;color:var(--text-secondary)}
+.mail-meta-open{font-size:9.5px;color:var(--text-muted);margin-top:3px}
+.mail-body{padding:13px 11px;overflow:auto;flex:1;font-size:10.8px;line-height:1.55;color:var(--text-secondary)}
+.reply-box{border-top:1px solid var(--border);padding:8px 9px 10px;display:flex;align-items:flex-end;gap:7px}
+.reply-box textarea{flex:1;min-height:36px;max-height:90px;border:1px solid #D8DCE6;border-radius:12px;padding:8px 10px;resize:none;outline:none;font-size:10.8px}
+.compose-line{display:flex;align-items:center;border-bottom:1px solid #EEF0F5;padding:8px 11px;gap:8px}
+.compose-line label{font-size:10px;color:var(--text-muted);width:44px}
+.compose-line input{border:0;outline:0;flex:1;font-size:11px;color:var(--text-secondary)}
+.compose-body{flex:1;border:0;outline:0;resize:none;padding:11px;font-size:11px;line-height:1.5;color:var(--text-secondary)}
+.compose-actions{display:flex;justify-content:flex-end;padding:8px 9px 10px;border-top:1px solid var(--border)}
+.empty-note{padding:18px;text-align:center;color:var(--text-muted);font-size:10.5px}
 
-  /* Radii */
-  --radius-panel: 16px;
-  --radius-control: 10px;
-
-  /* ---------------------------------------------------------------------
-   * Type. A modern grotesque for the interface, a mono for data. Tracking
-   * tightens as size grows and opens up on small uppercase labels.
-   * ------------------------------------------------------------------ */
-  --font-sans:
-    'Inter var', 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI Variable Text',
-    'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
-  --font-sans--font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11', 'ss01';
-  --font-mono:
-    'JetBrains Mono', 'SF Mono', ui-monospace, 'Cascadia Mono', 'Roboto Mono', Menlo, Consolas,
-    'Liberation Mono', monospace;
-  --font-mono--font-feature-settings: 'zero', 'tnum', 'ss01';
-
-  /* ---------------------------------------------------------------------
-   * Depth. Dark surfaces need a cast shadow *and* a 1px top highlight to read
-   * as raised; the highlight is what sells it.
-   * ------------------------------------------------------------------ */
-  --shadow-2xs: 0 1px 1px rgb(0 0 0 / 0.4);
-  --shadow-xs: 0 1px 2px rgb(0 0 0 / 0.45);
-  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.5), 0 2px 6px -2px rgb(0 0 0 / 0.4);
-  --shadow-md: 0 2px 4px rgb(0 0 0 / 0.45), 0 8px 20px -8px rgb(0 0 0 / 0.6);
-  --shadow-lg: 0 4px 8px rgb(0 0 0 / 0.45), 0 18px 40px -16px rgb(0 0 0 / 0.7);
-  --shadow-xl: 0 8px 16px rgb(0 0 0 / 0.45), 0 32px 64px -24px rgb(0 0 0 / 0.8);
-  --shadow-panel:
-    inset 0 1px 0 rgb(255 255 255 / 0.04), 0 1px 2px rgb(0 0 0 / 0.4),
-    0 16px 40px -24px rgb(0 0 0 / 0.9);
-  --shadow-raise:
-    inset 0 1px 0 rgb(255 255 255 / 0.07), 0 1px 2px rgb(0 0 0 / 0.5),
-    0 4px 12px -4px rgb(0 0 0 / 0.55);
-  --shadow-overlay:
-    inset 0 1px 0 rgb(255 255 255 / 0.05), 0 24px 70px -20px rgb(0 0 0 / 0.85),
-    0 0 0 1px rgb(0 0 0 / 0.5);
-  --shadow-accent:
-    inset 0 1px 0 rgb(255 255 255 / 0.26), 0 1px 2px rgb(0 0 0 / 0.4),
-    0 6px 18px -8px rgb(124 140 248 / 0.55);
-
-  /* ---------------------------------------------------------------------
-   * Motion. Short, eased, never showy.
-   * ------------------------------------------------------------------ */
-  --ease-smooth: cubic-bezier(0.22, 0.61, 0.36, 1);
-  --ease-entrance: cubic-bezier(0.16, 1, 0.3, 1);
-  --duration-fast: 120ms;
-  --duration-base: 160ms;
-  --duration-slow: 200ms;
-  --default-transition-duration: 160ms;
-  --default-transition-timing-function: cubic-bezier(0.22, 0.61, 0.36, 1);
+/* ── Large-screen scaling ───────────────────────────────────────────── */
+@media (min-width:2400px){
+  :root{--sidebar-w:250px;--header-h:58px}
+  html,body{font-size:16px}
+  .topbar{padding:0 28px}.topbar-logo{font-size:18px}.topbar-btn{padding:7px}.topbar-btn svg{width:19px;height:19px}
+  .dialer-inner{height:44px;min-width:520px;max-width:680px}
+  .dialer-input{font-size:14.5px}
+  .dialer-device-name{font-size:12px}
+  .dialer-btn{width:32px;height:32px}
+  .dialer-call{width:34px;height:34px}
+  .sidebar-section-label{font-size:10.5px;padding:23px 20px 7px}.nav-item{font-size:14px;padding:10px 20px;gap:10px}.nav-item svg{width:16px;height:16px}.sidebar-user-name{font-size:13.5px}.sidebar-user-role{font-size:11.5px}
+  .crm-panels{grid-template-columns:540px minmax(980px,1.42fr) minmax(680px,.92fr);min-width:2216px}
+  .panel-head,.comm-tabs{height:58px;flex-basis:58px}.panel-head{padding:0 18px}.panel-title{font-size:15px}#leadsPanel .panel-title{font-size:16px}.panel-muted{font-size:11.5px}
+  .lead-row{padding:15px 20px}.lead-company{font-size:14px}.lead-owner{font-size:12px}.lead-revenue{font-size:13px}.lead-activity{font-size:11px}
+  .lead-profile{padding:20px 22px 16px}.profile-company{font-size:19px}.profile-owner{font-size:12.5px}.profile-approval-label{font-size:9.5px}.profile-approval-value{font-size:16px}.profile-approval{min-width:112px}
+  .detail-section{padding:18px 26px}.section-title{font-size:11.5px;margin-bottom:13px;height:20px}.split-top{gap:44px}.contact-field-grid,.app-grid{grid-auto-rows:56px;row-gap:10px}.contact-field-grid{column-gap:22px}.app-grid{column-gap:30px}.contact-key,.app-key{font-size:10.5px;height:17px;line-height:17px}.contact-val,.app-val{font-size:13.2px;margin-top:5px;line-height:20px;height:20px}.info-line{min-height:31px}.info-label{font-size:11.5px;width:76px;flex-basis:76px}.info-value{font-size:13px}.statement-table th{font-size:10.5px}.statement-table td{font-size:13px;padding:9px 0}.pitch,.activity-copy{font-size:13px}.activity-time{font-size:11.2px}
+  .comm-tab{font-size:11px}.ios-row{padding:12px 13px}.ios-row-name{font-size:12.5px}.ios-row-preview{font-size:11.3px}.ios-row-time{font-size:10.2px}.call-row{padding:11px 13px}.call-name{font-size:12.5px}.call-meta{font-size:10.6px}.mail-row{padding:11px 13px}.mail-from{font-size:12px}.mail-subject{font-size:11.7px}.mail-preview{font-size:10.8px}
+}
+@media (min-width:3000px){
+  :root{--sidebar-w:280px;--header-h:64px}
+  html,body{font-size:17px}
+  .topbar{padding:0 32px}.topbar-logo{font-size:19px}.topbar-btn svg{width:20px;height:20px}
+  .dialer-inner{height:48px;min-width:600px;max-width:780px}
+  .dialer-input{font-size:15.5px}
+  .dialer-device-name{font-size:13px}
+  .dialer-btn{width:35px;height:35px}
+  .dialer-call{width:37px;height:37px}
+  .sidebar-section-label{font-size:11px;padding:26px 22px 8px}.nav-item{font-size:14.5px;padding:11px 22px;gap:11px}.nav-item svg{width:17px;height:17px}.sidebar-user-name{font-size:14px}.sidebar-user-role{font-size:12px}
+  .crm-panels{grid-template-columns:600px minmax(1180px,1.45fr) minmax(820px,.95fr);min-width:2632px}
+  .panel-head,.comm-tabs{height:62px;flex-basis:62px}.panel-head{padding:0 22px}.panel-title{font-size:16.5px}#leadsPanel .panel-title{font-size:18px}.panel-muted{font-size:12px}
+  .lead-row{padding:19px 24px}.lead-company{font-size:16.5px}.lead-owner{font-size:14px;margin-top:3px}.lead-revenue{font-size:15px}.lead-activity{font-size:12.5px;margin-top:3px}
+  .lead-profile{padding:25px 30px 20px}.profile-company{font-size:23px}.profile-owner{font-size:14.5px;margin-top:5px}.profile-approval-label{font-size:11px}.profile-approval-value{font-size:19px}.profile-approval{min-width:142px}
+  .detail-section{padding:21px 30px}.section-title{font-size:12.5px;margin-bottom:15px;height:22px}.split-top{grid-template-columns:minmax(0,46fr) minmax(0,54fr);gap:54px}.contact-field-grid,.app-grid{grid-auto-rows:62px;row-gap:12px}.contact-field-grid{column-gap:26px}.app-grid{column-gap:34px}.contact-key,.app-key{font-size:11.5px;height:18px;line-height:18px}.contact-val,.app-val{font-size:14.5px;margin-top:6px;line-height:22px;height:22px}.contact-actions{gap:4px;margin-left:8px}.mini-action{width:22px;height:22px}.info-line{min-height:34px}.info-label{font-size:12px;width:82px;flex-basis:82px}.info-value{font-size:14px}.statement-table th{font-size:11.2px}.statement-table td{font-size:14px;padding:10px 0}.pitch,.activity-copy{font-size:14px;line-height:1.6}.activity-time{font-size:11.8px}
+  .comm-tab{font-size:12.5px}.comm-toolbar{height:48px;flex-basis:48px}.comm-toolbar-title{font-size:13.5px}.ios-row{padding:16px 18px}.ios-row-name{font-size:14.5px}.ios-row-preview{font-size:13px}.ios-row-time{font-size:11.5px}.call-row{padding:15px 18px}.call-name{font-size:14.5px}.call-meta{font-size:12.3px}.mail-row{padding:15px 18px}.mail-from{font-size:14px}.mail-subject{font-size:13.5px}.mail-preview{font-size:12.5px}
+  .bubble{font-size:12.2px;padding:8px 11px}.compose-field{font-size:12px;min-height:38px}.send-btn{width:34px;height:34px;flex-basis:34px}
 }
 
-/*
- * Tailwind only emits the theme variables it sees used, which is the right
- * default but would leave holes in the two things that are meant to be
- * complete and inspectable: the type ramp and the semantic set. `static` keeps
- * every step and the informational tone in the output whether or not a screen
- * has reached for them yet.
- *
- * Tracking tightens as size grows and opens up on the small label sizes.
- */
-@theme static {
-  --text-2xs: 0.6875rem;
-  --text-2xs--line-height: 1.4;
-  --text-2xs--letter-spacing: 0.02em;
-
-  --text-xs: 0.75rem;
-  --text-xs--line-height: 1.45;
-  --text-xs--letter-spacing: 0.005em;
-
-  --text-sm: 0.875rem;
-  --text-sm--line-height: 1.55;
-  --text-sm--letter-spacing: 0em;
-
-  --text-base: 0.9375rem;
-  --text-base--line-height: 1.6;
-  --text-base--letter-spacing: -0.003em;
-
-  --text-lg: 1.0625rem;
-  --text-lg--line-height: 1.45;
-  --text-lg--letter-spacing: -0.012em;
-
-  --text-xl: 1.25rem;
-  --text-xl--line-height: 1.35;
-  --text-xl--letter-spacing: -0.016em;
-
-  --text-2xl: 1.5rem;
-  --text-2xl--line-height: 1.22;
-  --text-2xl--letter-spacing: -0.021em;
-
-  --text-3xl: 1.875rem;
-  --text-3xl--line-height: 1.18;
-  --text-3xl--letter-spacing: -0.024em;
-
-  --color-info: #68b5f2;
-  --color-info-soft: rgb(104 181 242 / 0.15);
-  --color-info-border: rgb(104 181 242 / 0.32);
-}
-
-@layer base {
-  * {
-    border-color: var(--color-line);
-  }
-
-  html {
-    -webkit-text-size-adjust: 100%;
-    /* Native form controls, scrollbars and autofill follow the theme. */
-    color-scheme: dark;
-    background-color: var(--color-canvas);
-  }
-
-  body {
-    margin: 0;
-    min-height: 100vh;
-    background-color: var(--color-canvas);
-    /* One ambient wash on the page canvas only. Content surfaces stay flat. */
-    background-image:
-      radial-gradient(1100px 620px at 50% -18%, rgb(124 140 248 / 0.075), transparent 68%),
-      radial-gradient(900px 520px at 100% 0%, rgb(104 181 242 / 0.04), transparent 62%);
-    background-repeat: no-repeat;
-    background-attachment: fixed;
-    color: var(--color-ink);
-    font-family: var(--font-sans);
-    font-feature-settings: var(--font-sans--font-feature-settings);
-    font-size: 15px;
-    line-height: 1.6;
-    letter-spacing: -0.003em;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    text-rendering: optimizeLegibility;
-  }
-
-  h1,
-  h2,
-  h3,
-  h4 {
-    letter-spacing: -0.016em;
-    text-wrap: balance;
-  }
-
-  /* Data reads as data: tabular figures, slashed zero, no ligature surprises. */
-  code,
-  kbd,
-  samp,
-  pre,
-  .font-mono {
-    font-variant-numeric: tabular-nums slashed-zero;
-  }
-
-  /* Keyboard focus stays visible everywhere; nothing suppresses the outline.
-   * The outline inherits each element's own radius so pills stay pills. */
-  :focus-visible {
-    outline: 2px solid var(--color-accent);
-    outline-offset: 2px;
-  }
-
-  input,
-  select,
-  textarea,
-  button {
-    font: inherit;
-    color: inherit;
-  }
-
-  ::placeholder {
-    color: var(--color-ink-faint);
-    opacity: 1;
-  }
-
-  ::selection {
-    background-color: rgb(124 140 248 / 0.32);
-    color: var(--color-ink-invert);
-  }
-
-  /* Native select popups follow the surface rather than the OS default. */
-  option,
-  optgroup {
-    background-color: var(--color-panel-raised);
-    color: var(--color-ink);
-  }
-
-  :where(a) {
-    text-underline-offset: 0.18em;
-    text-decoration-thickness: from-font;
-  }
-
-  hr {
-    border: 0;
-    border-top: 1px solid var(--color-line);
-  }
-}
-
-@layer components {
-  /* ---------------------------------------------------------------------
-   * Panel — the primary content surface. Hairline border for the edge, a 1px
-   * inset highlight along the top so it catches light, and a long soft cast
-   * shadow underneath.
-   * ------------------------------------------------------------------ */
-  .panel {
-    position: relative;
-    background-color: var(--color-panel);
-    border: 1px solid var(--color-line);
-    border-radius: var(--radius-panel);
-    box-shadow: var(--shadow-panel);
-  }
-
-  /* ---------------------------------------------------------------------
-   * Form scaffolding.
-   * ------------------------------------------------------------------ */
-  .field-label {
-    display: block;
-    font-size: 0.8125rem;
-    font-weight: 600;
-    line-height: 1.4;
-    letter-spacing: 0.004em;
-    color: var(--color-ink-soft);
-    margin-bottom: 7px;
-  }
-
-  .field-help {
-    font-size: 0.8125rem;
-    line-height: 1.5;
-    color: var(--color-ink-faint);
-  }
-
-  /* Inputs and selects read as wells cut into the panel: darker than their
-   * surroundings, hairline border, and a faint inner shadow at the top. */
-  .control {
-    width: 100%;
-    appearance: none;
-    background-color: var(--color-panel-sunken);
-    border: 1px solid var(--color-line-strong);
-    border-radius: var(--radius-control);
-    padding: 10px 13px;
-    font-size: 0.9375rem;
-    line-height: 1.5;
-    color: var(--color-ink);
-    box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.35);
-    transition:
-      border-color var(--duration-fast) var(--ease-smooth),
-      background-color var(--duration-fast) var(--ease-smooth),
-      box-shadow var(--duration-fast) var(--ease-smooth);
-  }
-
-  .control:hover:not(:disabled) {
-    border-color: var(--color-line-hover);
-  }
-
-  .control:focus {
-    outline: none;
-    border-color: var(--color-accent);
-    background-color: var(--color-panel);
-    box-shadow:
-      inset 0 1px 2px rgb(0 0 0 / 0.25),
-      0 0 0 3px var(--color-accent-ring);
-  }
-
-  .control:disabled {
-    background-color: var(--color-canvas);
-    border-color: var(--color-line);
-    color: var(--color-ink-faint);
-    box-shadow: none;
-    cursor: not-allowed;
-  }
-
-  /* Chevron for `Select`. Drawn as a background image so the select stays a
-   * single element and callers can keep sizing it directly. */
-  .control-select {
-    padding-right: 38px;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238b95a8' stroke-width='2.25' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 13px center;
-    background-size: 16px 16px;
-    cursor: pointer;
-  }
-
-  .control-select:hover:not(:disabled),
-  .control-select:focus {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%237c8cf8' stroke-width='2.25' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
-  }
-
-  .control-select:disabled {
-    cursor: not-allowed;
-  }
-
-  /* ---------------------------------------------------------------------
-   * Small uppercase section heading. Tracking is opened up because uppercase
-   * at this size needs the air.
-   * ------------------------------------------------------------------ */
-  .section-title {
-    font-size: 0.6875rem;
-    font-weight: 700;
-    line-height: 1.4;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--color-ink-faint);
-  }
-}
-
-/* ---------------------------------------------------------------------------
- * Compatibility shims.
- *
- * The app chrome (header, nav, status rail, footer, modal scrims) was written
- * against the previous light-on-mid-grey palette and still asks for
- * `text-panel/*` where it means "muted text on the dark chrome", and
- * `bg-ink/45` where it means "scrim". Under a dark palette `panel` is a surface
- * and `ink` is a light foreground, so those two utilities would invert. These
- * rules re-point them at the intended role. Declared in a layer of its own so
- * it always sorts after Tailwind's utilities.
- * ------------------------------------------------------------------------ */
-@layer compat {
-  .text-panel {
-    color: var(--color-ink);
-  }
-  .text-panel\/85 {
-    color: var(--color-ink-soft);
-  }
-  .text-panel\/80,
-  .text-panel\/75,
-  .text-panel\/70 {
-    color: var(--color-ink-faint);
-  }
-
-  /* Chrome hover: lift off the recess rather than flooding it with canvas. */
-  .hover\:bg-canvas\/40:hover {
-    background-color: rgb(255 255 255 / 0.06);
-  }
-
-  /* Modal scrim. */
-  .bg-ink\/45 {
-    background-color: rgb(3 4 7 / 0.72);
-    backdrop-filter: blur(6px) saturate(120%);
-    -webkit-backdrop-filter: blur(6px) saturate(120%);
-  }
-}
-
-/* Scrollbars are toned to the surface they sit on rather than left default. */
-@supports selector(::-webkit-scrollbar) {
-  ::-webkit-scrollbar {
-    width: 11px;
-    height: 11px;
-  }
-  ::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  ::-webkit-scrollbar-thumb {
-    background: var(--color-line-strong);
-    border: 3px solid transparent;
-    background-clip: content-box;
-    border-radius: 999px;
-  }
-  ::-webkit-scrollbar-thumb:hover {
-    background: var(--color-line-hover);
-    background-clip: content-box;
-  }
-  ::-webkit-scrollbar-corner {
-    background: transparent;
-  }
-}
-
-@supports not selector(::-webkit-scrollbar) {
-  * {
-    scrollbar-color: var(--color-line-strong) transparent;
-    scrollbar-width: thin;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.001ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.001ms !important;
-    scroll-behavior: auto !important;
-  }
-}
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border-panel);border-radius:4px}
