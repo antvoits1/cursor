@@ -18,16 +18,9 @@
   --accent-teal: #1A8F7A;
   --accent-teal-light: #E5F6F3;
   --accent-amber: #C97B2A;
-  --accent-amber-light: #FDF3E5;
   --accent-navy: #1E2235;
   --accent-red: #C43B3B;
   --accent-red-light: #FDEAEA;
-
-  /* Call semantics — tasteful green for connect, red for end (not neon). */
-  --call-green: #17A672;
-  --call-green-hover: #148C60;
-  --call-red: #EF4444;
-  --call-red-hover: #DC2626;
 
   --border: #E2E6F0;
   --border-panel: #D8DDE8;
@@ -247,13 +240,7 @@ body.panel-resizing {
   white-space: nowrap;
 }
 
-.forge-topbar-spacer {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
+.forge-topbar-spacer { flex: 1; }
 
 .forge-tool {
   width: 36px;
@@ -402,328 +389,6 @@ body.panel-resizing {
 }
 
 .forge-side-tab.forge-bell .forge-notif-badge { top: 4px; right: 8px; }
-
-/* ============================================================
-   Embedded telephony dialer (blends into the nav background)
-   ============================================================ */
-.forge-dialer {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-family: var(--font-family-main);
-}
-.forge-dialer.topbar { max-width: 560px; width: 100%; justify-content: center; }
-
-/* Number entry — subtle inset field that adapts to light/dark nav */
-.forge-dialer-entry {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  height: 36px;
-  flex: 1 1 auto;
-  min-width: 0;
-  padding: 0 6px 0 12px;
-  border-radius: 9px;
-  border: 1px solid transparent;
-  transition: box-shadow 0.16s ease, background 0.16s ease, border-color 0.16s ease;
-}
-.forge-dialer.topbar .forge-dialer-entry { max-width: 360px; }
-.forge-dialer.dark .forge-dialer-entry {
-  background: rgba(255, 255, 255, 0.09);
-  border-color: rgba(255, 255, 255, 0.14);
-  color: var(--text-sidebar-active);
-}
-.forge-dialer.light .forge-dialer-entry {
-  background: rgba(15, 20, 40, 0.05);
-  border-color: rgba(15, 20, 40, 0.08);
-  color: var(--text-primary);
-}
-.forge-dialer.dark .forge-dialer-entry:focus-within {
-  background: rgba(255, 255, 255, 0.14);
-  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.12);
-}
-.forge-dialer.light .forge-dialer-entry:focus-within {
-  background: var(--bg-surface);
-  border-color: var(--accent-blue);
-  box-shadow: 0 0 0 3px var(--accent-blue-light);
-}
-
-.forge-dialer-icon { display: flex; opacity: 0.55; flex: 0 0 auto; }
-
-.forge-dialer-input {
-  flex: 1 1 auto;
-  min-width: 90px;
-  width: 100%;
-  border: 0;
-  background: transparent;
-  outline: none;
-  color: inherit;
-  font-size: calc(13.5px + var(--font-offset));
-  font-weight: 500;
-  letter-spacing: 0.35px;
-}
-.forge-dialer.dark .forge-dialer-input::placeholder { color: rgba(255, 255, 255, 0.5); }
-.forge-dialer.light .forge-dialer-input::placeholder { color: var(--text-muted); }
-
-.forge-dialer-erase {
-  flex: 0 0 auto;
-  border: 0;
-  background: transparent;
-  color: inherit;
-  opacity: 0.5;
-  display: grid;
-  place-items: center;
-  width: 26px;
-  height: 26px;
-  border-radius: 6px;
-  transition: opacity 0.15s ease, background 0.15s ease;
-}
-.forge-dialer-erase:hover { opacity: 0.95; }
-.forge-dialer.dark .forge-dialer-erase:hover { background: rgba(255, 255, 255, 0.1); }
-.forge-dialer.light .forge-dialer-erase:hover { background: rgba(15, 20, 40, 0.06); }
-
-/* Green circular call button */
-.forge-dialer-call {
-  flex: 0 0 auto;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  border: 0;
-  background: var(--call-green);
-  color: #fff;
-  display: grid;
-  place-items: center;
-  box-shadow: 0 1px 3px rgba(23, 166, 114, 0.35);
-  transition: background 0.16s ease, transform 0.12s ease, box-shadow 0.16s ease;
-}
-.forge-dialer-call:hover {
-  background: var(--call-green-hover);
-  transform: translateY(-1px);
-  box-shadow: 0 3px 9px rgba(23, 166, 114, 0.4);
-}
-.forge-dialer-call:active { transform: translateY(0); }
-
-.forge-dialer-status {
-  flex: 0 0 auto;
-  font-size: calc(11px + var(--font-offset));
-  font-weight: 500;
-  opacity: 0.6;
-  white-space: nowrap;
-}
-.forge-dialer-hint {
-  flex: 0 0 auto;
-  font-size: calc(11px + var(--font-offset));
-  font-weight: 600;
-  color: var(--accent-amber);
-  white-space: nowrap;
-}
-.forge-dialer.dark .forge-dialer-hint { color: #F0B36B; }
-
-/* ---- Active call (topbar) ---- */
-.forge-dialer-live {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  height: 40px;
-  padding: 0 6px 0 14px;
-  border-radius: 9px;
-}
-.forge-dialer.dark .forge-dialer-live { background: rgba(255, 255, 255, 0.09); }
-.forge-dialer.light .forge-dialer-live { background: rgba(15, 20, 40, 0.05); }
-
-.forge-dialer-live-info { display: flex; flex-direction: column; line-height: 1.2; min-width: 0; }
-.forge-dialer-live-name {
-  font-size: calc(13px + var(--font-offset));
-  font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 180px;
-}
-.forge-dialer-live-sub { font-size: calc(11px + var(--font-offset)); opacity: 0.7; font-variant-numeric: tabular-nums; }
-.forge-dialer-live-sub.ringing { color: var(--accent-amber); opacity: 1; }
-.forge-dialer.dark .forge-dialer-live-sub.ringing { color: #F0B36B; }
-
-.forge-dialer-live-controls { display: flex; align-items: center; gap: 3px; }
-
-.forge-dialer-ctrl {
-  height: 32px;
-  min-width: 32px;
-  padding: 0 6px;
-  border-radius: 8px;
-  border: 0;
-  background: transparent;
-  color: inherit;
-  opacity: 0.82;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-  transition: background 0.15s ease, opacity 0.15s ease;
-}
-.forge-dialer-ctrl:hover { opacity: 1; }
-.forge-dialer.dark .forge-dialer-ctrl:hover,
-.forge-dialer.dark .forge-dialer-ctrl.on { background: rgba(255, 255, 255, 0.14); opacity: 1; }
-.forge-dialer.light .forge-dialer-ctrl:hover,
-.forge-dialer.light .forge-dialer-ctrl.on { background: rgba(15, 20, 40, 0.07); opacity: 1; }
-.forge-dialer-ctrl:disabled { opacity: 0.32; }
-
-.forge-dialer-line-wrap { position: relative; display: flex; }
-
-.forge-dialer-end {
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  border: 0;
-  background: var(--call-red);
-  color: #fff;
-  display: grid;
-  place-items: center;
-  margin-left: 4px;
-  box-shadow: 0 1px 3px rgba(239, 68, 68, 0.35);
-  transition: background 0.16s ease, transform 0.12s ease;
-}
-.forge-dialer-end:hover { background: var(--call-red-hover); transform: translateY(-1px); }
-
-/* Popovers (line switcher + tone pad) use the dashboard surface styling */
-.forge-dialer-menu {
-  position: absolute;
-  top: calc(100% + 8px);
-  right: 0;
-  min-width: 168px;
-  padding: 5px;
-  background: var(--bg-surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-panel);
-  box-shadow: var(--shadow-md);
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  z-index: 90;
-}
-.forge-dialer-menu button {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 7px 9px;
-  border: 0;
-  background: transparent;
-  border-radius: 6px;
-  text-align: left;
-  color: var(--text-primary);
-  font-size: calc(12.5px + var(--font-offset));
-}
-.forge-dialer-menu button:hover { background: var(--bg-row-hover); }
-.forge-dialer-menu button.sel { background: var(--accent-blue-light); color: var(--accent-blue); }
-
-.forge-dialer-tones {
-  position: absolute;
-  top: calc(100% + 8px);
-  right: 0;
-  width: 196px;
-  padding: 12px;
-  background: var(--bg-surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-panel);
-  box-shadow: var(--shadow-md);
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  z-index: 90;
-}
-.forge-dialer-tones button {
-  border: 0;
-  background: var(--bg-panel);
-  border-radius: 7px;
-  padding: 10px 0;
-  font-size: calc(16px + var(--font-offset));
-  font-weight: 500;
-  color: var(--text-primary);
-  transition: background 0.14s ease;
-}
-.forge-dialer-tones button:hover { background: var(--bg-row-hover); }
-
-/* ---- Sidebar variant ---- */
-.forge-dialer-side-wrap { position: relative; }
-.forge-dialer-side-dot {
-  display: grid;
-  place-items: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  background: var(--call-green);
-  color: #fff;
-  flex: 0 0 auto;
-  box-shadow: 0 1px 3px rgba(23, 166, 114, 0.3);
-}
-.forge-sidebar.wide .forge-dialer-side-btn { gap: 10px; }
-.forge-dialer-side-btn:hover .forge-dialer-side-dot { background: var(--call-green-hover); }
-
-.forge-dialer.sidebar-pop {
-  position: absolute;
-  bottom: calc(100% + 8px);
-  left: 8px;
-  width: 232px;
-  padding: 12px;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 10px;
-  background: var(--bg-surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-panel);
-  box-shadow: var(--shadow-lg);
-  z-index: 90;
-}
-.forge-dialer.sidebar-pop .forge-dialer-entry {
-  background: var(--bg-panel);
-  border-color: var(--border);
-  color: var(--text-primary);
-}
-.forge-dialer.sidebar-pop .forge-dialer-entry:focus-within {
-  background: var(--bg-surface);
-  border-color: var(--accent-blue);
-  box-shadow: 0 0 0 3px var(--accent-blue-light);
-}
-.forge-dialer.sidebar-pop .forge-dialer-input::placeholder { color: var(--text-muted); }
-.forge-dialer-pad {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 7px;
-}
-.forge-dialer-pad button {
-  border: 0;
-  background: var(--bg-panel);
-  border-radius: 7px;
-  padding: 9px 0;
-  font-size: calc(15px + var(--font-offset));
-  font-weight: 500;
-  color: var(--text-primary);
-  transition: background 0.14s ease;
-}
-.forge-dialer-pad button:hover { background: var(--bg-row-hover); }
-.forge-dialer-pop-actions { display: flex; justify-content: center; }
-.forge-dialer.sidebar-pop .forge-dialer-status,
-.forge-dialer.sidebar-pop .forge-dialer-hint { text-align: center; opacity: 0.75; }
-
-.forge-dialer.sidebar.active {
-  width: 100%;
-  flex-direction: column;
-  align-items: stretch;
-}
-.forge-dialer.sidebar.active .forge-dialer-live {
-  flex-direction: column;
-  align-items: stretch;
-  gap: 10px;
-  height: auto;
-  padding: 10px;
-  background: var(--bg-surface);
-  border: 1px solid var(--border);
-  color: var(--text-primary);
-}
-.forge-dialer.sidebar.active .forge-dialer-live-controls { flex-wrap: wrap; justify-content: center; }
-.forge-dialer.sidebar.active .forge-dialer-menu,
-.forge-dialer.sidebar.active .forge-dialer-tones { right: auto; left: 0; }
 
 .forge-notif-popup {
   position: fixed;
@@ -1269,30 +934,6 @@ html[data-lead-density="compact"] .forge-lead-row {
   font-size: calc(10.5px + var(--font-offset));
 }
 
-.detail-header-approval {
-  flex: 0 0 auto;
-  min-width: 132px;
-  text-align: center;
-}
-
-.detail-header-approval span {
-  display: block;
-  color: var(--text-muted);
-  font-size: calc(9.5px + var(--font-offset));
-  font-weight: 700;
-  letter-spacing: .9px;
-  text-transform: uppercase;
-}
-
-.detail-header-approval strong {
-  display: block;
-  margin-top: 4px;
-  color: var(--accent-teal);
-  font-size: calc(19px + var(--font-offset));
-  font-weight: 700;
-  line-height: 1.15;
-}
-
 .detail-body { padding: 16px 16px 40px; }
 
 .fin-strip {
@@ -1493,10 +1134,7 @@ html[data-lead-density="compact"] .forge-lead-row {
   text-decoration: none;
 }
 
-.detail-company-field > a {
-  color: var(--accent-blue);
-  text-decoration: none;
-}
+.detail-company-field > a { color: var(--accent-blue); }
 
 .detail-company-field > a:hover { text-decoration: underline; text-underline-offset: 3px; }
 
@@ -1894,12 +1532,19 @@ html[data-lead-density="compact"] .forge-lead-row {
   background: var(--bg-surface);
 }
 
+.comm-bubble-wrap {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 8px;
+}
+
 .comm-bubble {
+  position: relative;
   max-width: 84%;
   display: flex;
   align-items: flex-start;
   gap: 6px;
-  padding: 8px 10px;
+  padding: 8px 10px 18px;
   border-radius: 15px;
   font-size: calc(12.5px + var(--font-offset));
   line-height: 1.42;
@@ -1921,16 +1566,20 @@ html[data-lead-density="compact"] .forge-lead-row {
 
 .comm-bubble-channel { flex: 0 0 auto; opacity: .58; padding-top: 2px; }
 
-.comm-bubble-time {
-  width: 84%;
-  margin-top: 3px;
-  margin-bottom: 7px;
-  color: var(--text-muted);
+/* Corner timestamp + read receipt, iOS-style, inside the bubble padding. */
+.comm-bubble-meta {
+  position: absolute;
+  right: 8px;
+  bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  opacity: .7;
   font-size: calc(9.5px + var(--font-offset));
+  white-space: nowrap;
 }
 
-.comm-bubble-time.in { align-self: flex-start; text-align: left; padding-left: 8px; }
-.comm-bubble-time.out { align-self: flex-end; text-align: right; padding-right: 8px; }
+.comm-bubble-meta svg { color: #3B82F6; }
 
 .comm-composer {
   flex: 0 0 auto;
@@ -2512,7 +2161,6 @@ html[data-motion="reduced"] *::after {
   #root {
     width: calc(1200px / var(--ui-scale));
     min-width: 0;
-    height: calc(100dvh / var(--ui-scale));
     touch-action: pan-x pan-y pinch-zoom;
   }
 }
