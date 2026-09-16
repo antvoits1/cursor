@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { HOT_LEAD_IDS, leads } from '../../data/leads';
+import { leads } from '../../data/leads';
 import type { Lead, LeadFilter } from '../../data/types';
 import { money } from '../../lib/format';
+import { filterLeads } from '../../lib/leads';
 import { useCrm } from '../../state/CrmContext';
 import { Icon } from '../Icon';
 
@@ -10,12 +11,6 @@ const FILTERS: Array<{ id: LeadFilter; label: string }> = [
   { id: 'starred', label: 'Starred' },
   { id: 'hot', label: 'Hot' },
 ];
-
-function applyFilter(filter: LeadFilter): Lead[] {
-  if (filter === 'starred') return leads.filter((l) => l.fav);
-  if (filter === 'hot') return leads.filter((l) => HOT_LEAD_IDS.has(l.id));
-  return leads;
-}
 
 function LeadRow({ lead, active }: { lead: Lead; active: boolean }) {
   const { selectLead } = useCrm();
@@ -39,6 +34,7 @@ function LeadRow({ lead, active }: { lead: Lead; active: boolean }) {
 
 export function LeadsPanel() {
   const { selectedLeadId, filter, setFilter } = useCrm();
+  const [query, setQuery] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -51,13 +47,21 @@ export function LeadsPanel() {
     return () => document.removeEventListener('mousedown', onDocClick);
   }, [menuOpen]);
 
-  const visible = applyFilter(filter);
+  const visible = filterLeads(leads, filter, query);
 
   return (
     <section className="panel" id="leadsPanel">
       <div className="panel-head">
         <span className="panel-title">Leads</span>
         <span className="panel-muted">{visible.length}</span>
+        <input
+          className="lead-search"
+          type="search"
+          placeholder="Search"
+          aria-label="Search leads"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
         <div className="lead-filter-menu" ref={menuRef}>
           <button
             type="button"
@@ -89,6 +93,7 @@ export function LeadsPanel() {
         </div>
       </div>
       <div className="lead-list">
+        {visible.length === 0 && <div className="empty-note">No leads match</div>}
         {visible.map((lead) => (
           <LeadRow key={lead.id} lead={lead} active={lead.id === selectedLeadId} />
         ))}
