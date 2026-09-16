@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react';
-import { Users, MessageSquare, Mail, ScanLine, TerminalSquare, Bell, Settings, Phone } from 'lucide-react';
-import { useStore } from '../store';
+import { Users, MessageSquare, Mail, ScanLine, TerminalSquare, Bell, Settings } from 'lucide-react';
 import { isLightColor } from '../lib/format';
 import type { ActivePage } from '../lib/navigation';
 import type { CrmNotification } from '../lib/notifications';
 import NotificationPopup from './NotificationPopup';
+import TopbarDialer from './TopbarDialer';
 
 interface Props {
   isTop: boolean;
@@ -91,18 +91,6 @@ export default function NavRail({ isTop, isWide, navColor, activePage, setActive
     <NotificationPopup variant={isTop ? 'topbar' : 'sidebar'} anchorRect={anchorRect} items={notifications} readIds={readIds} onOpen={openItem} onMarkAllRead={onMarkAllRead}/>
   ) : null;
 
-  const { setCallState } = useStore();
-  
-  const forceDialer = () => {
-    setCallState({
-      status: 'connected',
-      number: '(555) 019-2834',
-      startTime: Date.now(),
-      isMuted: false,
-      isOnHold: false
-    });
-  };
-
   if (isTop) {
     return (
       <header className={`forge-topbar ${light ? 'light' : 'dark'}`} style={{ backgroundColor: navColor }}>
@@ -115,13 +103,12 @@ export default function NavRail({ isTop, isWide, navColor, activePage, setActive
             </button>
           ))}
         </nav>
-        <div className="forge-topbar-spacer"/>
+        <div className="forge-topbar-spacer">
+          <TopbarDialer variant="topbar" light={light}/>
+        </div>
         <button ref={bellRef} type="button" className={`forge-tool forge-bell ${notifOpen ? 'active' : ''}`} onClick={toggleNotifications} title="Notifications" aria-label="Notifications" aria-expanded={notifOpen} aria-haspopup="dialog" data-notif-bell>
           <Bell size={20} strokeWidth={1.8}/>
           <UnreadBadge count={unreadCount}/>
-        </button>
-        <button type="button" className="forge-tool" onClick={forceDialer} title="Test Dialer" aria-label="Test Dialer">
-          <Phone size={20} strokeWidth={1.8}/>
         </button>
         {popup}
         <div className="forge-account" ref={menuRef}>
@@ -160,9 +147,7 @@ export default function NavRail({ isTop, isWide, navColor, activePage, setActive
         {popup}
       </nav>
       <div className="forge-sidebar-bottom">
-        <button type="button" onClick={forceDialer} className="forge-side-tab" title="Test Dialer">
-          <Phone size={19} strokeWidth={1.7}/>{isWide && <span>Test Dialer</span>}
-        </button>
+        <TopbarDialer variant="sidebar" light={light} isWide={isWide}/>
         <button type="button" onClick={onOpenSettings} className="forge-side-tab" title="Settings">
           <Settings size={19} strokeWidth={1.7}/>{isWide && <span>Settings</span>}
         </button>
