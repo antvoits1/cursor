@@ -1,10 +1,11 @@
 {
-  "name": "reactcrm",
+  "name": "deskphone",
   "private": true,
   "version": "0.16.0",
   "type": "module",
   "scripts": {
     "dev": "vite --port=3000 --host=0.0.0.0",
+    "mock-bridge": "node scripts/mock-phone-bridge.mjs",
     "build": "vite build",
     "preview": "vite preview",
     "clean": "rm -rf dist",

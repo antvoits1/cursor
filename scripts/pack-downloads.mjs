@@ -1,12 +1,11 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import url from 'node:url';
-import { execSync } from 'node:child_process';
 
 const root = path.resolve(path.dirname(url.fileURLToPath(import.meta.url)), '..');
 const downloads = path.join(root, 'downloads');
-const stagingName = 'DeskPhoneCRM-016';
-const zipName = 'DeskPhoneCRM-016.zip';
+const stagingName = 'DeskPhone-016';
+const zipName = 'DeskPhone-016.zip';
 
 const zipFiles = [
   'index.html',
@@ -15,7 +14,6 @@ const zipFiles = [
   'tsconfig.json',
   'vite.config.ts',
   'src/App.tsx',
-  'src/data.ts',
   'src/index.css',
   'src/main.tsx',
   'src/store.ts',
@@ -23,19 +21,9 @@ const zipFiles = [
   'src/lib/comm.ts',
   'src/lib/dtmf.ts',
   'src/lib/bridge.ts',
-  'src/lib/format.ts',
-  'src/lib/navigation.ts',
-  'src/lib/notifications.ts',
-  'src/components/IPhoneFrame.tsx',
-  'src/components/IOSCommPanel.tsx',
-  'src/components/LeadDetailPanel.tsx',
-  'src/components/LeadsRail.tsx',
-  'src/components/MessagesView.tsx',
-  'src/components/NavRail.tsx',
-  'src/components/NotificationPopup.tsx',
+  'src/components/DeskPhone.tsx',
   'src/components/SettingsModal.tsx',
-  'src/components/StatementDocument.tsx',
-  'src/components/StatementViewerOverlay.tsx',
+  'scripts/mock-phone-bridge.mjs',
 ];
 
 function assertPresent(file) {
@@ -47,6 +35,7 @@ function assertPresent(file) {
 fs.mkdirSync(downloads, { recursive: true });
 fs.rmSync(path.join(downloads, 'Forge-CRM-016-SOURCE.txt'), { force: true });
 fs.rmSync(path.join(downloads, 'Forge-CRM-016.zip'), { force: true });
+fs.rmSync(path.join(downloads, 'DeskPhoneCRM-016.zip'), { force: true });
 
 const staging = path.join(downloads, stagingName);
 fs.rmSync(staging, { recursive: true, force: true });
@@ -58,6 +47,7 @@ for (const file of zipFiles) {
 
 const zipPath = path.join(downloads, zipName);
 fs.rmSync(zipPath, { force: true });
+const { execSync } = await import('node:child_process');
 execSync(`zip -qr ${JSON.stringify(zipName)} ${JSON.stringify(stagingName)}`, { cwd: downloads });
 fs.rmSync(staging, { recursive: true, force: true });
 
