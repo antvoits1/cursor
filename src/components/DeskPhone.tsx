@@ -64,6 +64,7 @@ export default function DeskPhone({ bridge, defaultTab, navColor, onOpenSettings
   const [emailSubject, setEmailSubject] = useState('');
   const [emailBody, setEmailBody] = useState('');
   const composerRef = useRef<HTMLTextAreaElement>(null);
+  const sendingRef = useRef(false);
   const dialRef = useRef(dialDigits);
   dialRef.current = dialDigits;
 
@@ -141,16 +142,21 @@ export default function DeskPhone({ bridge, defaultTab, navColor, onOpenSettings
   const sendMessage = async () => {
     const number = digitsOnly(currentNumber);
     const text = messageText.trim();
-    if (!number || !text) return;
-    const ok = await bridge.sendSms(number, text);
-    if (ok) {
-      setMessageText('');
-      setComposing(false);
-      setThreadKey(number);
-      onNotice(`SMS handed to ${bridge.selectedDevice?.name || 'the connected phone'}.`);
-      return;
+    if (!number || !text || sendingRef.current) return;
+    sendingRef.current = true;
+    try {
+      const ok = await bridge.sendSms(number, text);
+      if (ok) {
+        setMessageText('');
+        setComposing(false);
+        setThreadKey(number);
+        onNotice(`SMS handed to ${bridge.selectedDevice?.name || 'the connected phone'}.`);
+        return;
+      }
+      window.location.href = `sms:${number}?body=${encodeURIComponent(text)}`;
+    } finally {
+      sendingRef.current = false;
     }
-    window.location.href = `sms:${number}?body=${encodeURIComponent(text)}`;
   };
 
   const sendEmail = () => {
@@ -181,13 +187,7 @@ export default function DeskPhone({ bridge, defaultTab, navColor, onOpenSettings
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null;
-      if (target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) {
-        if (event.key === 'Enter' && !event.shiftKey && target === composerRef.current) {
-          event.preventDefault();
-          void sendMessage();
-        }
-        return;
-      }
+      if (target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) return;
       const key = event.key;
       if (/^[0-9]$/.test(key) || key === '*' || key === '#') {
         event.preventDefault();
