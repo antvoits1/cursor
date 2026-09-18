@@ -1,29 +1,11 @@
-# Dependencies
 node_modules/
-
-# Build output
 dist/
-.vercel/
-
-# Runtime state written by the engine (page cache, learning store, worker logs)
-backend/.runtime/
-backend/__pycache__/
-*.pyc
-.venv/
-
-# Local lead sheets used for manual testing. Real lead data must never be
-# committed, so this directory is deliberately ignored.
-.local-fixtures/
-
-# Editor and OS noise
-.DS_Store
-__MACOSX/
-*.swp
-.idea/
-.vscode/
-
-# Local environment
+.vite/
 .env
-.env.local
-.env.*.local
-.vercel
+.env.*
+.DS_Store
+*.log
+*.orig
+*.rej
+*.bak
+debug*.png
