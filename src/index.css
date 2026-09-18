@@ -261,7 +261,7 @@ body.panel-resizing {
 .forge-toast {
   position: fixed;
   left: 50%;
-  bottom: 22px;
+  bottom: 72px;
   transform: translateX(-50%);
   z-index: 140;
   max-width: min(480px, calc(100vw - 32px));
