@@ -30,8 +30,8 @@ export default function SettingsModal({ settings, setSetting, onResetPanels, onC
           <Setting label="Panel Density" help="Comfortable adds breathing room. Compact shows more lead rows.">
             <select value={settings.leadDensity} onChange={e => setSetting('leadDensity', e.target.value as UISettings['leadDensity'])}><option value="standard">Comfortable</option><option value="compact">Compact</option></select>
           </Setting>
-          <Setting label="Default Communications Tab" help="Choose which Communications view opens first.">
-            <select value={settings.defaultCommsTab} onChange={e => setSetting('defaultCommsTab', e.target.value as UISettings['defaultCommsTab'])}><option value="all">All</option><option value="messages">Messages</option><option value="calls">Call log</option><option value="contacts">Contacts</option><option value="email">Email</option></select>
+          <Setting label="Default Communications Tab" help="Dialer opens first so a number can be entered from the keyboard immediately.">
+            <select value={settings.defaultCommsTab} onChange={e => setSetting('defaultCommsTab', e.target.value as UISettings['defaultCommsTab'])}><option value="dialer">Dialer</option><option value="messages">Messages</option><option value="calls">Recents</option><option value="contacts">Contacts</option><option value="email">Mail</option></select>
           </Setting>
           <Setting label="Canvas / Page Background" help="Changes the real space around and between the CRM panels."><ColorPicker value={settings.canvasColor} colors={CANVAS_COLORS} onChange={value => setSetting('canvasColor', value)}/></Setting>
           <Setting label="Topbar / Sidebar Color" help="One shared color keeps all navigation modes visually consistent."><ColorPicker value={settings.sidebarColor} colors={NAV_COLORS} onChange={value => setSetting('sidebarColor', value)}/></Setting>

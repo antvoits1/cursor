@@ -3,7 +3,7 @@ import { INITIAL_LEADS, type Lead } from './data';
 
 export type NavMode = 'sidebar-slim' | 'sidebar-wide' | 'topbar';
 export type ScreenScale = 'auto' | 'standard' | 'wide' | 'ultra';
-export type CommTab = 'all' | 'messages' | 'calls' | 'contacts' | 'email';
+export type CommTab = 'messages' | 'calls' | 'contacts' | 'dialer' | 'email';
 
 export const CANVAS_COLORS = ['#F2F4F8','#F7F8FC','#FFFFFF','#FAFAF9','#F5F7F9','#F1F4F7','#ECEFF3','#E7EBEF'];
 export const NAV_COLORS = ['#FFFFFF','#F7F8FC','#F2F4F8','#E2E6F0','#C8CCDC','#8C93AB','#5A6078','#1E2235','#181B2A','#334155','#263447','#3B3548'];
@@ -31,7 +31,7 @@ const DEFAULTS: UISettings = {
   navMode: 'topbar',
   leadDensity: 'standard',
   motion: 'normal',
-  defaultCommsTab: 'all',
+  defaultCommsTab: 'dialer',
   canvasColor: '#F2F4F8',
   sidebarColor: '#1E2235',
 };
@@ -52,7 +52,7 @@ function sanitize(parsed: Partial<UISettings>): UISettings {
     navMode: ['topbar','sidebar-slim','sidebar-wide'].includes(String(parsed.navMode)) ? parsed.navMode as NavMode : DEFAULTS.navMode,
     leadDensity: parsed.leadDensity === 'compact' ? 'compact' : 'standard',
     motion: parsed.motion === 'reduced' ? 'reduced' : 'normal',
-    defaultCommsTab: ['all','messages','calls','contacts','email'].includes(String(parsed.defaultCommsTab)) ? parsed.defaultCommsTab as CommTab : DEFAULTS.defaultCommsTab,
+    defaultCommsTab: ['messages','calls','contacts','dialer','email'].includes(String(parsed.defaultCommsTab)) ? parsed.defaultCommsTab as CommTab : DEFAULTS.defaultCommsTab,
     canvasColor: validColor(parsed.canvasColor, DEFAULTS.canvasColor),
     sidebarColor: validColor(parsed.sidebarColor, DEFAULTS.sidebarColor),
   };

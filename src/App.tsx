@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useStore, type UISettings } from './store';
 import type { ActivePage } from './lib/navigation';
 import { digitsOnly } from './lib/comm';
+import { usePhoneBridge } from './lib/bridge';
 import { deriveNotifications, loadReadIds, saveReadIds, type CrmNotification } from './lib/notifications';
 import NavRail from './components/NavRail';
 import LeadsRail from './components/LeadsRail';
@@ -15,10 +16,10 @@ import SettingsModal from './components/SettingsModal';
 const PANEL_KEYS = { leads: 'forge.react.v16.panel.leads', comms: 'forge.react.v16.panel.comms' };
 const LEGACY_PANEL_KEYS = { leads: 'forge.react.v15.panel.leads', comms: 'forge.react.v15.panel.comms' };
 const DEFAULT_LEADS_WIDTH = 320;
-const DEFAULT_COMMS_WIDTH = 390;
+const DEFAULT_COMMS_WIDTH = 300;
 const MIN_LEADS_WIDTH = 260;
 const MIN_DETAIL_WIDTH = 340;
-const MIN_COMMS_WIDTH = 340;
+const MIN_COMMS_WIDTH = 260;
 const DIVIDER_WIDTH = 12;
 
 function readWidth(key: string): number | null {
@@ -40,6 +41,7 @@ export default function App() {
   const { leads, screenScale, fontSize, navMode, leadDensity, motion, defaultCommsTab, canvasColor, sidebarColor, setSetting, setNavMode } = useStore();
   const requestedStartPage = document.body.dataset.startPage as ActivePage | undefined;
   const initialPage: ActivePage = requestedStartPage && ['crm','messages','email','scanner','command'].includes(requestedStartPage) ? requestedStartPage : 'crm';
+  const bridge = usePhoneBridge();
 
   const [selectedId, setSelectedId] = useState(leads[0]?.id || '');
   const [activePage, setActivePage] = useState<ActivePage>(initialPage);
@@ -52,7 +54,7 @@ export default function App() {
   const [readIds, setReadIds] = useState<Set<string>>(() => loadReadIds());
   const notifications = useMemo(() => deriveNotifications(leads), [leads]);
   const [leadsWidth, setLeadsWidth] = useState(() => readSavedWidth(PANEL_KEYS.leads, LEGACY_PANEL_KEYS.leads) ?? DEFAULT_LEADS_WIDTH);
-  const [commsWidth, setCommsWidth] = useState(() => readSavedWidth(PANEL_KEYS.comms, LEGACY_PANEL_KEYS.comms) ?? DEFAULT_COMMS_WIDTH);
+  const [commsWidth, setCommsWidth] = useState(() => Math.min(readSavedWidth(PANEL_KEYS.comms, LEGACY_PANEL_KEYS.comms) ?? DEFAULT_COMMS_WIDTH, 340));
   const panelAreaRef = useRef<HTMLDivElement>(null);
   const lead = leads.find(item => item.id === selectedId) || leads[0];
 
@@ -79,7 +81,7 @@ export default function App() {
   const clampPanels = () => {
     const area = panelAreaRef.current;
     if (!area || activePage !== 'crm') return;
-    const available = area.clientWidth - DIVIDER_WIDTH * 2;
+    const available = area.clientWidth;
     let nextLeads = Math.max(MIN_LEADS_WIDTH, Math.min(leadsWidth, available - MIN_DETAIL_WIDTH - MIN_COMMS_WIDTH));
     let nextComms = Math.max(MIN_COMMS_WIDTH, Math.min(commsWidth, available - MIN_DETAIL_WIDTH - nextLeads));
     if (nextLeads + nextComms + MIN_DETAIL_WIDTH > available) {
@@ -137,19 +139,25 @@ export default function App() {
   const startCall = async (number: string) => {
     const clean = digitsOnly(number); if (!clean) return;
     const payload = { number: clean, leadId: lead?.id };
-    const adapter = (window as Window & { ForgeTelephonyAdapter?: { startCall?: (payload: { number: string; leadId?: string }) => Promise<void> | void } }).ForgeTelephonyAdapter;
+    const adapter = window.ForgeTelephonyAdapter;
     if (adapter?.startCall) {
       try { await adapter.startCall(payload); return; }
       catch { showNotice('Phone connection failed. Check the connected device or provider.'); return; }
     }
+    if (bridge.kind === 'synced' || bridge.kind === 'authed') {
+      try {
+        const ok = await bridge.placeCall(clean);
+        if (ok) { showNotice(`Call requested on ${bridge.devices.find(item => item.id === bridge.selectedDeviceId)?.name || 'the connected phone'}.`); return; }
+      } catch { /* fall through to the host event */ }
+    }
     const event = new CustomEvent('forge:call-request', { detail: payload, cancelable: true });
     const unhandled = window.dispatchEvent(event);
-    if (unhandled) showNotice('Connect a phone or calling provider to place calls.');
+    if (unhandled) showNotice('Connect a Bluetooth phone through the Windows bridge to place calls.');
   };
 
   const startResize = (side: 'leads' | 'comms', clientX: number) => {
     const area = panelAreaRef.current; if (!area) return;
-    const startX = clientX, startLeads = leadsWidth, startComms = commsWidth, available = area.clientWidth - DIVIDER_WIDTH * 2;
+    const startX = clientX, startLeads = leadsWidth, startComms = commsWidth, available = area.clientWidth;
     document.body.classList.add('panel-resizing');
     const onMove = (event: PointerEvent) => {
       const delta = event.clientX - startX;
@@ -168,7 +176,7 @@ export default function App() {
 
   const minStmtIndex = lead?.mtd ? -1 : 0;
   const maxStmtIndex = lead ? lead.stmts.length - 1 : 0;
-  const panelGridStyle = { gridTemplateColumns: `${leadsWidth}px ${DIVIDER_WIDTH}px minmax(${MIN_DETAIL_WIDTH}px,1fr) ${DIVIDER_WIDTH}px ${commsWidth}px` };
+  const panelGridStyle = { gridTemplateColumns: `${leadsWidth}px minmax(${MIN_DETAIL_WIDTH}px,1fr)`, ['--leads-w' as string]: `${leadsWidth}px`, ['--comms-w' as string]: `${commsWidth}px` };
   const settings: UISettings = { screenScale, fontSize, navMode, leadDensity, motion, defaultCommsTab, canvasColor, sidebarColor };
 
   return (
@@ -178,17 +186,21 @@ export default function App() {
         {activePage === 'crm' && lead && (
           <div className="forge-panel-grid" style={panelGridStyle}>
             <LeadsRail leads={leads} selectedId={selectedId} setSelectedId={setSelectedId}/>
-            <div className="panel-divider" role="separator" aria-orientation="vertical" aria-label="Resize leads panel" onPointerDown={e => startResize('leads', e.clientX)} onDoubleClick={resetPanels}/>
-            <section data-panel="lead-detail" className="forge-panel-surface forge-detail-column"><LeadDetailPanel lead={lead} onCall={startCall} onOpenMessages={openMessages} setViewerDocIndex={setViewerDocIndex}/></section>
-            <div className="panel-divider" role="separator" aria-orientation="vertical" aria-label="Resize communications panel" onPointerDown={e => startResize('comms', e.clientX)} onDoubleClick={resetPanels}/>
-            <section data-panel="communications" className="forge-phone-column">
-              <IPhoneFrame>
-                <IOSCommPanel lead={lead} contacts={leads} preferredMobile={messageNumber} defaultTab={defaultCommsTab} pendingOpen={pendingComm} onSelectLead={setSelectedId} onCall={startCall} onPreferredMobileChange={setMessageNumber}/>
-              </IPhoneFrame>
+            <section data-panel="lead-detail" className="forge-panel-surface forge-detail-column">
+              <div className="forge-detail-split">
+                <LeadDetailPanel lead={lead} onCall={startCall} onOpenMessages={openMessages} setViewerDocIndex={setViewerDocIndex}/>
+                <section data-panel="communications" className="forge-phone-dock">
+                  <IPhoneFrame status={bridge.label}>
+                    <IOSCommPanel lead={lead} contacts={leads} preferredMobile={messageNumber} defaultTab={defaultCommsTab} pendingOpen={pendingComm} onSelectLead={setSelectedId} onCall={startCall} onPreferredMobileChange={setMessageNumber} onSendSms={bridge.sendSms} devices={bridge.devices} selectedDeviceId={bridge.selectedDeviceId} onSelectDevice={bridge.setSelectedDeviceId} extractedMessages={bridge.messages} extractedContacts={bridge.contacts} extractedCalls={bridge.calls} bridgeKind={bridge.kind}/>
+                  </IPhoneFrame>
+                </section>
+              </div>
+              <div className="panel-divider panel-divider-comms" role="separator" aria-orientation="vertical" aria-label="Resize communications panel" style={{ width: DIVIDER_WIDTH }} onPointerDown={e => startResize('comms', e.clientX)} onDoubleClick={resetPanels}/>
             </section>
+            <div className="panel-divider panel-divider-leads" role="separator" aria-orientation="vertical" aria-label="Resize leads panel" style={{ width: DIVIDER_WIDTH }} onPointerDown={e => startResize('leads', e.clientX)} onDoubleClick={resetPanels}/>
           </div>
         )}
-        {activePage === 'messages' && <MessagesView leads={leads} selectedLeadId={selectedId} setSelectedLeadId={setSelectedId} preferredNumber={messageNumber} setPreferredNumber={setMessageNumber} onCall={startCall} openThread={pendingThread}/>}
+        {activePage === 'messages' && <MessagesView leads={leads} selectedLeadId={selectedId} setSelectedLeadId={setSelectedId} preferredNumber={messageNumber} setPreferredNumber={setMessageNumber} onCall={startCall} onSendSms={bridge.sendSms} openThread={pendingThread}/>}
         {!['crm','messages'].includes(activePage) && <div className="forge-placeholder forge-panel-surface"><div><strong>{activePage}</strong><span>This page is not available in this build.</span></div></div>}
       </div>
       {lead && viewerDocIndex !== null && <StatementViewerOverlay lead={lead} viewerDocIndex={viewerDocIndex} setViewerDocIndex={setViewerDocIndex} minStmtIndex={minStmtIndex} maxStmtIndex={maxStmtIndex}/>}

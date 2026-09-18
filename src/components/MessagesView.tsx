@@ -12,12 +12,13 @@ interface Props {
   preferredNumber: string;
   setPreferredNumber: (number: string) => void;
   onCall: (number: string) => void;
+  onSendSms?: (number: string, text: string) => Promise<boolean>;
   openThread?: { leadId: string; channel?: 'sms' | 'wa' } | null;
 }
 function newestMessage(lead: Lead) {
   return [...(lead.sms || [])].sort((a,b) => ageMinutes(a.t) - ageMinutes(b.t))[0] || null;
 }
-export default function MessagesView({ leads, selectedLeadId, setSelectedLeadId, preferredNumber, setPreferredNumber, onCall, openThread }: Props) {
+export default function MessagesView({ leads, selectedLeadId, setSelectedLeadId, preferredNumber, setPreferredNumber, onCall, onSendSms, openThread }: Props) {
   const [query, setQuery] = useState('');
   const [openedLeadId, setOpenedLeadId] = useState<string | null>(null);
   useEffect(() => { if (openThread) setOpenedLeadId(openThread.leadId); }, [openThread]);
@@ -32,7 +33,7 @@ export default function MessagesView({ leads, selectedLeadId, setSelectedLeadId,
     return (
       <div className="messages-page messages-phone-page">
         <IPhoneFrame>
-          <IOSCommPanel lead={openedLead} contacts={leads} preferredMobile={activeNumber} defaultTab="messages" openThreadOnLoad initialChannel={openThread && openedLeadId === openThread.leadId ? (openThread.channel || 'sms') : 'sms'} onBack={() => setOpenedLeadId(null)} onSelectLead={setSelectedLeadId} onPreferredMobileChange={setPreferredNumber} onCall={onCall}/>
+          <IOSCommPanel lead={openedLead} contacts={leads} preferredMobile={activeNumber} defaultTab="messages" openThreadOnLoad initialChannel={openThread && openedLeadId === openThread.leadId ? (openThread.channel || 'sms') : 'sms'} onBack={() => setOpenedLeadId(null)} onSelectLead={setSelectedLeadId} onPreferredMobileChange={setPreferredNumber} onCall={onCall} onSendSms={onSendSms}/>
         </IPhoneFrame>
       </div>
     );

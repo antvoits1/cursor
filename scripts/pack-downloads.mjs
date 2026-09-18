@@ -21,6 +21,8 @@ const zipFiles = [
   'src/store.ts',
   'src/vite-env.d.ts',
   'src/lib/comm.ts',
+  'src/lib/dtmf.ts',
+  'src/lib/bridge.ts',
   'src/lib/format.ts',
   'src/lib/navigation.ts',
   'src/lib/notifications.ts',
